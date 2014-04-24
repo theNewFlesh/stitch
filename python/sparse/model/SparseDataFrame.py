@@ -44,72 +44,77 @@ from sparse.utilities.Utils import *
 from sparse.model.SpQLParser import SpQLParser
 # ------------------------------------------------------------------------------
 
-class SparseDataFrame(DataFrame, Base):
+class SparseDataFrame(Base):
 	def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False, name=None):
 		super(SparseDataFrame, self).__init__(data=None, index=None, columns=None, dtype=None, copy=False)
 		self._cls = 'SparseDataFrame'
+
+		if type(data) is DataFrame:
+			self._data = data
+		else:
+			self._data = DataFrame(data=data, index=index, columns=columns, dtype=dtype, copy=copy)
 	# --------------------------------------------------------------------------
 
 	def to_type(self, dtype, inplace=False):
-		data = self.applymap(lambda x: to_type(x, dtype))
+		data = self.data.applymap(lambda x: to_type(x, dtype))
 
 		if inplace:
-			self = data
+			self.data = data
 		return data
 
 	def is_iterable(self, inplace=False):
-		data = self.applymap(lambda x: is_iterable(x))
+		data = self.data.applymap(lambda x: is_iterable(x))
 
 		if inplace:
-			self = data
+			self.data = data
 		return data
 
 	def make_iterable(self, inplace=False):
-		data = self.applymap(lambda x: make_iterable(x))
+		data = self.data.applymap(lambda x: make_iterable(x))
 
 		if inplace:
-			self = data
+			self.data = data
 		return data	
 	# --------------------------------------------------------------------------
 	
 	def regex_match(self, pattern, group=0, ignore_case=False, inplace=False):
-		data = self.applymap(lambda x: regex_match(pattern, x, group, ignore_case=ignore_case))
+		data = self.data.applymap(lambda x: regex_match(pattern, x, group, ignore_case=ignore_case))
 
 		if inplace:
-			self = data
+			self.data = data
 		return data
 
 	def regex_search(self, pattern, group=0, ignore_case=False, inplace=False):
-		data = self.applymap(lambda x: regex_search(pattern, x, group, ignore_case=ignore_case))
+		data = self.data.applymap(lambda x: regex_search(pattern, x, group, ignore_case=ignore_case))
 
 		if inplace:
-			self = data
+			self.data = data
 		return data
 
 	def regex_sub(self, pattern, repl, group=0, count=0, ignore_case=False, inplace=False):
-		data = self.applymap(lambda x: regex_sub(pattern, repl, x, group, ignore_case=ignore_case))
+		data = self.data.applymap(lambda x: regex_sub(pattern, repl, x, group, ignore_case=ignore_case))
 
 		if inplace:
-			self = data
+			self.data = data
 		return data
 
 	def regex_split(self, pattern, ignore_case=False, inplace=False):
-		data = self.applymap(lambda x: regex_split(pattern, x, ignore_case=ignore_case))
+		data = self.data.applymap(lambda x: regex_split(pattern, x, ignore_case=ignore_case))
 
 		if inplace:
-			self = data
+			self.data = data
 		return data
 	# --------------------------------------------------------------------------
 
 	def flatten(self, dtype=dict, prefix=True, inplace=False):
-		mask = self.applymap(lambda x: bool_test(type(x), '==', dtype))
-		iterables = self[mask]
+		mask = self.data.applymap(lambda x: bool_test(type(x), '==', dtype))
+		iterables = self.data[mask]
 		iterables = iterables.dropna(how='all', axis=1)
 
-		new_data = self.drop(iterables.columns, axis=1)
+		new_data = self.data.drop(iterables.columns, axis=1)
 		frames = [new_data]
 		for col in iterables.columns:
-			frame = DataFrame(self[col].tolist())
+			frame = DataFrame(self.data[col].tolist())
 			if prefix:
 				columns = {}
 				for k in frame.columns:
@@ -119,31 +124,31 @@ class SparseDataFrame(DataFrame, Base):
 		data = pandas.concat(frames, axis=1)
 		
 		if inplace:
-			self = data
+			self.data = data
 		return data
 
 	def drop_by_mask(self, mask, how='all', axis=0, inplace=False):
-		mask = self[mask]
+		mask = self.data[mask]
 		mask = mask.dropna(how=how, axis=axis)
 		data = None
 		if axis = 0:
-			data = self.ix[mask.index]
+			data = self.data.ix[mask.index]
 		if axis = 1:
-			data = self[mask.columns]
+			data = self.data[mask.columns]
 		data.reset_index(drop=True, inplace=True)
 
 		if inplace:
-			self = data
+			self.data = data
 		return data
 	# --------------------------------------------------------------------------
 
 	def spql_search(self, string, field_operator='re', inplace=False):
 		spql = SpQLInterpreter()
 		spql.search(string)
-		data = spql.dataframe_query(self, field_operator=field_operator)
+		data = spql.dataframe_query(self.data, field_operator=field_operator)
 		
 		if inplace:
-			self = data
+			self.data = data
 		return data
 # ------------------------------------------------------------------------------
 

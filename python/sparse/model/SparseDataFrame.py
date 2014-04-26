@@ -37,6 +37,7 @@
 
 from __future__ import with_statement
 import re
+from collections import OrderedDict
 import pandas
 from pandas import DataFrame, Series
 import numpy
@@ -74,7 +75,20 @@ class SparseDataFrame(Base):
 
 		if inplace:
 			self.data = data
-		return data	
+		return data
+
+	def coerce_nulls(self, inpace=True):
+		nulls = [None, '', [], {}, (), set(), OrderedDict()]
+		def _coerce_nulls(item):
+			if item in nulls:
+				return numpy.nan
+			else:
+				return item
+		data = self.applymap(lambda x: _coerce_nulls(x))
+
+		if inplace:
+			self.data = data
+		return data
 	# --------------------------------------------------------------------------
 	
 	def regex_match(self, pattern, group=0, ignore_case=False, inplace=False):

@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Alex Braun 04.23.2014
+# Alex Braun 04.13.2014
 
 # ------------------------------------------------------------------------------
 # The MIT License (MIT)
@@ -124,28 +124,28 @@ def _gt(item, value):
 	return item > value
 
 def _re(item, value):
-	found = re.search(value, str(item))
+	found = re.search(str(value), str(item))
 	if found:
 		return True
 	else:
 		return False
 
 def _reig(item, value):
-	found = re.search(value, str(item), re.IGNORECASE)
+	found = re.search(str(value), str(item), re.IGNORECASE)
 	if found:
 		return True
 	else:
 		return False
 
 def _nre(item, value):
-	found = re.search(value, str(item))
+	found = re.search(str(value), str(item))
 	if not found:
 		return True
 	else:
 		return False
 
 def _nreig(item, value):
-	found = re.search(value, str(item), re.IGNORECASE)
+	found = re.search(str(value), str(item), re.IGNORECASE)
 	if not found:
 		return True
 	else:

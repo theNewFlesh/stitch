@@ -72,11 +72,11 @@ class SpQLInterpreter(SpQLParser):
 		return [self._gen_mongo_query(q['fields'], q['operator'], q['values']) for q in self._last_query]
 	# --------------------------------------------------------------------------
 
-	def _gen_dataframe_query(self, dataframe, fields=['all'], operator='==', values=[''], field_operator='re'):
+	def _gen_dataframe_query(self, dataframe, fields=['all'], operator='==', values=[''], field_operator='=='):
 		if fields == ['all']:
 			mask = dataframe.applymap(lambda x: bool_test(x, operator, values))
 			mask[mask == False] = numpy.nan
-			mask.dropna(how='all', inplace=True)
+			mask.dropna(how='any', inplace=True)
 			return dataframe.ix[mask.index]
 
 		columns = dataframe.columns.to_series()
@@ -85,13 +85,13 @@ class SpQLInterpreter(SpQLParser):
 
 		mask = dataframe[columns].applymap(lambda x: bool_test(x, operator, values))
 		mas[mask == False] = numpy.nan
-		mask = mask.dropna(how='all')
+		mask.dropna(how='any', inplace=True)
 		dataframe = dataframe.ix[mask.index]
 		dataframe = dataframe.dropna(how='all', axis=1)
 		return dataframe
 
 	@property
-	def dataframe_query(self, dataframe, field_operator='re'):
+	def dataframe_query(self, dataframe, field_operator='=='):
 		for q in self._last_query:
 			dataframe = self._gen_dataframe_query(dataframe, q['fields'], q['operator'], q['values'], field_operator=field_operator)
 		return dataframe

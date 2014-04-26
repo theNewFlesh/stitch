@@ -35,7 +35,7 @@
 '''
 # ------------------------------------------------------------------------------
 
-from pyparsing import printables
+from pyparsing import printables, nums
 from pyparsing import Word, Keyword, Or, Group
 from pyparsing import delimitedList, oneOf, OneOrMore, Suppress
 from sparse.utilities.Utils import Base
@@ -50,7 +50,8 @@ class SpQLParser(Base):
 		all_chars            = printables + ' '
 		regex                = Suppress('"') + Word(all_chars, excludeChars=',")') + Suppress('"')
 		word                 = Word(printables, excludeChars=',")') 
-		item                 = Or([word, regex])
+		number               = Word(nums).setParseAction(lambda s,l,t: float(t[0]))
+		item                 = Or([number, word, regex])
 		items                = delimitedList(OneOrMore(item))
 		fields               = Group(Suppress('(') + items + Suppress(')')).setResultsName('fields')
 		values               = Group(Suppress('(') + items + Suppress(')')).setResultsName('values')

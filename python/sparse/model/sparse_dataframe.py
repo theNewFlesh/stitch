@@ -26,7 +26,7 @@
 # ------------------------------------------------------------------------------
 
 '''
-.. module:: SparseDataFrame
+.. module:: sparse_dataframe
 	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Special subclass of pandas DataFrame for sparse data aggregation
@@ -41,8 +41,8 @@ from collections import OrderedDict
 import pandas
 from pandas import DataFrame, Series
 import numpy
-from sparse.utilities.Utils import *
-from sparse.model.SpQLParser import SpQLParser
+from sparse.utilities.utils import *
+from sparse.model.spql_parser import SpQLParser
 # ------------------------------------------------------------------------------
 
 class SparseDataFrame(Base):

@@ -26,7 +26,7 @@
 # ------------------------------------------------------------------------------
 
 '''
-.. module:: SpQLParser
+.. module:: spql_parser
 	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Sparse Query Langauge parser
@@ -38,7 +38,7 @@
 from pyparsing import printables, nums
 from pyparsing import Word, Keyword, Or, Group
 from pyparsing import delimitedList, oneOf, OneOrMore, Suppress
-from sparse.utilities.Utils import Base
+from sparse.utilities.utils import Base
 # ------------------------------------------------------------------------------
 
 class SpQLParser(Base):

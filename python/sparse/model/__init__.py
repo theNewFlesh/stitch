@@ -1,4 +1,4 @@
-import SpQLParser
-import SpQLInterpreter
-import SparseDataFrame
-import SparseSeries
+import spql_parser
+import spwl_interpreter
+import sparse_dataframe
+import sparse_series

@@ -30,7 +30,7 @@
 	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Special subclass of pandas Series for sparse data aggregation
-	
+
 .. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
 '''
 # ------------------------------------------------------------------------------
@@ -161,7 +161,7 @@ class SparseSeries(Series, Base):
 			self.data = data
 		return data
 	# --------------------------------------------------------------------------
-	
+
 	def read_file(self, filepath, cleanup=True):
 	    data = None
 	    with open(filepath, 'r') as file_:
@@ -183,7 +183,7 @@ def main():
 	'''
 	Run help if called directly
 	'''
-	
+
 	import __main__
 	help(__main__)
 

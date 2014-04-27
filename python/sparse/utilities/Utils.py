@@ -26,11 +26,11 @@
 # ------------------------------------------------------------------------------
 
 '''
-.. module:: Utils
+.. module:: utils
 	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: General Python utilities
-	
+
 .. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
 '''
 # ------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ class Base(object):
 		class of instance
 		'''
 		return self._cls
-	
+
 	@property
 	def name(self):
 		'''
@@ -224,7 +224,7 @@ def main():
 	'''
 	Run help if called directly
 	'''
-	
+
 	import __main__
 	help(__main__)
 

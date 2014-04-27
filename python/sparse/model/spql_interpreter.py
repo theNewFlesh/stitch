@@ -30,7 +30,7 @@
 	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Sparse Query Langauge interpreter
-	
+
 .. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
 '''
 # ------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ from sparse.model.spql_parser import SpQLParser
 # ------------------------------------------------------------------------------
 
 class SpQLInterpreter(SpQLParser):
-	
+
 	def __init__(self, name=None):
 		super(SpQLInterpreter, self).__init__(name=name)
 		self._cls = 'SpQLInterpreter'
@@ -98,7 +98,7 @@ def main():
 	'''
 	Run help if called directly
 	'''
-	
+
 	import __main__
 	help(__main__)
 

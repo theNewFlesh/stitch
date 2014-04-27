@@ -30,7 +30,7 @@
 	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Special subclass of pandas DataFrame for sparse data aggregation
-	
+
 .. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
 '''
 # ------------------------------------------------------------------------------
@@ -54,6 +54,8 @@ class SparseDataFrame(Base):
 			self._data = data
 		else:
 			self._data = DataFrame(data=data, index=index, columns=columns, dtype=dtype, copy=copy)
+		super(SparseDataFrame, self).__init__(name=name)
+		self._cls = 'SparseDataFrame'
 	# --------------------------------------------------------------------------
 
 	def to_type(self, dtype, inplace=False):
@@ -90,7 +92,7 @@ class SparseDataFrame(Base):
 			self.data = data
 		return data
 	# --------------------------------------------------------------------------
-	
+
 	def regex_match(self, pattern, group=0, ignore_case=False, inplace=False):
 		data = self.data.applymap(lambda x: regex_match(pattern, x, group, ignore_case=ignore_case))
 
@@ -136,7 +138,7 @@ class SparseDataFrame(Base):
 				frame.rename(columns=columns)
 			frames.append(frame)
 		data = pandas.concat(frames, axis=1)
-		
+
 		if inplace:
 			self.data = data
 		return data
@@ -145,9 +147,9 @@ class SparseDataFrame(Base):
 		mask = self.data[mask]
 		mask = mask.dropna(how=how, axis=axis)
 		data = None
-		if axis = 0:
+		if axis == 0:
 			data = self.data.ix[mask.index]
-		if axis = 1:
+		if axis == 1:
 			data = self.data[mask.columns]
 		data.reset_index(drop=True, inplace=True)
 
@@ -160,7 +162,7 @@ class SparseDataFrame(Base):
 		spql = SpQLInterpreter()
 		spql.search(string)
 		data = spql.dataframe_query(self.data, field_operator=field_operator)
-		
+
 		if inplace:
 			self.data = data
 		return data
@@ -170,7 +172,7 @@ def main():
 	'''
 	Run help if called directly
 	'''
-	
+
 	import __main__
 	help(__main__)
 

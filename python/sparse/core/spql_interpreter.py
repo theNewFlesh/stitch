@@ -35,7 +35,9 @@
 '''
 # ------------------------------------------------------------------------------
 
-from sparse.model.spql_parser import SpQLParser
+import numpy
+from sparse.core.spql_parser import SpQLParser
+from sparse.utilities.utils import *
 # ------------------------------------------------------------------------------
 
 class SpQLInterpreter(SpQLParser):
@@ -78,16 +80,15 @@ class SpQLInterpreter(SpQLParser):
 
 		columns = dataframe.columns.to_series()
 		mask = columns.apply(lambda x: bool_test(x, field_operator, fields))
-		columns = columns[mask].toList()
+		columns = columns[mask].tolist()
 
 		mask = dataframe[columns].applymap(lambda x: bool_test(x, operator, values))
-		mas[mask == False] = numpy.nan
+		mask[mask == False] = numpy.nan
 		mask.dropna(how='any', inplace=True)
 		dataframe = dataframe.ix[mask.index]
 		dataframe = dataframe.dropna(how='all', axis=1)
 		return dataframe
 
-	@property
 	def dataframe_query(self, dataframe, field_operator='=='):
 		for q in self._last_query:
 			dataframe = self._gen_dataframe_query(dataframe, q['fields'], q['operator'], q['values'], field_operator=field_operator)

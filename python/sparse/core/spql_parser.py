@@ -30,7 +30,7 @@
 	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Sparse Query Langauge parser
-	
+
 .. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
 '''
 # ------------------------------------------------------------------------------
@@ -42,14 +42,14 @@ from sparse.utilities.utils import Base
 # ------------------------------------------------------------------------------
 
 class SpQLParser(Base):
-	
+
 	def __init__(self, name=None):
-		super(SpQLParser, self).__init__(none=name)
+		super(SpQLParser, self).__init__(name=name)
 		self._cls = 'SpQLParser'
 
 		all_chars            = printables + ' '
 		regex                = Suppress('"') + Word(all_chars, excludeChars=',")') + Suppress('"')
-		word                 = Word(printables, excludeChars=',")') 
+		word                 = Word(printables, excludeChars=',")')
 		number               = Word(nums).setParseAction(lambda s,l,t: float(t[0]))
 		item                 = Or([number, word, regex])
 		items                = delimitedList(OneOrMore(item))
@@ -96,7 +96,7 @@ def main():
 	'''
 	Run help if called directly
 	'''
-	
+
 	import __main__
 	help(__main__)
 

@@ -88,10 +88,10 @@ class Base(object):
 # ------------------------------------------------------------------------------
 
 def to_type(item, dtype):
-    try:
-        return dtype(item)
-    except ValueError:
-        return item
+	try:
+		return dtype(item)
+	except ValueError:
+		return item
 
 def is_iterable(item):
 	try:
@@ -209,11 +209,11 @@ def invert(iterable):
 	return [inversion_map[x] for x in iterable]
 
 def reduce_units(iterable, new_unit='-', min=0):
-    old = sorted(set(iterable))
-    new = range(0, len(old))
-    new = [new_unit * (x + min) for x in new]
-    lut = dict(zip(old, new))
-    return [lut[x] for x in iterable]
+	old = sorted(set(iterable))
+	new = range(0, len(old))
+	new = [new_unit * (x + min) for x in new]
+	lut = dict(zip(old, new))
+	return [lut[x] for x in iterable]
 # ------------------------------------------------------------------------------
 
 def main():

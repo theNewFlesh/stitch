@@ -26,53 +26,40 @@
 # ------------------------------------------------------------------------------
 
 '''
-.. module:: errors
-	:date: 12.29.2013
+.. module:: qube_backingstore
+	:date: 04.13.2014
 	:platform: Unix
-	:synopsis: Library of error messages
+	:synopsis: Qube BackingStore for interfacing with Probe API
 
 .. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
 '''
 # ------------------------------------------------------------------------------
 
-import re
+from datetime import datetime
+from pandas import DataFrame
+from sparse.frameworks.probe.backingstore import BackingStore
+from sparse.utilities.mock import qb
 # ------------------------------------------------------------------------------
 
-class NotFound(Exception):
-	def __init__(self, value):
-		self._value = value
-	def __str__(self):
-		return repr(self._value)
+class QubeBackingStore(BackingStore):
 
-class BadArgument(Exception):
-	def __init__(self, value):
-		self._value = value
-	def __str__(self):
-		return repr(self._value)
+	def __init__(self, name=None):
+		super(QubeBackingStore, self).__init__(name=name)
+		self._cls = 'QubeBackingStore'
 
-class OperatorError(Exception):
-	def __init__(self, value):
-		self._value = value
-	def __str__(self):
-		return repr(self._value)
+		self._db = qb()
+		self._data = None
+		self._results = None
+		self._instruction_map = {}
 
-class MissingKeywordArgument(Exception):
-	def __init__(self, message):
-		self._message = message
-	def __str__(self):
-		return self._message
-
-class EmptyFunction(Exception):
-	def __init__(self, message):
-		self._message = message
-	def __str__(self):
-		return self._message
-
-def _checkKwargs(self, *kwargs):
-	defaultRE = re.compile('~!')
-	for kwarg in kwargs:
-		if defaultRE.match(str(kwarg)):
-			raise MissingKeywordArgument(kwarg[2:])
+	@property
+	def source_data(self):
+		jobs = [dict(job) for job in self._db.jobinfo(subjobs=True)]
+		for job in jobs:
+			subjob = DataFrame(job['subjobs'])['timestart']
+			subjob = subjob.apply(lambda x: (datetime.now() - datetime.fromtimestamp(x)) )
+			job['frames_stdv'] = float(subjob.std())
+		return jobs
 # ------------------------------------------------------------------------------
 
 def main():
@@ -82,10 +69,8 @@ def main():
 
 	import __main__
 	help(__main__)
-# ------------------------------------------------------------------------------
 
-__all__ = ['NotFound', 'BadArgument', 'OperatorError', 'MissingKeywordArgument',
-		   '_checkKwargs']
+__all__ = ['QubeBackingStore']
 
 if __name__ == '__main__':
 	main()

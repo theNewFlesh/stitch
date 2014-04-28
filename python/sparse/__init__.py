@@ -1,2 +1,4 @@
+import core
+import frameworks
 import utilities
-import model
+import views

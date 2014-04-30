@@ -37,21 +37,30 @@
 
 import argparse
 from sparse.frameworks.probe.probe_cli import ProbeCLI
+from sparse.frameworks.probe.qube_backingstore import QubeBackingsStore
 # ------------------------------------------------------------------------------
 
-def main():
+BACKINGSTORES = {'qube': QubeBackingStore}
+
+def run():
 	parser = argparse.ArgumentParser(description='Query given backingstore')
 	parser.add_argument('backingstore', metavar='str', type=str, nargs=1,
 						action='store', help='The backingstore to query')
 	parser.add_argument('-s', '--search', metavar='str', type=str, nargs='?',
 						action='store', default=False, help='A SpQL search string')
+	parser.add_argument('-f', '--displayfields', metavar='str', type=str, nargs='?+',
+					action='store', default=False, help='Only display these fields')
 	args = parser.parse_args()
-	cli = ProbeCLI(args.backingstore[0])
+	bks = args.backingstore[0]
+	cli = ProbeCLI(BACKINGSTPRES[bks](), display_fields=args.displayfields)
 	if args.search:
-		cli.spql_search(args.search)
+		cli.spql_search(args.search, display_fields=args.displayfields)
 		print cli.results
 	else:
 		cli.cmdloop()
+
+def main():
+	run()
 
 if __name__ == '__main__':
 	main()

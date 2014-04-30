@@ -158,7 +158,7 @@ class SparseDataFrame(Base):
 		return data
 	# --------------------------------------------------------------------------
 
-	def spql_search(self, string, field_operator='re', inplace=False):
+	def spql_search(self, string, field_operator='==', inplace=False):
 		spql = SpQLInterpreter()
 		spql.search(string)
 		data = spql.dataframe_query(self.data, field_operator=field_operator)

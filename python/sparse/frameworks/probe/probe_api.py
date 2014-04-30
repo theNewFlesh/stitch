@@ -118,7 +118,7 @@ class ProbeAPI(Base):
 	def mongodb(self):
 		return self._mongodb
 
-	def spql_search(self, string, database='dataframe', field_operator='=='):
+	def spql_search(self, string, database='dataframe', field_operator='==', display_fields=[]):
 		self._spql.search(string)
 		if database is 'mongodb':
 			query = self._spql.mongo_query
@@ -130,10 +130,14 @@ class ProbeAPI(Base):
 			if self.datatype is 'json':
 				data = pandas.read_json(self.data, orient='records')
 				results = self._spql.dataframe_query(data)
+				if display_fields:
+					results = results[display_fields]
 				results = results.to_json(orient='records')
 				self._results = results
 			elif self.datatype is 'dataframe':
 				results = self._spql.dataframe_query(data)
+				if display_fields:
+					results = results[display_fields]
 				self._results = results
 			else:
 				raise TypeError('Database data type not recognized')

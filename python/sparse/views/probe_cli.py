@@ -42,11 +42,12 @@ from sparse.frameworks.probe.probe_api import ProbeAPI
 # ------------------------------------------------------------------------------
 
 class ProbeCLI(Cmd):
-	def __init__(self, backingstore):
+	def __init__(self, backingstore, display_fields=[]):
 		Cmd.__init__(self)
 		self.prompt = 'SpQL> '
 		self._api = ProbeAPI(backingstore)
 		self._results = None
+		self._display_fields = display_fields
 
 	@property
 	def results(self):
@@ -54,12 +55,14 @@ class ProbeCLI(Cmd):
 		return self._results
 
 	def default(self, arg):
-		self._api.spql_search(arg)
+		# DEBUG
+		# self._api.spql_search(arg, display_fields=self._display_fields)
+
 		try:
-			self._api.spql_search(arg)
+			self._api.spql_search(arg, display_fields=self._display_fields)
 			self._results = pandas.read_json(self._api._results, orient='records')
 			print self.results
-		except error:
+		except:
 			print 'Improper query'
 	# --------------------------------------------------------------------------
 

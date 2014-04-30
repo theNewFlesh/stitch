@@ -35,6 +35,7 @@
 '''
 # ------------------------------------------------------------------------------
 
+import time
 import random
 from sparse.utilities.utils import Base
 from sparse.utilities.errors import *
@@ -76,7 +77,7 @@ class qb(MockDatabase):
 		]
 
 		if subjobs:
-			base_time = 1398586748
+			base_time = time.time()
 			for i, job in enumerate(jobs):
 				subjobs = []
 				for n in range(1, 100):
@@ -85,7 +86,7 @@ class qb(MockDatabase):
 					subjob['id'] = 123111 + (i * 100) + n
 					time_ = base_time + (i * 500) + (n * 50)
 					subjob['timestart'] = time_
-					subjob['timecomplete'] = time_ + random.randrange(5000, 15000)
+					subjob['timecomplete'] = time_ + random.randrange(1000, 1500)
 					subjob['status'] = 'complete'
 					subjobs.append(subjob)
 				job['subjobs'] = subjobs

@@ -35,6 +35,7 @@
 '''
 # ------------------------------------------------------------------------------
 
+import subprocess
 from datetime import datetime
 from pandas import DataFrame
 from sparse.frameworks.probe.backingstore import BackingStore
@@ -54,11 +55,25 @@ class QubeBackingStore(BackingStore):
 
 	@property
 	def source_data(self):
+		# cmd  = '"'
+		# cmd += 'import json; '
+		# cmd += 'import qb; '
+		# cmd += "jobs = qb.jobinfo(filters={'status':'running'}, subjobs=True'); "
+		# cmd += 'jobs = [dict(job) for job in jobs]; '
+		# cmd += 'print json.dumps(jobs)'
+		# cmd += '"'
+		# jobs = subprocess.Popen(['python2.6', '-c', cmd], stdout=subprocess.PIPE)
+		# jobs = json.loads(jobs)[0]
+
+		# Won't work until Qube for python 2.7 comes out
 		jobs = [dict(job) for job in self._db.jobinfo(subjobs=True)]
+
 		for job in jobs:
-			subjob = DataFrame(job['subjobs'])['timestart']
-			subjob = subjob.apply(lambda x: (datetime.now() - datetime.fromtimestamp(x)) )
-			job['frames_stdv'] = float(subjob.std())
+			subjobs = DataFrame(job['subjobs'])
+			stdv = subjobs['timecomplete'] - subjobs['timestart']
+			stdv = str(stdv.std()).split('.')
+			stdv = float(stdv[0] + '.' + stdv[1][:3])
+			job['frames_stdv'] = stdv
 		return jobs
 # ------------------------------------------------------------------------------
 

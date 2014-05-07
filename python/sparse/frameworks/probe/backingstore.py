@@ -97,7 +97,7 @@ class BackingStore(Base):
 			data.append(Series(datum))
 		sdata = SparseDataFrame(data=data)
 		sdata.flatten(inplace=True)
-		sdata.coerce_nulls()
+		sdata.coerce_nulls(inplace=True)
 		data = sdata.data
 		data.dropna(how='all', axis=1, inplace=True)
 		data['probe_id'] = data.index

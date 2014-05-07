@@ -77,7 +77,7 @@ class SparseSeries(Base):
 			self.data = data
 		return data
 
-	def coerce_nulls(self, inpace=True):
+	def coerce_nulls(self, inpace=False):
 		nulls = [None, '', [], {}, (), set(), OrderedDict()]
 		def _coerce_nulls(item):
 			if item in nulls:
@@ -120,7 +120,7 @@ class SparseSeries(Base):
 		return data
 	# --------------------------------------------------------------------------
 
-	def remove_null_lines(self, inplace=True):
+	def remove_null_lines(self, inplace=False):
 		mask = self[self == '']
 		data = self
 		data[mask] = numpy.nan
@@ -141,7 +141,7 @@ class SparseSeries(Base):
 			self.data = data
 		return data
 
-	def invert(self, inplace=True):
+	def invert(self, inplace=False):
 		patterns = sorted(list(set(self)))
 		inversion_map = dict(zip(patterns, [x for x in reversed(patterns)]))
 		data = self.data.apply(lambda x: inversion_map[x])
@@ -150,7 +150,7 @@ class SparseSeries(Base):
 			self.data = data
 		return data
 
-	def reduce_units(self, new_unit='-', min=0, inplace=True):
+	def reduce_units(self, new_unit='-', min=0, inplace=False):
 		old = sort(self.data.unique())
 		new = range(0, len(old))
 		new = [new_unit * (x + min) for x in new]

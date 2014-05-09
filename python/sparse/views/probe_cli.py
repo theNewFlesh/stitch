@@ -38,11 +38,13 @@
 import sys
 from cmd import Cmd
 import pandas
+pandas.options.display.line_width = 500
+pandas.options.display.expand_frame_repr= False
 from sparse.frameworks.probe.probe_api import ProbeAPI
 # ------------------------------------------------------------------------------
 
 class ProbeCLI(Cmd):
-	def __init__(self, backingstore, display_fields=[]), debug_mode=False):
+	def __init__(self, backingstore, display_fields=[], debug_mode=False):
 		Cmd.__init__(self)
 		self.prompt = 'SpQL> '
 		self._api = ProbeAPI(backingstore)

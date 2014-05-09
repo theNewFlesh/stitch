@@ -38,7 +38,6 @@
 from __future__ import with_statement
 from collections import OrderedDict
 import pandas
-pandas.options.display.expand_frame_repr= False
 from sparse.utilities.utils import *
 from sparse.core.spql_interpreter import SpQLInterpreter
 # ------------------------------------------------------------------------------

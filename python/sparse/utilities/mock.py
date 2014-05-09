@@ -56,33 +56,46 @@ class qb(MockDatabase):
 		super(qb, self).__init__(name=name)
 		self._cls = 'qb'
 
-	def jobinfo(filters={}, subjobs=False):
+	def jobinfo(filters={}, agenda=True, subjobs=False):
 		jobs = [
-		{'id': 123000, 'name':      'vfx_herc_nuke_shot01_v001', 'priority':    5},
-		{'id': 123001, 'name':      'vfx_herc_nuke_shot01_v002', 'priority':  100},
-		{'id': 123002, 'name':   'vfx_jupiter_vray_shot01_v005', 'priority':  100},
-		{'id': 123003, 'name':    'vfx_tyrant_nuke_shot01_v001', 'priority':  100},
-		{'id': 123004, 'name':      'vfx_herc_maya_shot01_v010', 'priority':  100},
-		{'id': 123005, 'name':      'vfx_herc_nuke_shot03_v004', 'priority':  500},
-		{'id': 123006, 'name':      'vfx_herc_nuke_shot22_v007', 'priority':  500},
-		{'id': 123007, 'name':   'vfx_jupiter_nuke_shot05_v001', 'priority':  500},
-		{'id': 123008, 'name': 'vfx_tyrant_houdini_shot01_v002', 'priority': 2000},
-		{'id': 123009, 'name':      'vfx_herc_maya_shot56_v015', 'priority': 2500},
-		{'id': 123010, 'name':      'vfx_herc_maya_shot01_v010', 'priority': 2501},
-		{'id': 123011, 'name':      'vfx_herc_nuke_shot03_v004', 'priority': 2501},
-		{'id': 123012, 'name':      'vfx_herc_nuke_shot22_v007', 'priority': 2501},
-		{'id': 123013, 'name':   'vfx_jupiter_nuke_shot05_v001', 'priority': 2501},
-		{'id': 123014, 'name': 'vfx_tyrant_houdini_shot01_v002', 'priority': 3000},
-		{'id': 123015, 'name':      'vfx_herc_maya_shot56_v015', 'priority': 3000}
+		{'id': 123000, 'name':      'vfx_herc_nuke_shot01_v001', 'priority':    5, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123001, 'name':      'vfx_herc_nuke_shot01_v002', 'priority':  100, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123002, 'name':   'vfx_jupiter_vray_shot01_v005', 'priority':  100, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123003, 'name':    'vfx_tyrant_nuke_shot01_v001', 'priority':  100, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123004, 'name':      'vfx_herc_maya_shot01_v010', 'priority':  100, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123005, 'name':      'vfx_herc_nuke_shot03_v004', 'priority':  500, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123006, 'name':      'vfx_herc_nuke_shot22_v007', 'priority':  500, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123007, 'name':   'vfx_jupiter_nuke_shot05_v001', 'priority':  500, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123008, 'name': 'vfx_tyrant_houdini_shot01_v002', 'priority': 2000, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123009, 'name':      'vfx_herc_maya_shot56_v015', 'priority': 2500, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123010, 'name':      'vfx_herc_maya_shot01_v010', 'priority': 2501, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123011, 'name':      'vfx_herc_nuke_shot03_v004', 'priority': 2501, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123012, 'name':      'vfx_herc_nuke_shot22_v007', 'priority': 2501, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123013, 'name':   'vfx_jupiter_nuke_shot05_v001', 'priority': 2501, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123014, 'name': 'vfx_tyrant_houdini_shot01_v002', 'priority': 3000, 'timestart': 1, 'timecomplete': 2},
+		{'id': 123015, 'name':      'vfx_herc_maya_shot56_v015', 'priority': 3000, 'timestart': 1, 'timecomplete': 2}
 		]
+
+		if agenda:
+			base_time = time.time()
+			for i, job in enumerate(jobs):
+				frames = []
+				for n in range(1, 10):
+					frame = {}
+					time_ = base_time + (i * 500) + (n * 50)
+					frame['timestart'] = time_
+					frame['timecomplete'] = time_ + random.randrange(1000, 1500)
+					frame['status'] = 'complete'
+					frames.append(frame)
+				job['agenda'] = frames
 
 		if subjobs:
 			base_time = time.time()
 			for i, job in enumerate(jobs):
 				subjobs = []
-				for n in range(1, 100):
+				for n in range(1, 10):
 					subjob = {}
-					subjob['name'] = 'frame_' + str(n).zfill(3)
+					subjob['name'] = 'subjob_' + str(n).zfill(3)
 					subjob['id'] = 123111 + (i * 100) + n
 					time_ = base_time + (i * 500) + (n * 50)
 					subjob['timestart'] = time_
@@ -95,7 +108,7 @@ class qb(MockDatabase):
 
 	@property
 	def jobs(self):
-		return self.jobinfo(subjobs=True)
+		return self.jobinfo()
 # ------------------------------------------------------------------------------
 
 def main():

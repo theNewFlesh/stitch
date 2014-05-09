@@ -36,6 +36,7 @@
 # ------------------------------------------------------------------------------
 
 import subprocess
+from copy import copy
 from datetime import datetime
 from pandas import DataFrame
 from sparse.frameworks.probe.backingstore import BackingStore
@@ -48,17 +49,37 @@ class QubeBackingStore(BackingStore):
 		super(QubeBackingStore, self).__init__(name=name)
 		self._cls = 'QubeBackingStore'
 
-		self._db = qb()
+		self._database = qb()
 		self._data = None
 		self._results = None
 		self._instruction_map = {}
+
+	def _flatten_qube_field(self, database, field='agenda'):   
+	    new_db = []
+	    for job in database:       
+	        frames = []
+	        for item in job[field]:
+	            temp = {}
+	            for key, value in item.iteritems():
+	                temp[field + '_' + key] = value    
+	            frames.append(temp)
+
+	        head = job
+	        del head[field]
+	        for frame in frames:
+	            new_job = copy(head)
+	            for key, value in frame.iteritems():
+	                new_job[key] = value
+	            new_db.append(new_job)
+	            
+	    return new_db
 
 	@property
 	def source_data(self):
 		# cmd  = '"'
 		# cmd += 'import json; '
 		# cmd += 'import qb; '
-		# cmd += "jobs = qb.jobinfo(filters={'status':'running'}, subjobs=True'); "
+		# cmd += "jobs = qb.jobinfo(filters={'status':'running'}, agenda=True'); "
 		# cmd += 'jobs = [dict(job) for job in jobs]; '
 		# cmd += 'print json.dumps(jobs)'
 		# cmd += '"'
@@ -66,14 +87,8 @@ class QubeBackingStore(BackingStore):
 		# jobs = json.loads(jobs)[0]
 
 		# Won't work until Qube for python 2.7 comes out
-		jobs = [dict(job) for job in self._db.jobinfo(subjobs=True)]
-
-		for job in jobs:
-			subjobs = DataFrame(job['subjobs'])
-			stdv = subjobs['timecomplete'] - subjobs['timestart']
-			stdv = str(stdv.std()).split('.')
-			stdv = float(stdv[0] + '.' + stdv[1][:3])
-			job['frames_stdv'] = stdv
+		jobs = [dict(job) for job in self._database.jobinfo()]
+		jobs = self._flatten_qube_field(jobs)
 		return jobs
 # ------------------------------------------------------------------------------
 

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+ #! /usr/bin/env python
 
 # Alex Braun 11.13.2013
 # >> INSERT LICENSE HERE <<
@@ -14,23 +14,27 @@
 # ------------------------------------------------------------------------------
 
 from __future__ import with_statement
-from pandas import DataFrame, Series, Panel
-import pandas
-import numpy
-from matplotlib import pyplot
-import os
-import json
 import re
-import copy
-from collections import *
-from itertools import *
-from Axon.Utilities.ErrorsImpl import *
+from collections import OrderedDict
+import pandas
+from pandas import DataFrame, Series, Panel
+import numpy
+from sparse.utilities.utils import *
+from sparse.core.spql_parser import SpQLParser
 # ------------------------------------------------------------------------------
 
-class LUT(Panel):
+class SparseLUT(Base):
+	def __init__(self, data, null='missing data', null_value=-1.0, name=None):
+		super(LUT, self).__init__(name=name)
+		self._cls = 'SparseLUT'
+
+		self._null = null
+		self._null_value = null_value
+		data = self._reduce_data(data)
+		values = self._generate_values(data)
+
 	def _reduce_data(self, data):
-		data = data.reset_index()
-		del data['index']
+		data.reset_index(drop=True, inplace=True)
 		data = data.apply(unique)
 		data = data.apply(organize)
 		data[data.apply(pandas.isnull)] = self._null
@@ -45,13 +49,6 @@ class LUT(Panel):
 		values[data == self._null] = self._null_value
 		return values
 	# --------------------------------------------------------------------------
-
-	def __init__(self, data, null='Missing Data', null_value=-1.0):
-		super(LUT, self).__init__()
-		self._null = null
-		self._null_value = null_value
-		data = self._reduce_data(data)
-		values = self._generate_values(data)
 
 	def lookup(self, lut, column, datum):
 		data = lut['data'][column]
@@ -75,28 +72,6 @@ class LUT(Panel):
 		mask = mask[mask == True]
 		values = lut['values'][column]
 		return values.ix[mask.index].values
-
-class SD_dataframe(DataFrame):
-
-	def reduce(self, data):
-		data = data.reset_index()
-		del data['index']
-		data = data.apply(unique)
-		data = data.apply(organize)
-		data[data.apply(pandas.isnull)] = self._null
-		data = data.apply(unique)
-		data = data.dropna(how='all')
-		return data
-
-class SD_series(Series):
-
-	def organize(self, series):
-		new_series = series.dropna()
-		buffer = [numpy.nan] * (series.size - new_series.size)
-		new_series = new_series.append(Series(buffer))
-		return Series(list(new_series), index=series.index)
-
-
 # ------------------------------------------------------------------------------
 
 def main():

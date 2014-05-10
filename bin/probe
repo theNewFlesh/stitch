@@ -44,15 +44,22 @@ BACKINGSTORES = {'qube': QubeBackingStore}
 
 def run():
 	parser = argparse.ArgumentParser(description='Query given backingstore')
+	
 	parser.add_argument('backingstore', metavar='str', type=str, nargs=1,
 						action='store', help='The backingstore to query')
+	
 	parser.add_argument('-s', '--search', metavar='str', type=str, nargs='?',
 						action='store', default=False, help='A SpQL search string')
+	
 	parser.add_argument('-f', '--displayfields', metavar='str', type=str, nargs='?+',
-					action='store', default=False, help='Only display these fields')
+						action='store', default=False, help='Only display these fields')
+	
+	parser.add_argument('-d', '--debug', default=False, action='store_true',
+						help='Enable debug mode')
+	
 	args = parser.parse_args()
 	bks = args.backingstore[0]
-	cli = ProbeCLI(BACKINGSTPRES[bks](), display_fields=args.displayfields)
+	cli = ProbeCLI(BACKINGSTORES[bks](), display_fields=args.displayfields, debug_mode=args.debug)
 	if args.search:
 		cli.spql_search(args.search, display_fields=args.displayfields)
 		print cli.results

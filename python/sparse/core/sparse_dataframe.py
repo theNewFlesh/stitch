@@ -79,7 +79,7 @@ class SparseDataFrame(Base):
 			self.data = data
 		return data
 
-	def coerce_nulls(self, inplace=True):
+	def coerce_nulls(self, inplace=False):
 		nulls = [None, '', [], {}, (), set(), OrderedDict()]
 		def _coerce_nulls(item):
 			if item in nulls:
@@ -87,6 +87,20 @@ class SparseDataFrame(Base):
 			else:
 				return item
 		data = self.data.applymap(lambda x: _coerce_nulls(x))
+
+		if inplace:
+			self.data = data
+		return data
+
+	def nan_to_bottom(self, inplace=True):
+		def _nan_to_bottom(item):
+			data = item.dropna()
+			buf = [numpy.nan] * (item.size - data.size)
+			data = data.append(Series(buf))
+			data = Series(list(data), index=item.index)
+			return data
+
+		data = self.data.apply(lambda x: _nan_to_bottom(x))
 
 		if inplace:
 			self.data = data
@@ -152,6 +166,37 @@ class SparseDataFrame(Base):
 		if axis == 1:
 			data = self.data[mask.columns]
 		data.reset_index(drop=True, inplace=True)
+
+		if inplace:
+			self.data = data
+		return data
+
+	def stack_by_column(self, column, inplace=False):
+		frames = []
+		max_len = 0
+		cols = list(self.data.columns.drop(column))
+		grps = self.data.groupby(column)
+		   
+		for item in self.data[column].unique():
+			group = grps.get_group(item)
+			group = group[cols]
+			group.columns = [[item] * len(cols), cols]
+			frames.append(group)
+
+			if len(group) > max_len:
+				max_len = len(group)
+
+		for frame in frames:
+			bufr = frame.head(1)
+			bufr = bufr.apply(lambda x: numpy.nan)
+
+			buf_len = max_len - len(frame)
+			for i in range(buf_len):
+				bufr.append(bufr)
+			frame.append(bufr, ignore_index=True)
+			frame.reset_index(drop=True, inplace=True)
+
+		data = pandas.concat(frames, axis=1)
 
 		if inplace:
 			self.data = data

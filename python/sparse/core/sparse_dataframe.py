@@ -80,7 +80,12 @@ class SparseDataFrame(Base):
 		return data
 
 	def coerce_nulls(self, inplace=False):
-		nulls = [None, '', [], {}, (), set(), OrderedDict()]
+		nulls = [   None,      '',      [],      {},      (),      set(),      OrderedDict(),
+				   [None],    [''],    [[]],    [{}],    [()],    [set()],    [OrderedDict()],
+				   (None),    (''),    ([]),    ({}),    (()),    (set()),    (OrderedDict()),
+						   set(''), set([]), set({}), set(()), set(set()), set(OrderedDict())   
+
+		]
 		def _coerce_nulls(item):
 			if item in nulls:
 				return numpy.nan
@@ -106,7 +111,7 @@ class SparseDataFrame(Base):
 			self.data = data
 		return data
 	# --------------------------------------------------------------------------
-
+							
 	def regex_match(self, pattern, group=0, ignore_case=False, inplace=False):
 		data = self.data.applymap(lambda x: regex_match(pattern, x, group, ignore_case=ignore_case))
 
@@ -197,6 +202,40 @@ class SparseDataFrame(Base):
 			frame.reset_index(drop=True, inplace=True)
 
 		data = pandas.concat(frames, axis=1)
+
+		if inplace:
+			self.data = data
+		return data
+
+	def unstripe(self, inplace=False):
+		data = self.data.reset_index(level=1, drop=True)
+		
+		new_cols = data.columns.unique().tolist()
+		cols = Series(data.columns)
+		mask = cols.duplicated()
+		bad_cols = cols[mask].tolist()
+		good_cols = set(cols.unique()).difference(bad_cols)
+
+		items = []
+		for col in new_cols:
+			if col in bad_cols:
+				item = data[col].unstack()
+				item = Series(item.values)
+				items.append(item)
+			else:
+				items.append(data[col])
+			
+		data = irregular_concat(items, axis=1, ignore_index=False)
+		data.columns = new_cols
+		
+		if inplace:
+			self.data = data
+		return data
+
+	def unique(self, inplace=True):
+		data = self.data
+		mask = data.apply(lambda x: x.duplicated())
+		data[mask] = numpy.nan
 
 		if inplace:
 			self.data = data

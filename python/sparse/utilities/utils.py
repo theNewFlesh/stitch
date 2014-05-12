@@ -36,6 +36,8 @@
 # ------------------------------------------------------------------------------
 
 import re
+import numpy
+import pandas
 # ------------------------------------------------------------------------------
 
 class Base(object):
@@ -216,6 +218,26 @@ def reduce_units(iterable, new_unit='-', min=0):
 	return [lut[x] for x in iterable]
 # ------------------------------------------------------------------------------
 
+def irregular_concat(items, axis=0, ignore_index=True):
+	max_len = 0
+	for item in items:
+		if len(item) > max_len:
+			max_len = len(item)
+	
+	for item in items:
+		bufr = item.head(1)
+		bufr = bufr.apply(lambda x: numpy.nan)
+		buf_len = max_len - len(item)
+		for i in range(buf_len):
+			if ignore_index:
+				item.append(bufr, ignore_index=True)
+			else:
+				item.append(bufr)
+	
+	data = pandas.concat(items, axis=axis)
+	return data
+# ------------------------------------------------------------------------------
+
 def main():
 	'''
 	Run help if called directly
@@ -225,7 +247,7 @@ def main():
 	help(__main__)
 
 __all__ = ['Base', 'to_type', 'is_iterable', 'make_iterable', 'iprint',
-		   'bool_test', 'regex_match', 'regex_search', 'regex_sub']
+		   'bool_test', 'regex_match', 'regex_search', 'regex_sub', 'irregular_concat']
 
 if __name__ == '__main__':
 	main()

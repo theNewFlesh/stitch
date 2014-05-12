@@ -40,6 +40,7 @@ from cmd import Cmd
 import pandas
 pandas.options.display.line_width = 500
 pandas.options.display.expand_frame_repr= False
+from sparse.utilities.errors import *
 from sparse.frameworks.probe.probe_api import ProbeAPI
 # ------------------------------------------------------------------------------
 
@@ -67,6 +68,8 @@ class ProbeCLI(Cmd):
 				self._api.spql_search(arg, display_fields=self._display_fields)
 				self._results = pandas.read_json(self._api._results, orient='records')
 				print self.results
+			except NotFound:
+				print 'No results found'
 			except:
 				print 'Improper query'
 	# --------------------------------------------------------------------------

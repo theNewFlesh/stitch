@@ -84,7 +84,8 @@ class QubeBackingStore(BackingStore):
 		# cmd += 'print json.dumps(jobs)'
 		# cmd += '"'
 		# jobs = subprocess.Popen(['python2.6', '-c', cmd], stdout=subprocess.PIPE)
-		# jobs = json.loads(jobs)[0]
+		# jobs = jobs.stdout.read()
+		# jobs = json.loads(jobs)
 
 		# Won't work until Qube for python 2.7 comes out
 		jobs = [dict(job) for job in self._database.jobinfo()]

@@ -38,6 +38,7 @@
 from __future__ import with_statement
 from collections import OrderedDict
 import pandas
+from sparse.utilities.errors import *
 from sparse.utilities.utils import *
 from sparse.core.spql_interpreter import SpQLInterpreter
 # ------------------------------------------------------------------------------
@@ -123,22 +124,35 @@ class ProbeAPI(Base):
 		if database is 'mongodb':
 			query = self._spql.mongo_query
 			self._results = self._mongodb.aggregate(query)
+		
 		elif database is 'elasticsearch':
 			query = self._spql.elasticsearch_query
 			self._results = self._elasticsearch.aggregate(query)
+		
 		else:
 			if self.datatype is 'json':
 				data = pandas.read_json(self.data, orient='records')
 				results = self._spql.dataframe_query(data)
+				
+				if len(results) == 0:
+					raise NotFound('No search results found')
+				
 				if display_fields:
 					results = results[display_fields]
+				
 				results = results.to_json(orient='records')
 				self._results = results
+			
 			elif self.datatype is 'dataframe':
 				results = self._spql.dataframe_query(data)
+
+				if len(results) == 0:
+					raise NotFound('No search results found')
+				
 				if display_fields:
 					results = results[display_fields]
 				self._results = results
+			
 			else:
 				raise TypeError('Database data type not recognized')
 	# --------------------------------------------------------------------------

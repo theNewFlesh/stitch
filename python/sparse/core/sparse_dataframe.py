@@ -241,7 +241,20 @@ class SparseDataFrame(Base):
 			self.data = data
 		return data
 	# --------------------------------------------------------------------------
+	
+	def read_nested_dict(self, item, name, inplace=False):
+		values = flatten_nested_dict(item, name).values()
+		index = nested_dict_to_index(item, name)
+		data = DataFrame(values, index=index)
+		mask = data.apply(lambda x: x != 'null')
+		mask = mask[mask].dropna()
+		data = data.ix[mask.index]
 
+		if inplace:
+			self.data = data
+		return data
+	# --------------------------------------------------------------------------
+	
 	def spql_search(self, string, field_operator='==', inplace=False):
 		spql = SpQLInterpreter()
 		spql.search(string)

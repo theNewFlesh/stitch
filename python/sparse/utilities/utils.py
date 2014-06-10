@@ -38,6 +38,8 @@
 import re
 import numpy
 import pandas
+from pandas import DataFrame
+from collections import OrderedDict, namedtuple
 # ------------------------------------------------------------------------------
 
 class Base(object):
@@ -216,6 +218,35 @@ def reduce_units(iterable, new_unit='-', min=0):
 	new = [new_unit * (x + min) for x in new]
 	lut = dict(zip(old, new))
 	return [lut[x] for x in iterable]
+
+def dict_to_namedtuple(name, dict):
+    tup = namedtuple(name, dict.keys())
+    return tup(*dict.values())
+
+def flatten_nested_dict(item, name, separator='_', null='null'):
+    output = OrderedDict()
+    def _flatten_nested_dict(item, name):
+        for key, val in item.iteritems():
+            if type(val) is dict:
+                output[name + separator + str(key)] = null
+                _flatten_nested_dict(val, name + separator + str(key))
+            else:
+                output[name + separator + str(key)] = val
+    _flatten_nested_dict(item, name)
+    return output
+
+def nested_dict_to_index(item, name):
+    index = flatten_nested_dict(item, name, separator='__null__')
+    index = [x.split('__null__') for x in index.keys()]
+    max_ = 0
+    for item in index:
+        if len(item) > max_:
+            max_ = len(item)
+    for item in index:
+        while len(item) < max_:
+            item.append('-->')
+    index = DataFrame(index).transpose().values.tolist()
+    return index
 # ------------------------------------------------------------------------------
 
 def irregular_concat(items, axis=0, ignore_index=True):
@@ -247,7 +278,9 @@ def main():
 	help(__main__)
 
 __all__ = ['Base', 'to_type', 'is_iterable', 'make_iterable', 'iprint',
-		   'bool_test', 'regex_match', 'regex_search', 'regex_sub', 'irregular_concat']
+		   'bool_test', 'regex_match', 'regex_search', 'regex_sub', 
+		   'dict_to_namedtuple', 'flatten_nested_dict', 'nested_dict_to_index',
+		   'irregular_concat']
 
 if __name__ == '__main__':
 	main()

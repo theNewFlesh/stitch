@@ -42,7 +42,7 @@ import pandas
 from pandas import DataFrame, Series
 import numpy
 from sparse.utilities.utils import *
-from sparse.core.spql_parser import SpQLParser
+from sparse.core.spql_interpreter import SpQLInterpreter
 # ------------------------------------------------------------------------------
 
 class SparseDataFrame(Base):
@@ -154,7 +154,7 @@ class SparseDataFrame(Base):
 				columns = {}
 				for k in frame.columns:
 					columns[k] = str(col) + '_' + str(k)
-				frame.rename(columns=columns)
+				frame.rename(columns=columns, inplace=True)
 			frames.append(frame)
 		data = pandas.concat(frames, axis=1)
 

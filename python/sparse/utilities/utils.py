@@ -36,6 +36,7 @@
 # ------------------------------------------------------------------------------
 
 import re
+from decimal import Decimal
 import numpy
 import pandas
 from pandas import DataFrame
@@ -113,6 +114,27 @@ def make_iterable(item):
 def iprint(iterable):
 	for item in iterable:
 		print item
+
+def keep_type(item, func):
+	return item.dtypes.type(func(item))
+
+def set_decimal_expansion(item, expansion):
+	return int(item * 10 ** expansion) / float(10 ** expansion)
+
+def try_(item, func):
+	try:
+		return func(item)
+	except:
+		return item
+
+def round_to(item, order):
+	return round(Decimal(item), order)
+
+def eval_(item):
+	try:
+		return eval(item)
+	except:
+		return item
 # ------------------------------------------------------------------------------
 
 def _eq(item, value):
@@ -278,9 +300,10 @@ def main():
 	help(__main__)
 
 __all__ = ['Base', 'to_type', 'is_iterable', 'make_iterable', 'iprint',
-		   'bool_test', 'regex_match', 'regex_search', 'regex_sub', 
-		   'dict_to_namedtuple', 'flatten_nested_dict', 'nested_dict_to_index',
-		   'irregular_concat']
+			'keep_type', 'set_decimal_expansion', 'try_', 'round_to', 'eval_',
+			'bool_test', 'regex_match', 'regex_search', 'regex_sub', 
+			'dict_to_namedtuple', 'flatten_nested_dict', 'nested_dict_to_index',
+			'irregular_concat']
 
 if __name__ == '__main__':
 	main()

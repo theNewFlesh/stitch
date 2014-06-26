@@ -49,6 +49,7 @@ class SparseDataFrame(Base):
 	def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False, name=None):
 		super(SparseDataFrame, self).__init__(name=name)
 		self._cls = 'SparseDataFrame'
+		self._spql = SpQLInterpreter()
 
 		if type(data) is DataFrame:
 			self.data = data
@@ -256,9 +257,7 @@ class SparseDataFrame(Base):
 	# --------------------------------------------------------------------------
 	
 	def spql_search(self, string, field_operator='==', inplace=False):
-		spql = SpQLInterpreter()
-		spql.search(string)
-		data = spql.dataframe_query(self.data, field_operator=field_operator)
+		data = self._spql.dataframe_query(self.data, field_operator=field_operator)
 
 		if inplace:
 			self.data = data

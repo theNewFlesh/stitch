@@ -36,8 +36,8 @@
 # ------------------------------------------------------------------------------
 
 import argparse
-from sparse.frameworks.probe.probe_cli import ProbeCLI
-from sparse.frameworks.probe.qube_backingstore import QubeBackingsStore
+from sparse.views.probe_cli import ProbeCLI
+from sparse.frameworks.probe.qube_backingstore import QubeBackingStore
 # ------------------------------------------------------------------------------
 
 BACKINGSTORES = {'qube': QubeBackingStore}
@@ -47,11 +47,17 @@ def run():
 	
 	parser.add_argument('backingstore', metavar='str', type=str, nargs=1,
 						action='store', help='The backingstore to query')
+
+	parser.add_argument('-a', '--args', metavar='str', type=str, nargs='*',
+						action='store', help='Backingstore arguments')
+
+	parser.add_argument('-k', '--kwargs', metavar='str', type=str, nargs='?',
+						action='store', help='Backingstore key word arguments')
 	
 	parser.add_argument('-s', '--search', metavar='str', type=str, nargs='?',
 						action='store', default=False, help='A SpQL search string')
 	
-	parser.add_argument('-f', '--displayfields', metavar='str', type=str, nargs='?+',
+	parser.add_argument('-f', '--displayfields', metavar='str', type=str, nargs='*',
 						action='store', default=False, help='Only display these fields')
 	
 	parser.add_argument('-d', '--debug', default=False, action='store_true',
@@ -59,7 +65,11 @@ def run():
 	
 	args = parser.parse_args()
 	bks = args.backingstore[0]
-	cli = ProbeCLI(BACKINGSTORES[bks](), display_fields=args.displayfields, debug_mode=args.debug)
+	_args = args.args
+	kwargs = {}
+	if args.kwargs:
+		kwargs = eval(args.kwargs)
+	cli = ProbeCLI(BACKINGSTORES[bks](*_args, **kwargs), display_fields=args.displayfields, debug_mode=args.debug)
 	if args.search:
 		cli.spql_search(args.search, display_fields=args.displayfields)
 		print cli.results

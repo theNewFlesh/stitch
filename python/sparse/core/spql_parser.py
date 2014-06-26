@@ -50,7 +50,9 @@ class SpQLParser(Base):
 		all_chars            = printables + ' '
 		regex                = Suppress('"') + Word(all_chars, excludeChars=',")') + Suppress('"')
 		word                 = Word(printables, excludeChars=',")')
-		number               = Word(nums).setParseAction(lambda s,l,t: float(t[0]))
+		float_               = Word(nums + '.' + nums).setParseAction(lambda s,l,t: float(t[0]))
+		integer              = Word(nums).setParseAction(lambda s,l,t: int(t[0]))
+		number               = Or([float_, integer])
 		item                 = Or([number, word, regex])
 		items                = delimitedList(OneOrMore(item))
 		fields               = Group(Suppress('(') + items + Suppress(')')).setResultsName('fields')

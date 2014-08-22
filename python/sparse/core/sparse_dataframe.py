@@ -243,10 +243,10 @@ class SparseDataFrame(Base):
 		return data
 
 	def cross_map(self, source_column, target_column, mask_predicate, target_predicate=None, inplace=False):
-    	data = self.data
-    	mask = data[source_column].apply(mask_predicate)
+		data = self.data
+		mask = data[source_column].apply(mask_predicate)
 		if target_predicate:
-    		data[target_column][mask] = data[target_column][mask].apply(target_predicate)
+			data[target_column][mask] = data[target_column][mask].apply(target_predicate)
 		else:
 			data[target_column][mask] = data[source_column][mask]
 

@@ -36,6 +36,7 @@
 # ------------------------------------------------------------------------------
 
 import numpy
+import pandas
 from sparse.core.spql_parser import SpQLParser
 from sparse.utilities.utils import *
 # ------------------------------------------------------------------------------
@@ -47,8 +48,8 @@ class SpQLInterpreter(SpQLParser):
 		self._cls = 'SpQLInterpreter'
 
 	def _gen_mongo_query(self, fields, operator, values):
-		ops = {'==': '$in', '!=': '$ne', '>': '$gt', '<': '$lt', 're': '$regex',
-		'nre': '$regex', 're.IGNORECASE': '$regex', 'nre.IGNORECASE': '$regex'}
+		ops = {'==': '$in', '!=': '$ne', '>': '$gt', '>=': '$gte', '<': '$lt', 
+		'<=': '$lte', 're': '$regex', 'nre': '$regex', 're.IGNORECASE': '$regex', 'nre.IGNORECASE': '$regex'}
 
 		op = ops[operator]
 		subquiries = []
@@ -90,9 +91,24 @@ class SpQLInterpreter(SpQLParser):
 		return dataframe
 
 	def dataframe_query(self, dataframe, field_operator='=='):
-		for q in self._last_query:
-			dataframe = self._gen_dataframe_query(dataframe, q['fields'], q['operator'], q['values'], field_operator=field_operator)
-		return dataframe
+		dataframe['__probe_id'] = dataframe.index
+		results = []
+		for query in self._last_search:
+			result = dataframe
+			for q in query:
+				result = self._gen_dataframe_query(result, q['fields'], q['operator'], q['values'], field_operator=field_operator)
+			results.append(result)
+			
+		if len(results) > 1:
+			results = pandas.concat(results)
+			mask = results['__probe_id'].duplicated()
+			results = results[~mask]
+			results.reset_index(drop=True, inplace=True)
+		else:
+			results = results[0]	
+
+		del results['__probe_id']
+		return results
 # ------------------------------------------------------------------------------
 
 def main():

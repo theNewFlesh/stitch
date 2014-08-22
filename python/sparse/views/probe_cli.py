@@ -39,6 +39,7 @@ import sys
 from cmd import Cmd
 import pandas
 pandas.options.display.line_width = 500
+pandas.options.display.max_rows = 1000
 pandas.options.display.expand_frame_repr= False
 from sparse.utilities.errors import *
 from sparse.frameworks.probe.probe_api import ProbeAPI
@@ -123,20 +124,28 @@ class ProbeCLI(Cmd):
 		print 'items in a database whose names contain the string "jupiter".'
 		print ''
 		print 'Operators include:'
-		print '                           is,  =  :  exact match'
-		print '            is not,     isnot,  !  :  does not match'
-		print '      greater than,        gt,  >  :  greater than'
-		print '         less than,        ls,  <  :  less than'
-		print '          contains,      cont,  {  :  contains'
-		print '  does not contain,   notcont,  }  :  does not contain'
-		print '        cscontains,    cscont, {{  :  contains (case sensitive)'
-		print 'does not cscontain, csnotcont, }}  :  does not contain (case sensitive)'
+		print '                              is,   =  :  exact match'
+		print '               is not,     isnot,  !=  :  does not match'
+		print '         greater than,        gt,   >  :  greater than'
+		print 'greater than equal to,       gte,  >=  :  greater than or equal to'
+		print '            less than,        lt,   <  :  less than'
+		print '   less than equal to,       lte,  <=  :  less than or equal to'
+		print '             contains,      cont,   ~  :  contains'
+		print '     does not contain,   notcont,  !~  :  does not contain'
+		print '           cscontains,    cscont,  ~~  :  contains (case sensitive)'
+		print '   does not cscontain, csnotcont, !~~  :  does not contain (case sensitive)'
 
-	def help_pipe(self):
+	def help_and(self):
 		print ''
-		print 'A pipe (|) is a means of chaining queries together.  It pipes the'
+		print 'The AND operator (&) is a means of chaining queries together.  It pipes the'
 		print 'results of the left query into the right query as its new, smaller'
 		print 'database.'
+
+	def help_or(self):
+		print ''
+		print 'The OR operator (|) is a means of concatinating multiple queries into a'
+		print 'single result.  Both operands are executed as independent queries and'
+		print 'their results are then merged together with duplicate rows removed.'
 	# --------------------------------------------------------------------------
 
 	def do_quit(self, arg):

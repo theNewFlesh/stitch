@@ -146,8 +146,14 @@ def _ne(item, value):
 def _lt(item, value):
 	return item < value
 
+def _lte(item, value):
+	return item <= value
+
 def _gt(item, value):
 	return item > value
+
+def _gte(item, value):
+	return item >= value
 
 def _re(item, value):
 	found = re.search(str(value), str(item))
@@ -177,8 +183,8 @@ def _nreig(item, value):
 	else:
 		return False
 
-OPERATORS = {'==': _eq, '!=': _ne, '<': _lt, '>': _gt, 're': _re,
-	   're.IGNORECASE': _reig, 'nre': _nre, 'nre.IGNORECASE': _nreig}
+OPERATORS = {'==': _eq, '!=': _ne, '<': _lt, '<=': _lte, '>': _gt, '>=': _gte, 
+			're': _re, 're.IGNORECASE': _reig, 'nre': _nre, 'nre.IGNORECASE': _nreig}
 
 def bool_test(item, operator, values):
 	op = OPERATORS[operator]
@@ -245,16 +251,20 @@ def dict_to_namedtuple(name, dict):
     tup = namedtuple(name, dict.keys())
     return tup(*dict.values())
 
-def flatten_nested_dict(item, name, separator='_', null='null'):
-    output = OrderedDict()
+def flatten_nested_dict(item, separator='_', null='null'):
+    temp = OrderedDict()
     def _flatten_nested_dict(item, name):
         for key, val in item.iteritems():
-            if type(val) is dict:
-                output[name + separator + str(key)] = null
+            if type(val) is dict and val != {}:
+                temp[name + separator + str(key)] = null
                 _flatten_nested_dict(val, name + separator + str(key))
             else:
-                output[name + separator + str(key)] = val
-    _flatten_nested_dict(item, name)
+                temp[name + separator + str(key)] = val
+    _flatten_nested_dict(item, '__null__')
+    output = OrderedDict()
+    header = 8 + len(separator)
+    for key, value in temp.iteritems():
+    	output[key[header:]] = value
     return output
 
 def nested_dict_to_index(item, name):

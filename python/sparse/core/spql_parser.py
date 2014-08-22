@@ -57,41 +57,60 @@ class SpQLParser(Base):
 		items                = delimitedList(OneOrMore(item))
 		fields               = Group(Suppress('(') + items + Suppress(')')).setResultsName('fields')
 		values               = Group(Suppress('(') + items + Suppress(')')).setResultsName('values')
-		pipe                 = Keyword('|')
-		is_                  = oneOf(['is',                               '='], caseless=True).setParseAction(lambda s,l,t: '==')
-		isnot                = oneOf(['is not',                 'isnot',  '!'], caseless=True).setParseAction(lambda s,l,t: '!=')
-		contains             = oneOf(['contains',                'cont',  '{'], caseless=True).setParseAction(lambda s,l,t: 're.IGNORECASE')
-		does_not_contain     = oneOf(['does not contain',     'notcont',  '}'], caseless=True).setParseAction(lambda s,l,t: 'nre.IGNORECASE')
-		cs_contains          = oneOf(['cscontains',            'cscont', '{{'], caseless=True).setParseAction(lambda s,l,t: 're')
-		cs_does_not_contain  = oneOf(['does not cscontain', 'csnotcont', '}}'], caseless=True).setParseAction(lambda s,l,t: 'nre')
-		greater_than         = oneOf(['greater than',              'gt',  '>'], caseless=True).setParseAction(lambda s,l,t: '>')
-		less_than            = oneOf(['less than',                 'ls',  '<'], caseless=True).setParseAction(lambda s,l,t: '<')
-		operator             = isnot | is_ | cs_contains | cs_does_not_contain | contains | does_not_contain | greater_than | less_than
+		is_                  = oneOf(['is',                                '='], caseless=True).setParseAction(lambda s,l,t: '==')
+		isnot                = oneOf(['is not',                 'isnot',  '!='], caseless=True).setParseAction(lambda s,l,t: '!=')
+		contains             = oneOf(['contains',                'cont',   '~'], caseless=True).setParseAction(lambda s,l,t: 're.IGNORECASE')
+		does_not_contain     = oneOf(['does not contain',     'notcont',  '!~'], caseless=True).setParseAction(lambda s,l,t: 'nre.IGNORECASE')
+		cs_contains          = oneOf(['cscontains',            'cscont',  '~~'], caseless=True).setParseAction(lambda s,l,t: 're')
+		cs_does_not_contain  = oneOf(['does not cscontain', 'csnotcont', '!~~'], caseless=True).setParseAction(lambda s,l,t: 'nre')
+		greater_than         = oneOf(['greater than',              'gt',   '>'], caseless=True).setParseAction(lambda s,l,t: '>')
+		greater_than_equal   = oneOf(['greater than equal to',    'gte',  '>='], caseless=True).setParseAction(lambda s,l,t: '>=')
+		less_than            = oneOf(['less than',                 'ls',   '<'], caseless=True).setParseAction(lambda s,l,t: '<')
+		less_than_equal      = oneOf(['less than equal to',       'lte',  '<='], caseless=True).setParseAction(lambda s,l,t: '<=')
+		operator             = isnot | is_ | cs_contains | cs_does_not_contain | contains | does_not_contain | greater_than_equal | greater_than | less_than_equal | less_than
 		operator             = operator.setResultsName('operator')
-		self._query          = fields + operator + values
-		self._compound_query = delimitedList(Word(all_chars, excludeChars='|'), delim=pipe)
+		and_                 = Keyword('&')
+		or_                  = Keyword('|')
+		query                = Group(fields + operator + values)
+		compound_query       = Group(delimitedList(query, delim=and_))
+		fragment             = OneOrMore(compound_query)
+		self._line           = delimitedList(fragment, delim=or_)		
 
-		self._last_query = None
+		self._last_search = None
 
 	@property
-	def last_query(self):
-		return self._last_query
+	def last_search(self):
+		return self._last_search
 
 	@property
-	def query_stats(self):
-		for item in self._last_query:
-			for key, val in item.iteritems():
-				print '{:>8} : {}'.format(key, val)
+	def search_stats(self):
+		print '---------------------------------'
+		print ''
+		for i, cq in enumerate(self._last_search):
+			print 'COMPOUND QUERY: ' + str(i)
+			for x, q in enumerate(cq):
+				print '  QUERY: ' + str(x)
+				for key, val in q.iteritems():
+					print '    {:>8} : {}'.format(key, val)
+			print '---------------------------------'
 			print ''
 
 	def search(self, string):
-		result = [self._query.parseString(x).asDict() for x in self._compound_query.parseString(string).asList()]
-		for item in result:
-			item['fields'] = list(item['fields'])
-			item['values'] = list(item['values'])
-
-		self._last_query = result
-		return result
+		results = []
+		for fragment in self._line.parseString(string):
+			compound_query = []
+			for q in fragment:
+				query = {}
+				for key, value in q.asDict().iteritems():
+					if key == 'operator':
+						query[key] = value
+					else:
+						query[key] = value.asList()
+				compound_query.append(query)
+			results.append(compound_query)
+		
+		self._last_search = results
+		return results
 # ------------------------------------------------------------------------------
 
 def main():

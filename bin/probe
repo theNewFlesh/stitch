@@ -49,10 +49,10 @@ def run():
 						action='store', help='The backingstore to query')
 
 	parser.add_argument('-a', '--args', metavar='str', type=str, nargs='*',
-						action='store', help='Backingstore arguments')
+						action='store', default=[], help='Backingstore arguments')
 
 	parser.add_argument('-k', '--kwargs', metavar='str', type=str, nargs='?',
-						action='store', help='Backingstore key word arguments')
+						action='store', default={}, help='Backingstore key word arguments')
 	
 	parser.add_argument('-s', '--search', metavar='str', type=str, nargs='?',
 						action='store', default=False, help='A SpQL search string')
@@ -66,12 +66,12 @@ def run():
 	args = parser.parse_args()
 	bks = args.backingstore[0]
 	_args = args.args
-	kwargs = {}
+	kwargs = args.kwargs
 	if args.kwargs:
 		kwargs = eval(args.kwargs)
 	cli = ProbeCLI(BACKINGSTORES[bks](*_args, **kwargs), display_fields=args.displayfields, debug_mode=args.debug)
 	if args.search:
-		cli.spql_search(args.search, display_fields=args.displayfields)
+		cli._api.spql_search(args.search, display_fields=args.displayfields)
 		print cli.results
 	else:
 		cli.cmdloop()

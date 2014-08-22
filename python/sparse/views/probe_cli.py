@@ -37,18 +37,22 @@
 
 import sys
 from cmd import Cmd
-import pandas
-pandas.options.display.line_width = 500
-pandas.options.display.max_rows = 1000
-pandas.options.display.expand_frame_repr= False
 from sparse.utilities.errors import *
 from sparse.frameworks.probe.probe_api import ProbeAPI
+
+from sparse.frameworks.tune.tuner import Tuner
+TUNER = Tuner()
+
+import pandas
+pandas.options.display.line_width = TUNER.config['probe_cli']['line_width']
+pandas.options.display.max_rows = TUNER.config['probe_cli']['max_rows']
+pandas.options.display.expand_frame_repr= False
 # ------------------------------------------------------------------------------
 
 class ProbeCLI(Cmd):
-	def __init__(self, backingstore, display_fields=[], debug_mode=False):
+	def __init__(self, backingstore, display_fields=[], debug_mode=False, prompt='SpQL>'):
 		Cmd.__init__(self)
-		self.prompt = 'SpQL> '
+		self.prompt = prompt
 		self._api = ProbeAPI(backingstore)
 		self._results = None
 		self._display_fields = display_fields

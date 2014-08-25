@@ -1,0 +1,13 @@
+{
+"custom_search_index": {
+	"qube": {
+		"$<2501": "(priority) < (2501)",
+		"$flrms": "(priority) < (2501) & (flrms) > (0)",
+	  	  "$max": "(priority) < (2501) & (max) >= (4)",
+		 "$long": "(priority) < (2501) & (dist) >= (0.15)",
+		 "$down": "(state) = (down)",
+		 "$idle": "(state) = (idle)",
+	   "$idlefs": "(state) = (idle) & (slt_pct) >= (1)"
+		}
+	}
+}

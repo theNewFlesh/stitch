@@ -279,6 +279,16 @@ def nested_dict_to_index(item, name):
             item.append('-->')
     index = DataFrame(index).transpose().values.tolist()
     return index
+
+def interpret_nested_dict(item, predicate):
+	def _interpret_nested_dict(item, cursor):
+		for key, val in item.iteritems():
+			if type(val) is dict and val != {}:
+				cursor[key] = _interpret_nested_dict(val, val)
+			else:
+				cursor[key] = predicate(val)
+		return cursor
+	return _interpret_nested_dict(item, {})
 # ------------------------------------------------------------------------------
 
 def irregular_concat(items, axis=0, ignore_index=True):
@@ -313,7 +323,7 @@ __all__ = ['Base', 'to_type', 'is_iterable', 'make_iterable', 'iprint',
 			'keep_type', 'set_decimal_expansion', 'try_', 'round_to', 'eval_',
 			'bool_test', 'regex_match', 'regex_search', 'regex_sub', 
 			'dict_to_namedtuple', 'flatten_nested_dict', 'nested_dict_to_index',
-			'irregular_concat']
+			'interpret_nested_dict', 'irregular_concat']
 
 if __name__ == '__main__':
 	main()

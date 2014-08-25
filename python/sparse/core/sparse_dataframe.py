@@ -25,13 +25,21 @@
 # THE SOFTWARE.
 # ------------------------------------------------------------------------------
 
-'''
-.. module:: sparse_dataframe
-	:date: 04.13.2014
-	:platform: Unix
-	:synopsis: Special subclass of pandas DataFrame for sparse data aggregation
+'''The sparse_dataframe module contains the SparseDataFrame class.
 
-.. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
+The SparseDataFrame class is an extension of the DataFrame class from the Pandas
+library.  SparseDataFrames contain additional methods for converting sparse data,
+such as esoteric databases, logs and custom made tables, into SparseDataFrames,
+with the actual data residing within a Pandas DataFrame.  
+
+Date:
+	08.24.2014
+
+Platform:
+	Unix
+
+Author:
+	Alex Braun <ABraunCCS@gmail.com> <http://www.AlexBraunVFX.com>
 '''
 # ------------------------------------------------------------------------------
 
@@ -46,7 +54,32 @@ from sparse.core.spql_interpreter import SpQLInterpreter
 # ------------------------------------------------------------------------------
 
 class SparseDataFrame(Base):
+	'''Class for converting sparse data into well-formated, tabular data
+
+	The SparseDataFrame class which is an extension of the DataFrame class from
+	the Pandas library.  SparseDataFrames contain additional methods for converting
+	sparse data, such as esoteric databases, logs and custom made tables, into
+	SparseDataFrames, with the actual data residing	within a Pandas DataFrame,
+	acessible through the data attribute.
+
+	Attributes:
+		cls (str): Class descriptor
+		name (str): Name descriptor
+		data (DataFrame): Internal DataFrame where data is actually stored
+	'''
+
 	def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False, name=None):
+		'''SparseDataFrame initializer
+
+		Args:
+			data (array-like or DataFrame, optional): Data to be ingested. Default: None.
+			index (Index or array-like, optional): Index of dataframe. Default: None.
+			columns (Index or array-like, optional): Column names. Default: None.
+			dtype (dtype, optional): Data type to force, otherwise infer. Default: None.
+			copy (bool, optional): Copy data from inputs. Default: None.
+			name (str, optional): Name of object. Default: None.
+		'''
+
 		super(SparseDataFrame, self).__init__(name=name)
 		self._cls = 'SparseDataFrame'
 		self._spql = SpQLInterpreter()
@@ -60,6 +93,16 @@ class SparseDataFrame(Base):
 	# --------------------------------------------------------------------------
 
 	def to_type(self, dtype, inplace=False):
+		'''Converts data to specified type, leaving uncoercible types alone
+
+		Args:
+			dtype (type): Type to convert data into.
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns:
+			DataFrame.
+		'''
+
 		data = self.data.applymap(lambda x: to_type(x, dtype))
 
 		if inplace:
@@ -67,6 +110,15 @@ class SparseDataFrame(Base):
 		return data
 
 	def is_iterable(self, inplace=False):
+		'''Returns a boolean mask indicating which elements are iterable
+
+		Args:
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns: 
+			DataFrame mask.
+		'''
+
 		data = self.data.applymap(lambda x: is_iterable(x))
 
 		if inplace:
@@ -74,6 +126,15 @@ class SparseDataFrame(Base):
 		return data
 
 	def make_iterable(self, inplace=False):
+		'''Makes all the elements iterable
+
+		Args:
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns:
+			DataFrame of iterable elements.
+		'''
+
 		data = self.data.applymap(lambda x: make_iterable(x))
 
 		if inplace:
@@ -81,12 +142,21 @@ class SparseDataFrame(Base):
 		return data
 
 	def coerce_nulls(self, inplace=False):
+		'''Coerce all null elements into numpy.nan
+
+		Args:
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns:
+			DataFrame of coerced elements.
+		'''
+
 		nulls = [   None,      '',      [],      {},      (),      set(),      OrderedDict(),
 				   [None],    [''],    [[]],    [{}],    [()],    [set()],    [OrderedDict()],
 				   (None),    (''),    ([]),    ({}),    (()),    (set()),    (OrderedDict()),
 						   set(''), set([]), set({}), set(()), set(set()), set(OrderedDict())   
-
 		]
+
 		def _coerce_nulls(item):
 			if item in nulls:
 				return numpy.nan
@@ -99,6 +169,15 @@ class SparseDataFrame(Base):
 		return data
 
 	def nan_to_bottom(self, inplace=True):
+		'''Pushes all nan elements to the bottom rows of the DataFrame
+
+		Args:
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns:
+			DataFrame with nan elements at the bottom.
+		'''
+
 		def _nan_to_bottom(item):
 			data = item.dropna()
 			buf = [numpy.nan] * (item.size - data.size)
@@ -114,6 +193,18 @@ class SparseDataFrame(Base):
 	# --------------------------------------------------------------------------
 							
 	def regex_match(self, pattern, group=0, ignore_case=False, inplace=False):
+		'''Apply regular expression matches to all DataFrame elements
+
+		Args:
+			pattern (str): Regular expression pattern to match.
+			group (int, optional): Regular expression group to return. Default: 0.
+			ignore_case (bool, optional): Ignore case. Default: False.
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns:
+			DataFrame of regex matches.
+		'''
+		
 		data = self.data.applymap(lambda x: regex_match(pattern, x, group, ignore_case=ignore_case))
 
 		if inplace:
@@ -121,6 +212,18 @@ class SparseDataFrame(Base):
 		return data
 
 	def regex_search(self, pattern, group=0, ignore_case=False, inplace=False):
+		'''Apply regular expression searches to all DataFrame elements
+
+		Args:
+			pattern (str): Regular expression pattern to search.
+			group (int, optional): Regular expression group to return. Default: 0.
+			ignore_case (bool, optional): Ignore case. Default: False.
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns:
+			DataFrame of regex searches.
+		'''
+
 		data = self.data.applymap(lambda x: regex_search(pattern, x, group, ignore_case=ignore_case))
 
 		if inplace:
@@ -128,13 +231,38 @@ class SparseDataFrame(Base):
 		return data
 
 	def regex_sub(self, pattern, repl, group=0, count=0, ignore_case=False, inplace=False):
-		data = self.data.applymap(lambda x: regex_sub(pattern, repl, x, group, ignore_case=ignore_case))
+		'''Apply regular expression substitutions to all DataFrame elements
+
+		Args:
+			pattern (str): Regular expression pattern to substitute.
+			repl (str): String to replace pattern.
+			group (int, optional): Regular expression group to return. Default: 0.
+			count (int, optional): Maximum number of occurences to be replaced. Default: 0.
+			ignore_case (bool, optional): Ignore case. Default: False.
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns:
+			DataFrame of regex substitutions.
+		'''
+
+		data = self.data.applymap(lambda x: regex_sub(pattern, repl, x, group, count, ignore_case=ignore_case))
 
 		if inplace:
 			self.data = data
 		return data
 
 	def regex_split(self, pattern, ignore_case=False, inplace=False):
+		'''Splits elements into list of found regular expression groups
+
+		Args:
+			pattern (str): Regular expression pattern with groups, ie. "(foo)(bar)".
+			ignore_case (bool, optional): Ignore case. Default: False.
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns:
+			DataFrame of with matched elements as lists of groups.
+		'''
+
 		data = self.data.applymap(lambda x: regex_split(pattern, x, ignore_case=ignore_case))
 
 		if inplace:
@@ -143,6 +271,30 @@ class SparseDataFrame(Base):
 	# --------------------------------------------------------------------------
 
 	def flatten(self, dtype=dict, prefix=True, inplace=False):
+		'''Split items of iterable elements into separate columns.
+
+		Args:
+			dtype (type, optional): Columns types to be split. Default: dict.
+			prefix (bool, optional): Append original column name as a prefix to new columns.
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns: Flattened DataFrame.
+
+		Example:
+			>>> print sdf.data
+			                   foo             bar
+			0  {u'a': 1, u'b': 10}     some string
+			1  {u'a': 2, u'b': 20}  another string
+			2  {u'a': 3, u'b': 30}            blah
+
+			>>> sdf.flatten(inplace=True)
+			>>> print sdf.data
+				foo_a 	 foo_b   	       bar
+			0  		1 		10     some string
+			1  		2 		20  another string
+			2  		3 		30            blah
+		'''
+
 		mask = self.data.applymap(lambda x: bool_test(type(x), '==', dtype))
 		iterables = self.data[mask]
 		iterables = iterables.dropna(how='all', axis=1)
@@ -164,6 +316,17 @@ class SparseDataFrame(Base):
 		return data
 
 	def drop_by_mask(self, mask, how='all', axis=0, inplace=False):
+		'''Drops entire rows or columns from data according to given mask.
+
+		Args:
+			how (drop method, optional): Drop method, ('any' or 'all'). 
+										 Default: 'all'.
+			axis (int, optional): Axis to drop by. Default: 0.
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns: Reduced DataFrame.
+		'''
+
 		mask = self.data[mask]
 		mask = mask.dropna(how=how, axis=axis)
 		data = None
@@ -178,6 +341,15 @@ class SparseDataFrame(Base):
 		return data
 
 	def stack_by_column(self, column, inplace=False):
+		'''Stacks data according to chunks demarcated by unique elements within a given column.
+
+		Args:
+			column (column name): column by which to split data into chunks.
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns: Stacked (striped) DataFrame.
+		'''
+
 		frames = []
 		max_len = 0
 		cols = list(self.data.columns.drop(column))
@@ -209,6 +381,13 @@ class SparseDataFrame(Base):
 		return data
 
 	def unstripe(self, inplace=False):
+		'''Reduced striped DataFrame into DataFrame with unique columns
+
+		Args:
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns: Unstriped DataFrame.
+		'''
 		data = self.data.reset_index(level=1, drop=True)
 		
 		new_cols = data.columns.unique().tolist()
@@ -234,6 +413,14 @@ class SparseDataFrame(Base):
 		return data
 
 	def unique(self, inplace=True):
+		'''Returns a DataFrame of unique values, excluding numpy.nans.
+
+		Args:
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns: Unique DataFrame.
+		'''
+
 		data = self.data
 		mask = data.apply(lambda x: x.duplicated())
 		data[mask] = numpy.nan
@@ -242,9 +429,22 @@ class SparseDataFrame(Base):
 			self.data = data
 		return data
 
-	def cross_map(self, source_column, target_column, mask_predicate, target_predicate=None, inplace=False):
+	def cross_map(self, source_column, target_column, source_predicate, target_predicate=None, inplace=False):
+		'''Applies a predicate to a target column based on a mask derived from the
+		results of a source predicate applied to a source column
+
+		Args:
+			source_column (column name): column by which to derive a mask.
+			target_column (column name): column to be changed.
+			source_predicate (lambda or func): rule by which to create a mask, (ie lambda x: x == 'foo'). 
+			target_predicate (lambda or func): rule by which to change target column, (ie lambda x: 'bar'). 
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns: Cross-mapped DataFrame.
+		'''
+
 		data = self.data
-		mask = data[source_column].apply(mask_predicate)
+		mask = data[source_column].apply(source_predicate)
 		if target_predicate:
 			data[target_column][mask] = data[target_column][mask].apply(target_predicate)
 		else:
@@ -256,6 +456,16 @@ class SparseDataFrame(Base):
 	# --------------------------------------------------------------------------
 	
 	def read_nested_dict(self, item, name, inplace=False):
+		'''Reads nested dictionary into a DataFrame.
+
+		Args:
+			item (dict): Dictionary to be read.
+			name (str): Name of dictionary.
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns: DataFrame.
+		'''
+
 		values = flatten_nested_dict(item, name).values()
 		index = nested_dict_to_index(item, name)
 		data = DataFrame(values, index=index)
@@ -269,6 +479,29 @@ class SparseDataFrame(Base):
 	# --------------------------------------------------------------------------
 	
 	def spql_search(self, string, field_operator='==', inplace=False):
+		'''Query data using the Sparse Query Language (SpQL).
+
+		Args:
+			string (str): SpQL search string.
+			field_operator (str): Advanced feature, do not use.  Default: '=='.
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns: Queried (likely reduced) DataFrame.
+
+		Example:
+			>>> print sdf.data
+			    name  age
+			0    abe   15
+			1  carla   22
+			2   jack   57
+
+			>>> sdf.spql_search('(name) is (abe) | (age) < (50)', inplace=True)
+			>>> print sdf.data
+				name  age
+			0    abe   15
+			1  carla   22
+		'''
+
 		data = self._spql.dataframe_query(self.data, field_operator=field_operator)
 
 		if inplace:

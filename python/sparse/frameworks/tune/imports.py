@@ -26,48 +26,24 @@
 # ------------------------------------------------------------------------------
 
 '''
-.. module:: tuner
+.. module:: imports
 	:date: 08.22.2014
 	:platform: Unix
-	:synopsis: Configuration framework
+	:synopsis: Imports configuration file
 
 .. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
 '''
 # ------------------------------------------------------------------------------
-
 import os
-import json
-from sparse.utilities.utils import Base, interpret_nested_dict
-from sparse.frameworks.tune.imports import IMPORTS, CONFIG
+from sparse.frameworks.probe.qube_backingstore import QubeBackingStore
 # ------------------------------------------------------------------------------
 
-class Tuner(Base):
-	def __init__(self, name=None):
-		super(Tuner, self).__init__(name=name)
-		self._cls = 'Tuner'
-		self._imports = {}
-		self._config = {}
-		self.update()
+IMPORTS = {
+	'<qube>': QubeBackingStore
+}
 
-	def update(self):
-		self._imports = {}
-		self._config = {}
-		reload(IMPORTS)
-		reload(CONFIG)
+CONFIG = os.path.join(os.getcwd(), 'sparse/frameworks/tune/config')
 
-		self._imports = IMPORTS
-		for conf in os.listdir(CONFIG):
-			with open(os.path.join(CONFIG, conf)) as config:
-				config = json.loads(config.read())
-				imp = self._imports
-				self._config = interpret_nested_dict(config, 
-					lambda x: imp[x] if x in imp.keys() else x)
-
-	@property
-	def config(self):
-		return self._config
-
-TUNER = Tuner()
 # ------------------------------------------------------------------------------
 def main():
 	'''
@@ -77,7 +53,7 @@ def main():
 	import __main__
 	help(__main__)
 
-__all__ = ['TUNER']
+__all__ = ['IMPORTS', 'CONFIG']
 
 if __name__ == '__main__':
 	main()

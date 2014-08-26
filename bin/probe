@@ -38,12 +38,12 @@
 import argparse
 from sparse.views.probe_cli import ProbeCLI
 from sparse.frameworks.probe.qube_backingstore import QubeBackingStore
-from spare.frameworks.tune.tuner import Tuner
-# ------------------------------------------------------------------------------
 
-from sparse.frameworks.tune.tuner import TUNER
+from spare.frameworks.tune.tuner import Tuner
+TUNER = Tuner()
 BACKINGSTORES = TUNER.config['probe']['backingstores']
 PROMPT = TUNER.config['probe']['prompt']
+# ------------------------------------------------------------------------------
 
 def run():
 	parser = argparse.ArgumentParser(description='Query given backingstore')
@@ -73,7 +73,7 @@ def run():
 	if args.kwargs:
 		kwargs = eval(args.kwargs)
 
-	prompt = PROMPT.split(' ')[0] + bks + PROMPT.split(' ')[1]
+	prompt = PROMPT[0] + bks + PROMPT[1]
 	csi = TUNER.config['custom_search_index'][bks]
 	
 	cli = ProbeCLI(BACKINGSTORES[bks](*_args, **kwargs), 

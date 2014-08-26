@@ -40,7 +40,8 @@ from cmd import Cmd
 from sparse.utilities.errors import *
 from sparse.frameworks.probe.probe_api import ProbeAPI
 
-from sparse.frameworks.tune.tuner import TUNER
+from sparse.frameworks.tune.tuner import Tuner
+TUNER = Tuner()
 
 import pandas
 pandas.options.display.line_width = TUNER.config['probe_cli']['line_width']

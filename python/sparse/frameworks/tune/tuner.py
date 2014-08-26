@@ -38,7 +38,7 @@
 import os
 import json
 from sparse.utilities.utils import Base, interpret_nested_dict
-from sparse.frameworks.tune.imports import IMPORTS, CONFIG
+from sparse.frameworks.tune import imports
 # ------------------------------------------------------------------------------
 
 class Tuner(Base):
@@ -52,22 +52,21 @@ class Tuner(Base):
 	def update(self):
 		self._imports = {}
 		self._config = {}
-		reload(IMPORTS)
-		reload(CONFIG)
+		reload(imports)
 
-		self._imports = IMPORTS
-		for conf in os.listdir(CONFIG):
-			with open(os.path.join(CONFIG, conf)) as config:
+		self._imports = imports.IMPORTS
+		for conf in os.listdir(imports.CONFIG):
+			with open(os.path.join(imports.CONFIG, conf)) as config:
 				config = json.loads(config.read())
 				imp = self._imports
-				self._config = interpret_nested_dict(config, 
-					lambda x: imp[x] if x in imp.keys() else x)
+				config = interpret_nested_dict(config, lambda x: imp[x] if x 
+											   in imp.keys() else x)
+				for key, value in confg.iteritems():
+					self._config[key] = value
 
 	@property
 	def config(self):
 		return self._config
-
-TUNER = Tuner()
 # ------------------------------------------------------------------------------
 def main():
 	'''
@@ -77,7 +76,7 @@ def main():
 	import __main__
 	help(__main__)
 
-__all__ = ['TUNER']
+__all__ = ['Tuner']
 
 if __name__ == '__main__':
 	main()

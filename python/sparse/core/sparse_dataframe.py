@@ -453,6 +453,39 @@ class SparseDataFrame(Base):
 		if inplace:
 			self.data = data
 		return data
+
+	def group_cross_map(self, group_column, value_column, source_column, target_column, predicate,
+						concat=True, inplace=False):
+		'''Applies a predicate to a target column based on a mask derived from the
+		results of a source predicate applied to a source column
+
+		Args:
+			group_column (column name): column by which to group data.
+			value_column (str): new column for storing concatenated results.
+			source_column (column name): column by which to derive a mask.
+			target_column (column name): column to be changed.
+			predicate (lambda or func): rule by which to create a mask, (ie lambda x: x == 'foo').
+			concat (bool, optional): Concatenate results into comma separated string. Default: True.
+			inplace (bool, optional): Apply changes in place. Default: False.
+
+		Returns: DataFrame with new value column.
+		'''
+
+		data  = self.data
+		data[value_column] = None
+		mask = data[group_column].duplicated()
+		groups = data[group_column][~mask].values.tolist()
+		for group in groups:
+			group_data = data[data[group_column] == group]
+			mask = group_data[source_column].apply(lambda x: predicate(x))
+			group_data[target_column][mask].values.tolist()
+			if concat:
+				values = ', '.join(values)
+			data.loc[mask.index, value_column] = values
+
+		if inplace:
+			self.data = data
+		return data
 	# --------------------------------------------------------------------------
 	
 	def read_nested_dict(self, item, name, inplace=False):

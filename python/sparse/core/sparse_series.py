@@ -84,9 +84,9 @@ class SparseSeries(Base):
 		self._cls = 'SparseSeries'
 
 		if type(data) is Series:
-			self._data = data
+			self.data = data
 		else:
-			self._data = DataFrame(data=data, index=index, columns=columns, dtype=dtype, copy=copy)
+			self.data = DataFrame(data=data, index=index, columns=columns, dtype=dtype, copy=copy)
 	# --------------------------------------------------------------------------
 
 	def to_type(self, dtype, inplace=False):

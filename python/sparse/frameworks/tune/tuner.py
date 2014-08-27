@@ -53,10 +53,12 @@ class Tuner(Base):
 		self._imports = {}
 		self._config = {}
 		reload(imports)
+		IMPORTS = imports.IMPORTS
+		CONFIG = imports.CONFIG
 
-		self._imports = imports.IMPORTS
-		for conf in os.listdir(imports.CONFIG):
-			with open(os.path.join(imports.CONFIG, conf)) as config:
+		self._imports = IMPORTS
+		for conf in os.listdir(CONFIG):
+			with open(os.path.join(CONFIG, conf)) as config:
 				config = json.loads(config.read())
 				imp = self._imports
 				config = interpret_nested_dict(config, lambda x: imp[x] if x 

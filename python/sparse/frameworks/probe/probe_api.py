@@ -119,42 +119,36 @@ class ProbeAPI(Base):
 	def mongodb(self):
 		return self._mongodb
 
-	def spql_search(self, string, database='dataframe', field_operator='==', display_fields=[]):
-		self._spql.search(string)
-		if database is 'mongodb':
+	def spql_search(self, string, database='sparse', field_operator='==', display_fields=[], culling=True):
+		if database == 'sparse':
+			results = SparseDataFrame.read_json(self.data)
+
+			if culling = True:
+				if display_fields:
+					results.data = results.data[display_fields]
+
+			results.search(string, field_operator=field_operator, inplace=True)
+
+			if len(results) == 0:
+				raise NotFound('No search results found')
+				
+			if culling == False:	
+				if display_fields:
+					results.data = results.data[display_fields]
+				
+			results = results.to_json(orient='records')
+			self._results = results
+					
+		elif database is 'mongodb':
 			query = self._spql.mongo_query
 			self._results = self._mongodb.aggregate(query)
 		
 		elif database is 'elasticsearch':
 			query = self._spql.elasticsearch_query
 			self._results = self._elasticsearch.aggregate(query)
-		
-		else:
-			if self.datatype is 'json':
-				data = pandas.read_json(self.data, orient='records')
-				results = self._spql.dataframe_query(data)
-				
-				if len(results) == 0:
-					raise NotFound('No search results found')
-				
-				if display_fields:
-					results = results[display_fields]
-				
-				results = results.to_json(orient='records')
-				self._results = results
-			
-			elif self.datatype is 'dataframe':
-				results = self._spql.dataframe_query(data)
 
-				if len(results) == 0:
-					raise NotFound('No search results found')
-				
-				if display_fields:
-					results = results[display_fields]
-				self._results = results
-			
-			else:
-				raise TypeError('Database data type not recognized')
+		else:
+			raise TypeError('Database type not recognized')
 	# --------------------------------------------------------------------------
 
 	def _do(self, instructions):

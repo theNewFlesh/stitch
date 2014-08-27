@@ -106,8 +106,12 @@ class SpQLInterpreter(SpQLParser):
 			results.reset_index(drop=True, inplace=True)
 		else:
 			results = results[0]	
+			
+		try:
+			del results['__probe_id']
+		except KeyError:
+			pass
 
-		del results['__probe_id']
 		return results
 # ------------------------------------------------------------------------------
 

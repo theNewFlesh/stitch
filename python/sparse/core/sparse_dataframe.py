@@ -478,7 +478,7 @@ class SparseDataFrame(Base):
 		for group in groups:
 			group_data = data[data[group_column] == group]
 			mask = group_data[source_column].apply(lambda x: predicate(x))
-			group_data[target_column][mask].values.tolist()
+			values = group_data[target_column][mask].values.tolist()
 			if concat:
 				values = ', '.join(values)
 			data.loc[mask.index, value_column] = values
@@ -509,6 +509,29 @@ class SparseDataFrame(Base):
 		if inplace:
 			self.data = data
 		return data
+
+	def read_json(self, json, orient='records'):
+		'''Reads json into SparseDataFrame.
+
+		Args:
+			json (json): Json string to be read.
+			orient (str, optional): Schema of json. Default: 'orient'.
+
+		Returns: None.
+		'''
+
+		self.data = pandas.read_json(json, orient=orient)
+
+	def to_json(self, orient='records'):
+		'''Reads SparseDataFrame into json string.
+
+		Args:
+			orient (str, optional): Schema of json. Default: 'orient'.
+
+		Returns: json string.
+		'''
+
+		return self.data.to_json(orient=orient)
 	# --------------------------------------------------------------------------
 	
 	def spql_search(self, string, field_operator='==', inplace=False):
@@ -535,6 +558,7 @@ class SparseDataFrame(Base):
 			1  carla   22
 		'''
 
+		data._spql.search(string)
 		data = self._spql.dataframe_query(self.data, field_operator=field_operator)
 
 		if inplace:

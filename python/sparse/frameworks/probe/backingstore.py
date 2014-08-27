@@ -95,13 +95,14 @@ class BackingStore(Base):
 		data = []
 		for datum in self.source_data:
 			data.append(Series(datum))
-		sdata = SparseDataFrame(data=data)
+		sdata = SparseDataFrame(data)
 		sdata.flatten(inplace=True)
 		sdata.coerce_nulls(inplace=True)
 		data = sdata.data
-		# data.dropna(how='all', axis=1, inplace=True)
+		data.dropna(how='all', axis=1, inplace=True)
 		data['probe_id'] = data.index
-		self._data = data
+		sdata.data = data
+		self._data = sdata
 # ------------------------------------------------------------------------------
 
 def main():

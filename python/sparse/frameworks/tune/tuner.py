@@ -63,7 +63,7 @@ class Tuner(Base):
 				imp = self._imports
 				config = interpret_nested_dict(config, lambda x: imp[x] if x 
 											   in imp.keys() else x)
-				for key, value in confg.iteritems():
+				for key, value in config.iteritems():
 					self._config[key] = value
 
 	@property

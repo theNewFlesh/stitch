@@ -558,7 +558,7 @@ class SparseDataFrame(Base):
 			1  carla   22
 		'''
 
-		data._spql.search(string)
+		self._spql.search(string)
 		data = self._spql.dataframe_query(self.data, field_operator=field_operator)
 
 		if inplace:

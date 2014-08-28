@@ -44,7 +44,7 @@ from sparse.frameworks.tune.tuner import Tuner
 TUNER = Tuner()
 
 import pandas
-pandas.options.display.line_width = TUNER.config['probe_cli']['line_width']
+pandas.options.display.width = TUNER.config['probe_cli']['line_width']
 pandas.options.display.max_rows = TUNER.config['probe_cli']['max_rows']
 pandas.options.display.expand_frame_repr = False
 # ------------------------------------------------------------------------------
@@ -65,8 +65,6 @@ class ProbeCLI(Cmd):
 		return self._results
 
 	def default(self, arg):
-		if arg in 
-
 		if self._debug_mode:
 			self._api.spql_search(arg, display_fields=self._display_fields)
 			self._results = pandas.read_json(self._api._results, orient='records')
@@ -150,7 +148,7 @@ class ProbeCLI(Cmd):
 
 	def help_or(self):
 		print ''
-		print 'The OR operator (|) is a means of concatinating multiple queries into a'
+		print 'The OR operator (|) is a means of concatenating multiple queries into a'
 		print 'single result.  Both operands are executed as independent queries and'
 		print 'their results are then merged together with duplicate rows removed.'
 	# --------------------------------------------------------------------------

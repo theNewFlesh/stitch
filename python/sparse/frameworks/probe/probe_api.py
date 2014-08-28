@@ -41,6 +41,7 @@ import pandas
 from sparse.utilities.errors import *
 from sparse.utilities.utils import *
 from sparse.core.spql_interpreter import SpQLInterpreter
+from sparse.core.sparse_dataframe import SparseDataFrame
 # ------------------------------------------------------------------------------
 
 class ProbeAPI(Base):
@@ -119,22 +120,17 @@ class ProbeAPI(Base):
 	def mongodb(self):
 		return self._mongodb
 
-	def spql_search(self, string, database='sparse', field_operator='==', display_fields=[], culling=True):
+	def spql_search(self, string, database='sparse', field_operator='==', display_fields=[]):
 		if database == 'sparse':
-			results = SparseDataFrame.read_json(self.data)
+			results = SparseDataFrame()
+			results.read_json(self.data)
+			results.spql_search(string, field_operator=field_operator, inplace=True)
 
-			if culling = True:
-				if display_fields:
-					results.data = results.data[display_fields]
-
-			results.search(string, field_operator=field_operator, inplace=True)
-
-			if len(results) == 0:
+			if len(results.data) == 0:
 				raise NotFound('No search results found')
 				
-			if culling == False:	
-				if display_fields:
-					results.data = results.data[display_fields]
+			if display_fields:
+				results.data = results.data[display_fields]
 				
 			results = results.to_json(orient='records')
 			self._results = results

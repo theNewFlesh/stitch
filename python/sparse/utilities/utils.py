@@ -35,6 +35,7 @@
 '''
 # ------------------------------------------------------------------------------
 
+import warnings
 import re
 from decimal import Decimal
 import numpy
@@ -311,6 +312,25 @@ def irregular_concat(items, axis=0, ignore_index=True):
 	return data
 # ------------------------------------------------------------------------------
 
+def double_lut_transform(items, input_lut, output_lut):
+	# Check luts and issue warnings/errors if necessary
+    if input_lut.keys() != output_lut.keys():
+        raise KeyError('input lut keys do not match output lut keys')
+    if len(set(input_lut.values() )) != len(input_lut.values()):
+        warnings.warn('input lut has non-unique values', Warning)
+    if len(set(output_lut.values() )) != len(output_lut.values()):
+        warnings.warn('output lut has non-unique values', Warning)
+        
+    reverse_lut = dict(zip(input_lut.values(), input_lut.keys() ))       
+    output = []
+    for item in items:
+        new_item = item
+        if item in reverse_lut.keys():
+            new_item = output_lut[reverse_lut[item]]
+        output.append(new_item)
+    return output
+# ------------------------------------------------------------------------------
+
 def main():
 	'''
 	Run help if called directly
@@ -323,7 +343,7 @@ __all__ = ['Base', 'to_type', 'is_iterable', 'make_iterable', 'iprint',
 			'keep_type', 'set_decimal_expansion', 'try_', 'round_to', 'eval_',
 			'bool_test', 'regex_match', 'regex_search', 'regex_sub', 
 			'dict_to_namedtuple', 'flatten_nested_dict', 'nested_dict_to_index',
-			'interpret_nested_dict', 'irregular_concat']
+			'interpret_nested_dict', 'irregular_concat', 'double_lut_transform']
 
 if __name__ == '__main__':
 	main()

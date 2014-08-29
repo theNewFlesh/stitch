@@ -35,6 +35,7 @@
 '''
 # ------------------------------------------------------------------------------
 
+import warnings
 import os
 import json
 from sparse.utilities.utils import Base, interpret_nested_dict
@@ -64,6 +65,11 @@ class Tuner(Base):
 				config = interpret_nested_dict(config, lambda x: imp[x] if x 
 											   in imp.keys() else x)
 				for key, value in config.iteritems():
+					if key in self._config.keys():
+						if type(value) is dict and type(self._config[key]) is dict:
+							value = dict(self._config[key].items() + value.items())
+						else:
+							warnings.warn('Non-unique primary keys detected: ' + value, Warning)
 					self._config[key] = value
 
 	@property

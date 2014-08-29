@@ -74,11 +74,10 @@ def run():
 		kwargs = eval(args.kwargs)
 
 	prompt = PROMPT[0] + bks + PROMPT[1]
-	csi = TUNER.config['custom_search_index'][bks]
 	
 	cli = ProbeCLI(BACKINGSTORES[bks](*_args, **kwargs), 
 					display_fields=args.displayfields, debug_mode=args.debug, 
-					prompt=prompt, custom_search_index=csi)
+					prompt=prompt)
 	
 	if args.search:
 		cli._api.spql_search(args.search, display_fields=args.displayfields)

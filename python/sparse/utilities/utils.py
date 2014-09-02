@@ -37,6 +37,7 @@
 
 import warnings
 import re
+from copy import copy
 from decimal import Decimal
 import numpy
 import pandas
@@ -249,37 +250,37 @@ def reduce_units(iterable, new_unit='-', min=0):
 	return [lut[x] for x in iterable]
 
 def dict_to_namedtuple(name, dict):
-    tup = namedtuple(name, dict.keys())
-    return tup(*dict.values())
+	tup = namedtuple(name, dict.keys())
+	return tup(*dict.values())
 
 def flatten_nested_dict(item, separator='_', null='null'):
-    temp = OrderedDict()
-    def _flatten_nested_dict(item, name):
-        for key, val in item.iteritems():
-            if type(val) is dict and val != {}:
-                temp[name + separator + str(key)] = null
-                _flatten_nested_dict(val, name + separator + str(key))
-            else:
-                temp[name + separator + str(key)] = val
-    _flatten_nested_dict(item, '__null__')
-    output = OrderedDict()
-    header = 8 + len(separator)
-    for key, value in temp.iteritems():
-    	output[key[header:]] = value
-    return output
+	temp = OrderedDict()
+	def _flatten_nested_dict(item, name):
+		for key, val in item.iteritems():
+			if type(val) is dict and val != {}:
+				temp[name + separator + str(key)] = null
+				_flatten_nested_dict(val, name + separator + str(key))
+			else:
+				temp[name + separator + str(key)] = val
+	_flatten_nested_dict(item, '__null__')
+	output = OrderedDict()
+	header = 8 + len(separator)
+	for key, value in temp.iteritems():
+		output[key[header:]] = value
+	return output
 
 def nested_dict_to_index(item, name):
-    index = flatten_nested_dict(item, name, separator='__null__')
-    index = [x.split('__null__') for x in index.keys()]
-    max_ = 0
-    for item in index:
-        if len(item) > max_:
-            max_ = len(item)
-    for item in index:
-        while len(item) < max_:
-            item.append('-->')
-    index = DataFrame(index).transpose().values.tolist()
-    return index
+	index = flatten_nested_dict(item, name, separator='__null__')
+	index = [x.split('__null__') for x in index.keys()]
+	max_ = 0
+	for item in index:
+		if len(item) > max_:
+			max_ = len(item)
+	for item in index:
+		while len(item) < max_:
+			item.append('-->')
+	index = DataFrame(index).transpose().values.tolist()
+	return index
 
 def interpret_nested_dict(item, predicate):
 	def _interpret_nested_dict(item, cursor):
@@ -314,21 +315,27 @@ def irregular_concat(items, axis=0, ignore_index=True):
 
 def double_lut_transform(items, input_lut, output_lut):
 	# Check luts and issue warnings/errors if necessary
-    if input_lut.keys() != output_lut.keys():
-        raise KeyError('input lut keys do not match output lut keys')
-    if len(set(input_lut.values() )) != len(input_lut.values()):
-        warnings.warn('input lut has non-unique values', Warning)
-    if len(set(output_lut.values() )) != len(output_lut.values()):
-        warnings.warn('output lut has non-unique values', Warning)
-        
-    reverse_lut = dict(zip(input_lut.values(), input_lut.keys() ))       
-    output = []
-    for item in items:
-        new_item = item
-        if item in reverse_lut.keys():
-            new_item = output_lut[reverse_lut[item]]
-        output.append(new_item)
-    return output
+	if input_lut.keys() != output_lut.keys():
+		raise KeyError('input lut keys do not match output lut keys')
+	if len(set(input_lut.values() )) != len(input_lut.values()):
+		warnings.warn('input lut has non-unique values', Warning)
+	if len(set(output_lut.values() )) != len(output_lut.values()):
+		warnings.warn('output lut has non-unique values', Warning)
+		
+	reverse_lut = dict(zip(input_lut.values(), input_lut.keys() ))       
+	output = []
+	for item in items:
+		new_item = item
+		if item in reverse_lut.keys():
+			new_item = output_lut[reverse_lut[item]]
+		output.append(new_item)
+	return output
+
+def list_to_lut(items, interchange_lut):
+	lut = copy(interchange_lut)
+	for i, item in enumerate(items):
+		lut[lut.keys()[i]] = item
+	return lut
 # ------------------------------------------------------------------------------
 
 def main():
@@ -343,7 +350,8 @@ __all__ = ['Base', 'to_type', 'is_iterable', 'make_iterable', 'iprint',
 			'keep_type', 'set_decimal_expansion', 'try_', 'round_to', 'eval_',
 			'bool_test', 'regex_match', 'regex_search', 'regex_sub', 
 			'dict_to_namedtuple', 'flatten_nested_dict', 'nested_dict_to_index',
-			'interpret_nested_dict', 'irregular_concat', 'double_lut_transform']
+			'interpret_nested_dict', 'irregular_concat', 'double_lut_transform',
+			'list_to_lut']
 
 if __name__ == '__main__':
 	main()

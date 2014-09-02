@@ -7,7 +7,7 @@
 	"target_path": "sparse/bin/probe",
 	"prompt": ["SpQL[", "]> "],
 	"backingstores": {
-		"qube": "<qube>"}
+		"qube": "<QubeBackingStore>"}
 	},
 "probe_api": {
 	"custom_search_words": {

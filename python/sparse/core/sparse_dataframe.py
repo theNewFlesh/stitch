@@ -278,7 +278,8 @@ class SparseDataFrame(Base):
 			prefix (bool, optional): Append original column name as a prefix to new columns.
 			inplace (bool, optional): Apply changes in place. Default: False.
 
-		Returns: Flattened DataFrame.
+		Returns: 
+			Flattened DataFrame.
 
 		Example:
 			>>> print sdf.data
@@ -324,7 +325,8 @@ class SparseDataFrame(Base):
 			axis (int, optional): Axis to drop by. Default: 0.
 			inplace (bool, optional): Apply changes in place. Default: False.
 
-		Returns: Reduced DataFrame.
+		Returns: 
+			Reduced DataFrame.
 		'''
 
 		mask = self.data[mask]
@@ -341,13 +343,15 @@ class SparseDataFrame(Base):
 		return data
 
 	def stack_by_column(self, column, inplace=False):
-		'''Stacks data according to chunks demarcated by unique elements within a given column.
+		'''Stacks data according to chunks demarcated by unique elements within 
+		a given column.
 
 		Args:
 			column (column name): column by which to split data into chunks.
 			inplace (bool, optional): Apply changes in place. Default: False.
 
-		Returns: Stacked (striped) DataFrame.
+		Returns: 
+			Stacked (striped) DataFrame.
 		'''
 
 		frames = []
@@ -386,7 +390,8 @@ class SparseDataFrame(Base):
 		Args:
 			inplace (bool, optional): Apply changes in place. Default: False.
 
-		Returns: Unstriped DataFrame.
+		Returns: 
+			Unstriped DataFrame.
 		'''
 		data = self.data.reset_index(level=1, drop=True)
 		
@@ -418,7 +423,8 @@ class SparseDataFrame(Base):
 		Args:
 			inplace (bool, optional): Apply changes in place. Default: False.
 
-		Returns: Unique DataFrame.
+		Returns: 
+			Unique DataFrame.
 		'''
 
 		data = self.data
@@ -430,8 +436,8 @@ class SparseDataFrame(Base):
 		return data
 
 	def cross_map(self, source_column, target_column, source_predicate, target_predicate=None, inplace=False):
-		'''Applies a predicate to a target column based on a mask derived from the
-		results of a source predicate applied to a source column
+		'''Applies a predicate to a target column based on a mask derived from 
+		the results of a source predicate applied to a source column
 
 		Args:
 			source_column (column name): column by which to derive a mask.
@@ -440,7 +446,8 @@ class SparseDataFrame(Base):
 			target_predicate (lambda or func): rule by which to change target column, (ie lambda x: 'bar'). 
 			inplace (bool, optional): Apply changes in place. Default: False.
 
-		Returns: Cross-mapped DataFrame.
+		Returns: 
+			Cross-mapped DataFrame.
 		'''
 
 		data = self.data
@@ -456,8 +463,8 @@ class SparseDataFrame(Base):
 
 	def group_cross_map(self, group_column, value_column, source_column, target_column, predicate,
 						concat=True, inplace=False):
-		'''Applies a predicate to a target column based on a mask derived from the
-		results of a source predicate applied to a source column
+		'''Applies a predicate to a target column based on a mask derived from 
+		the results of a source predicate applied to a source column
 
 		Args:
 			group_column (column name): column by which to group data.
@@ -468,7 +475,8 @@ class SparseDataFrame(Base):
 			concat (bool, optional): Concatenate results into comma separated string. Default: True.
 			inplace (bool, optional): Apply changes in place. Default: False.
 
-		Returns: DataFrame with new value column.
+		Returns: 
+			DataFrame with new value column.
 		'''
 
 		data  = self.data
@@ -496,7 +504,8 @@ class SparseDataFrame(Base):
 			name (str): Name of dictionary.
 			inplace (bool, optional): Apply changes in place. Default: False.
 
-		Returns: DataFrame.
+		Returns: 
+			DataFrame.
 		'''
 
 		values = flatten_nested_dict(item, name).values()
@@ -517,7 +526,8 @@ class SparseDataFrame(Base):
 			json (json): Json string to be read.
 			orient (str, optional): Schema of json. Default: 'orient'.
 
-		Returns: None.
+		Returns: 
+			None.
 		'''
 
 		self.data = pandas.read_json(json, orient=orient)
@@ -528,7 +538,8 @@ class SparseDataFrame(Base):
 		Args:
 			orient (str, optional): Schema of json. Default: 'orient'.
 
-		Returns: json string.
+		Returns: 
+			JSON string.
 		'''
 
 		return self.data.to_json(orient=orient)
@@ -542,7 +553,8 @@ class SparseDataFrame(Base):
 			field_operator (str): Advanced feature, do not use.  Default: '=='.
 			inplace (bool, optional): Apply changes in place. Default: False.
 
-		Returns: Queried (likely reduced) DataFrame.
+		Returns: 
+			Queried (likely reduced) DataFrame.
 
 		Example:
 			>>> print sdf.data

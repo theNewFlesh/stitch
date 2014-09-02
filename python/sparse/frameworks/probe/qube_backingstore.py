@@ -35,12 +35,16 @@
 '''
 # ------------------------------------------------------------------------------
 
+import warnings
 import subprocess
 from copy import copy
 from datetime import datetime
-from pandas import DataFrame
+from pandas import DataFrame, Series
+from sparse.core.sparse_dataframe import SparseDataFrame
 from sparse.frameworks.probe.backingstore import BackingStore
 from sparse.utilities.mock import qb
+from sparse.frameworks.tune.tuner import Tuner
+TUNER = Tuner()
 # ------------------------------------------------------------------------------
 
 class QubeBackingStore(BackingStore):
@@ -91,6 +95,25 @@ class QubeBackingStore(BackingStore):
 		jobs = [dict(job) for job in self._database.jobinfo()]
 		jobs = self._flatten_qube_field(jobs)
 		return jobs
+
+	def update(self):
+		data = []
+		for datum in self.source_data:
+			data.append(Series(datum))
+		sdata = SparseDataFrame(data)
+		sdata.flatten(inplace=True)
+		sdata.coerce_nulls(inplace=True)
+		data = sdata.data
+		data.dropna(how='all', axis=1, inplace=True)
+		data['probe_id'] = data.index
+
+		try:
+			data.columns = TUNER.tune(data.columns, 'qube_backingstore')
+		except ValueError:
+			warning.warn('Luts not set. Cannot assign non-unique values.')
+
+		sdata.data = data
+		self._data = sdata
 # ------------------------------------------------------------------------------
 
 def main():

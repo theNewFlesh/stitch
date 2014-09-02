@@ -41,6 +41,7 @@ from sparse.frameworks.probe.qube_backingstore import QubeBackingStore
 
 from sparse.frameworks.tune.tuner import Tuner
 TUNER = Tuner()
+TUNER.resolve_config()
 BACKINGSTORES = TUNER.config['probe']['backingstores']
 PROMPT = TUNER.config['probe']['prompt']
 # ------------------------------------------------------------------------------
@@ -62,6 +63,9 @@ def run():
 	
 	parser.add_argument('-f', '--displayfields', metavar='str', type=str, nargs='*',
 						action='store', default=False, help='Only display these fields')
+
+	parser.add_argument('-p', '--prompt', metavar='str', type=str, nargs=1,
+						action='store', default=False, help='Add custom text to SpQL prompt')
 	
 	parser.add_argument('-d', '--debug', default=False, action='store_true',
 						help='Enable debug mode')
@@ -73,7 +77,11 @@ def run():
 	if args.kwargs:
 		kwargs = eval(args.kwargs)
 
-	prompt = PROMPT[0] + bks + PROMPT[1]
+	prompt = args.prompt
+	if prompt:
+		prompt = PROMPT[0] + prompt[0] + PROMPT[1]
+	else:
+		prompt = PROMPT[0] + bks + PROMPT[1]
 	
 	cli = ProbeCLI(BACKINGSTORES[bks](*_args, **kwargs), 
 					display_fields=args.displayfields, debug_mode=args.debug, 

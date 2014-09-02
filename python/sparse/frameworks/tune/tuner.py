@@ -35,11 +35,16 @@
 '''
 # ------------------------------------------------------------------------------
 
+from __future__ import with_statement
+from collections import OrderedDict
 import warnings
 import os
 import json
-from sparse.utilities.utils import Base, interpret_nested_dict
-from sparse.frameworks.tune import imports
+from sparse.utilities.utils import Base
+from sparse.utilities.utils import interpret_nested_dict
+from sparse.utilities.utils import double_lut_transform
+from sparse.utilities.utils import list_to_lut
+from sparse.frameworks.tune import tune_imports
 # ------------------------------------------------------------------------------
 
 class Tuner(Base):
@@ -48,22 +53,29 @@ class Tuner(Base):
 		self._cls = 'Tuner'
 		self._imports = {}
 		self._config = {}
-		self.update()
+		self._config_path = None
+		self.update_config()
 
-	def update(self):
-		self._imports = {}
+	def _remove_non_configs(self, files):
+		non_configs = ['.DS_Store']
+		output = []
+		for f in files:
+			if f in non_configs:
+				pass
+			else:
+				output.append(f)
+		return output
+
+	def update_config(self):
 		self._config = {}
-		reload(imports)
-		IMPORTS = imports.IMPORTS
-		CONFIG = imports.CONFIG
+		reload(tune_imports)
+		root = tune_imports.CONFIG_PATH
+		self._config_path = root
 
-		self._imports = IMPORTS
-		for conf in os.listdir(CONFIG):
-			with open(os.path.join(CONFIG, conf)) as config:
+		ls = self._remove_non_configs(os.listdir(root))
+		for conf in ls:
+			with open(os.path.join(root, conf)) as config:
 				config = json.loads(config.read())
-				imp = self._imports
-				config = interpret_nested_dict(config, lambda x: imp[x] if x 
-											   in imp.keys() else x)
 				for key, value in config.iteritems():
 					if key in self._config.keys():
 						if type(value) is dict and type(self._config[key]) is dict:
@@ -72,9 +84,60 @@ class Tuner(Base):
 							warnings.warn('Non-unique primary keys detected: ' + value, Warning)
 					self._config[key] = value
 
+	def resolve_config(self):
+		self._imports = {}
+		from sparse.frameworks.tune import tune_imports
+		IMPORTS = tune_imports.get_imports()
+		self._imports = IMPORTS
+		self._config = interpret_nested_dict(self._config,
+						lambda x: IMPORTS[x] if x in IMPORTS.keys() else x)
+
+	def tune(self, items, lut_index):
+		conf = self._config
+		input_lut = conf[lut_index]['input_lut']
+		input_lut = conf['luts'][input_lut]
+		output_lut = conf[lut_index]['output_lut']
+		output_lut = conf['luts'][output_lut]
+		return double_lut_transform(items, input_lut, output_lut)
+
+	def create_lut(self, items, name, filename):
+		temp = self._config['luts']['interchange_lut']
+		ilut = OrderedDict()
+		for key in sorted(temp.keys()):
+			ilut[key] = temp[key]
+		temp = list_to_lut(items, ilut)
+		lut = OrderedDict()
+		for key in sorted(temp.keys()):
+			lut[key] = temp[key]
+
+		with open(os.path.join(self._config_path, filename), 'w+') as lut_file:
+			lut_file.write('{ "luts" : {\n')
+			lut_file.write('\t"' + name + '" : {\n')
+			lut = zip(lut.keys(), lut.values())
+			for key, value in lut[:-1]:
+				key = '"' + key + '"'
+				value = '"' + value + '",'
+				line = '\t\t\t{:<20}: {:<10}\n'.format(key, value)
+				lut_file.write(line)
+			key = '"' + lut[-1][0] + '"'
+			value = '"' + lut[-1][1] + '"'
+			line = '\t\t\t{:<20}: {:<10}\n'.format(key, value)
+			lut_file.write(line)
+			lut_file.write('\t\t}\n')
+			lut_file.write('\t}\n')
+			lut_file.write('}\n')
+			
 	@property
 	def config(self):
 		return self._config
+
+	@property
+	def config_path(self):
+		return self._config_path
+
+	@property
+	def imports(self):
+		return self._imports
 # ------------------------------------------------------------------------------
 def main():
 	'''

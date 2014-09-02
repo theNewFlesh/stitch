@@ -26,7 +26,7 @@
 # ------------------------------------------------------------------------------
 
 '''
-.. module:: imports
+.. module:: tune_imports
 	:date: 08.22.2014
 	:platform: Unix
 	:synopsis: Imports configuration file
@@ -35,16 +35,19 @@
 '''
 # ------------------------------------------------------------------------------
 import os
-from sparse.frameworks.probe.qube_backingstore import QubeBackingStore
 # ------------------------------------------------------------------------------
 
-IMPORTS = {
-	'<qube>': QubeBackingStore
-}
+def get_imports():
+	from sparse.frameworks.probe.qube_backingstore import QubeBackingStore
+	IMPORTS = {
+		'<QubeBackingStore>': QubeBackingStore
+	}
+	return IMPORTS
 
-CONFIG = os.path.join(os.getcwd(), 'sparse/frameworks/tune/config')
+CONFIG_PATH = os.path.join(os.getcwd(), 'sparse/frameworks/tune/config')
 
 # ------------------------------------------------------------------------------
+
 def main():
 	'''
 	Run help if called directly

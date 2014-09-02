@@ -68,12 +68,12 @@ class ProbeCLI(Cmd):
 		if self._debug_mode:
 			self._api.spql_search(arg, display_fields=self._display_fields)
 			self._results = pandas.read_json(self._api._results, orient='records')
-			print self.results
+			print self._results
 		else:
 			try:
 				self._api.spql_search(arg, display_fields=self._display_fields)
 				self._results = pandas.read_json(self._api._results, orient='records')
-				print self.results
+				print self._results
 			except NotFound:
 				print 'No results found'
 			except:

@@ -317,11 +317,22 @@ def double_lut_transform(items, input_lut, output_lut):
 	# Check luts and issue warnings/errors if necessary
 	if input_lut.keys() != output_lut.keys():
 		raise KeyError('input lut keys do not match output lut keys')
-	if len(set(input_lut.values() )) != len(input_lut.values()):
-		warnings.warn('input lut has non-unique values', Warning)
-	if len(set(output_lut.values() )) != len(output_lut.values()):
-		warnings.warn('output lut has non-unique values', Warning)
-		
+	
+	input_test = input_lut.values()
+	for item in input_lut.values():
+		input_test.remove(item)
+	if len(input_test) > 0:
+		input_test = ', '.join(input_test)
+		warnings.warn('input lut has duplicate values: ' + input_test, Warning)
+	
+	output_test = output_lut.values()
+	for item in output_lut.values():
+		output_test.remove(item)
+	if len(output_test) > 0:
+		output_test = ', '.join(output_test)
+		warnings.warn('output lut has duplicate values: ' + output_test, Warning)
+	# --------------------------------------------------------------------------
+
 	reverse_lut = dict(zip(input_lut.values(), input_lut.keys() ))       
 	output = []
 	for item in items:

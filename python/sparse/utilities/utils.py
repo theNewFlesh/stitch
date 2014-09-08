@@ -165,7 +165,7 @@ def _re(item, value):
 		return False
 
 def _reig(item, value):
-	found = re.search(str(value), str(item), re.IGNORECASE)
+	found = re.search(str(value), str(item), flags=re.IGNORECASE)
 	if found:
 		return True
 	else:
@@ -179,14 +179,14 @@ def _nre(item, value):
 		return False
 
 def _nreig(item, value):
-	found = re.search(str(value), str(item), re.IGNORECASE)
+	found = re.search(str(value), str(item), flags=re.IGNORECASE)
 	if not found:
 		return True
 	else:
 		return False
 
 OPERATORS = {'==': _eq, '!=': _ne, '<': _lt, '<=': _lte, '>': _gt, '>=': _gte, 
-			're': _re, 're.IGNORECASE': _reig, 'nre': _nre, 'nre.IGNORECASE': _nreig}
+			're': _re, 'flags=re.IGNORECASE': _reig, 'nre': _nre, 'nflags=re.IGNORECASE': _nreig}
 
 def bool_test(item, operator, values):
 	op = OPERATORS[operator]
@@ -199,10 +199,14 @@ def bool_test(item, operator, values):
 
 def regex_match(pattern, string, group=0, ignore_case=False):
 	if ignore_case:
-		regex = re.compile(pattern, re.IGNORECASE)
+		regex = re.compile(pattern, flags=re.IGNORECASE)
 	else:
 		regex = re.compile(pattern)
-	found = regex.match(string)
+	found = None
+	try:
+		found = regex.match(string)
+	except TypeError:
+		return string
 	if found:
 		return found.group(group)
 	else:
@@ -210,10 +214,14 @@ def regex_match(pattern, string, group=0, ignore_case=False):
 
 def regex_search(pattern, string, group=0, ignore_case=False):
 	if ignore_case:
-		regex = re.compile(pattern, re.IGNORECASE)
+		regex = re.compile(pattern, flags=re.IGNORECASE)
 	else:
 		regex = re.compile(pattern)
-	found = regex.search(string)
+	found = None
+	try:
+		found = regex.search(string)
+	except TypeError:
+		return string
 	if found:
 		return found.group(group)
 	else:
@@ -221,16 +229,26 @@ def regex_search(pattern, string, group=0, ignore_case=False):
 
 def regex_sub(pattern, repl, string, count=0, ignore_case=False):
 	if ignore_case:
-		return re.sub(pattern, repl, string, count, re.IGNORECASE)
+		try:
+			return re.sub(pattern, repl, string, count=count, flags=re.IGNORECASE)
+		except TypeError:
+			return string
 	else:
-		return re.sub(pattern, repl, string, count)
+		try:
+			return re.sub(pattern, repl, string, count=count)
+		except TypeError:
+			return string
 
 def regex_split(pattern, string, ignore_case=False):
 	if ignore_case:
-		regex = re.compile(pattern, re.IGNORECASE)
+		regex = re.compile(pattern, flags=re.IGNORECASE)
 	else:
 		regex = re.compile(pattern)
-	found = regex.search(string)
+	found = None
+	try:
+		found = regex.search(string)
+	except TypeError:
+		return string
 	if found:
 		return list(found.groups())
 	else:
@@ -359,7 +377,7 @@ def main():
 
 __all__ = ['Base', 'to_type', 'is_iterable', 'make_iterable', 'iprint',
 			'keep_type', 'set_decimal_expansion', 'try_', 'round_to', 'eval_',
-			'bool_test', 'regex_match', 'regex_search', 'regex_sub', 
+			'bool_test', 'regex_match', 'regex_search', 'regex_sub', 'regex_split',
 			'dict_to_namedtuple', 'flatten_nested_dict', 'nested_dict_to_index',
 			'interpret_nested_dict', 'irregular_concat', 'double_lut_transform',
 			'list_to_lut']

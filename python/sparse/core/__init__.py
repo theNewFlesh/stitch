@@ -3,3 +3,4 @@ import spql_interpreter
 import sparse_dataframe
 import sparse_series
 import sparse_lut
+import sparse_string

@@ -186,7 +186,7 @@ def _nreig(item, value):
 		return False
 
 OPERATORS = {'==': _eq, '!=': _ne, '<': _lt, '<=': _lte, '>': _gt, '>=': _gte, 
-			're': _re, 'flags=re.IGNORECASE': _reig, 'nre': _nre, 'nflags=re.IGNORECASE': _nreig}
+			're': _re, 're.IGNORECASE': _reig, 'nre': _nre, 'nre.IGNORECASE': _nreig}
 
 def bool_test(item, operator, values):
 	op = OPERATORS[operator]
@@ -288,7 +288,7 @@ def flatten_nested_dict(item, separator='_', null='null'):
 	return output
 
 def nested_dict_to_index(item, name):
-	index = flatten_nested_dict(item, name, separator='__null__')
+	index = flatten_nested_dict(item, separator='__null__')
 	index = [x.split('__null__') for x in index.keys()]
 	max_ = 0
 	for item in index:

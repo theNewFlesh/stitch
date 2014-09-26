@@ -114,6 +114,11 @@ class QubeBackingStore(BackingStore):
 
 		sdata.data = data
 		self._data = sdata
+	# --------------------------------------------------------------------------
+
+	def set_priority(self, priority):
+		jobs = self._results['jobs'].tolist()
+		slef._database.set_priority(jobs=jobs, priority=priority)
 # ------------------------------------------------------------------------------
 
 def main():

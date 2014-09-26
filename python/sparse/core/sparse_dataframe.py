@@ -741,7 +741,7 @@ class SparseDataFrame(Base):
 			DataFrame
 		'''
 
-		values = flatten_nested_dict(item, name).values()
+		values = flatten_nested_dict(item).values()
 		index = nested_dict_to_index(item, name)
 		data = DataFrame(values, index=index)
 		mask = data.apply(lambda x: x != 'null')

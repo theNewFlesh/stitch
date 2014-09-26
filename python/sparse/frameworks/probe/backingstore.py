@@ -35,6 +35,7 @@
 '''
 # ------------------------------------------------------------------------------
 
+import json
 import pandas
 from pandas import Series
 import numpy
@@ -44,14 +45,16 @@ from sparse.utilities.errors import *
 # ------------------------------------------------------------------------------
 
 class BackingStore(Base):
-
 	def __init__(self, name=None):
 		super(BackingStore, self).__init__(name=name)
 		self._cls = 'BackingStore'
-
 		self._data = None
 		self._results = None
-		self._instruction_map = {}
+
+	@property
+	def source_data(self):
+		# method for retrieving source data
+		raise EmptyFunction('Please define this function in your subclass')
 
 	@property
 	def data(self):
@@ -60,36 +63,15 @@ class BackingStore(Base):
 	@property
 	def results(self):
 		return self._results
+	# --------------------------------------------------------------------------
 
 	def get_database(self):
 		self.update()
 		database = {}
-		database['dtype'] = 'json'
+		database['metadata'] = {}
+		database['metadata']['data_type'] = 'json orient=records, DataFrame'
 		database['data'] = self.data.to_json(orient='records')
 		return database
-
-	def _do_instructions(self, instructions):
-		for instr in instructions:
-			if instr not in self._instruction_map:
-				raise KeyError('Instruction not defined in backingstore instruction map')
-
-		for instr, args, kwargs in instructions.iteritems():
-			self._instruction_map[instr](*args, **kwargs)
-
-	def process_order(self, order):
-		if order['dtype'] is 'json':
-			self._results = pandas.read_json(order['data'], orient='records')
-		elif order['dtype'] is 'DataFrame':
-			self._results = results
-		else:
-			raise TypeError('Unrecognized data type')
-
-		self._do_instructions(order['instructions'])
-
-	@property
-	def source_data(self):
-		# method for retrieving source data
-		raise EmptyFunction('Please define this function in your subclass')
 
 	def update(self):
 		data = []
@@ -103,6 +85,23 @@ class BackingStore(Base):
 		data['probe_id'] = data.index
 		sdata.data = data
 		self._data = sdata
+	# --------------------------------------------------------------------------
+
+	def _execute_instruction(self, instruction):
+		func = instruction['func']
+		args = instruction['args']
+		kwargs = instruction['kwargs']	
+		getattr(self, func)(*args, **kwargs)
+
+	def process_order(self, package):
+		package = json.loads(package)
+		if package['metadata']['data_type'] is 'json orient=records, DataFrame':
+			self._results = SparseDataFrame.read_json(package['data'], orient='records')
+		else:
+			raise TypeError('Unrecognized data type')
+
+		for instruction in package['instructions']:
+			self._execute_instruction(instruction)
 # ------------------------------------------------------------------------------
 
 def main():

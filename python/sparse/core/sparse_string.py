@@ -106,7 +106,8 @@ class SparseString(Base):
 				if verbose:
 					print '\tWarning:', message
 				warnings.warn(message, Warning)
-			print ''
+			if verbose:
+				print ''
 
 		# test each entry against all other entry's examples
 		examples = []

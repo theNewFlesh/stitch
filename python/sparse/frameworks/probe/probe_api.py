@@ -55,10 +55,7 @@ class ProbeAPI(Base):
 		self._updates = updates
 		self._user_mode = user_mode
 		self._database = self._backingstore.get_database()
-		self._data = self._database['data']
-		self._datatype = self._database['dtype']
 		self._results = None
-		self._instructions = OrderedDict()
 		self._spql = SpQLInterpreter()
 		self._mongodb = None
 		self._elasticsearch = None
@@ -74,19 +71,16 @@ class ProbeAPI(Base):
 		return self.database['data']
 
 	@property
-	def datatype(self):
-		return self.database['dtype']
+	def metadata(self):
+		return self._database['metadata']
+
+	@property
+	def data_type(self):
+		return self._database['metadata']['data_type']
 
 	@property
 	def results(self):
 		return self._results
-
-	@property
-	def instructions(self):
-		return self._instructions
-
-	def clear_instructions(self):
-		self._instructions = OrderedDict()
 
 	def issue_order(self):
 		self._backingstore.process_order(self.order)
@@ -122,12 +116,12 @@ class ProbeAPI(Base):
 	def mongodb(self):
 		return self._mongodb
 
-	def spql_search(self, string, database='sparse', field_operator='==', display_fields=[]):
+	def spql_search(self, string, data_type='sparse', field_operator='==', display_fields=[]):
 		if string in TUNER.config['probe_api']['custom_search_words'].keys():
 			string = TUNER.config['probe_api']['custom_search_words'][string]
 			print 'SpQL search:', string
 
-		if database == 'sparse':
+		if data_type == 'sparse':
 			results = SparseDataFrame()
 			results.read_json(self.data)
 			results.spql_search(string, field_operator=field_operator, inplace=True)
@@ -141,11 +135,11 @@ class ProbeAPI(Base):
 			results = results.to_json(orient='records')
 			self._results = results
 					
-		elif database is 'mongodb':
+		elif data_type is 'mongodb':
 			query = self._spql.mongo_query
 			self._results = self._mongodb.aggregate(query)
 		
-		elif database is 'elasticsearch':
+		elif data_type is 'elasticsearch':
 			query = self._spql.elasticsearch_query
 			self._results = self._elasticsearch.aggregate(query)
 
@@ -153,29 +147,13 @@ class ProbeAPI(Base):
 			raise TypeError('Database type not recognized')
 	# --------------------------------------------------------------------------
 
-	def _do(self, instructions):
-		if self._user_mode is 'automatic':
-			self.clear_instructions()
-			self._instructions = instructions
-			self.issue_order(self.order)
-		else:
-			for key, val in instructions.iteritems():
-				self._instructions[key] = val
+	def _send_order(self, instructions):
+		order = {}
+		order['data'] = self._results
+		order['metadata'] = self.metadata
+		order['instructions'] = instructions
 
-	def update_view(self):
-		self._do({'update_view': True})
-
-	def set_priority(self, integer):
-		self._do({'set_priority': integer})
-
-	def set_instances(self, integer):
-		self._do({'set_instances': integer})
-
-	def adjust_priority(self, integer):
-		self._do({'adjust_priority': integer})
-
-	def adjust_instances(self, integer):
-		self._do({'adjust_instances': integer})
+		self._backingstore.process_order(order)
 # ------------------------------------------------------------------------------
 
 def main():

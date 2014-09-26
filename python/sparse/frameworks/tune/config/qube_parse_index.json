@@ -1,0 +1,31 @@
+{
+"qube_parse_index":
+	{
+		"vrscene": {
+		     "example": "(vfx_quake/er054) er054_trackcomp_wireframe_shotcam1_render_v0003.mb [Vray:vrscene]",
+			   "regex": "\\(show/.*\\) scene_descriptor_camera_.*_version\\.extension \\[.*:jobtype\\]",
+			"keywords": {
+				      "show": "vfx_(.*)",
+				     "scene": "(.*\\d)",
+				"descriptor": "(.*)",
+				    "camera": "(.*[cam|Cam|CAM].*)",
+				   "version": "v(\\d\\d\\d\\d|\\d\\d\\d)",
+				 "extension": "(.*)",
+				   "jobtype": "(.*)"
+			}
+		},
+		"scratch": {
+			 "example": "(vfx_exo/mw0060) mw0060_comp_s3d_lf_v024_scratch_2kaxp_lnf.1000.exr:SendToScratch [cmdrange:S25]",
+			   "regex": "\\(show/.*\\) scene_.*_version_jobtype_resolution_.*\\.frame\\.extension:.*",
+			"keywords": {
+				      "show": "vfx_(.*)",
+				     "scene": "(.*\\d)",
+				   "version": "v(\\d\\d\\d\\d|\\d\\d\\d)",
+				   "jobtype": "(scratch|Scratch|SCRATCH)",
+				"resolution": "(\\dk).*",
+				     "frame": "(\\d\\d\\d\\d)",
+				 "extension": "(.*?)"
+			}
+		}
+	}
+}

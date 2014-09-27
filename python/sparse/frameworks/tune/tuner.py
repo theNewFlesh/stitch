@@ -75,8 +75,9 @@ class Tuner(Base):
 
 		# all_files = self._remove_non_configs(os.listdir(root))
 		all_files = os.listdir(root)
-		cofigs = [x for x in all_files if os.path.splittext(x) == '.config']
-		for conf in cofigs:
+		all_files = [os.path.join(root, x) for x in all_files]
+		configs = [x for x in all_files if os.path.splittext(x)[1] == '.config']
+		for conf in configs:
 			with open(os.path.join(root, conf)) as config:
 				config = json.loads(config.read())
 				for key, value in config.iteritems():
@@ -87,16 +88,16 @@ class Tuner(Base):
 							warnings.warn('Non-unique primary keys detected: ' + value, Warning)
 					self._config[key] = value
 
-		luts = [x for x in ls if os.path.splittext(x) == '.lut']
+		luts = [x for x in ls if os.path.splittext(x)[1] == '.lut']
 		master_lut = []
 		for lut in luts:
 			data = pandas.read_table(lut, delim_whitespace=True, index_col=False)
 			master_lut.append(data)
 		
-		if len(master_lut) > 1:
-			master_lut = pandas.concat(master_lut, axis=1)
-		
-		self._lut = SparseLUT(master_lut)
+		if len(master_lut) > 0:
+			if len(master_lut) > 1:
+				master_lut = pandas.concat(master_lut, axis=1)
+			self._lut = SparseLUT(master_lut)
 
 	def resolve_config(self):
 		self._imports = {}

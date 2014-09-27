@@ -54,7 +54,7 @@ class ProbeAPI(Base):
 		self._backingstore = backingstore
 		self._updates = updates
 		self._user_mode = user_mode
-		self._database = self._backingstore.get_database()
+		self._database = None
 		self._results = None
 		self._spql = SpQLInterpreter()
 		self._mongodb = None

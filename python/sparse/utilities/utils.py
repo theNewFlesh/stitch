@@ -287,7 +287,7 @@ def flatten_nested_dict(item, separator='_', null='null'):
 		output[key[header:]] = value
 	return output
 
-def nested_dict_to_index(item, name):
+def nested_dict_to_index(item):
 	index = flatten_nested_dict(item, separator='__null__')
 	index = [x.split('__null__') for x in index.keys()]
 	max_ = 0

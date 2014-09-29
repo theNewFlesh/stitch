@@ -40,6 +40,8 @@ from collections import OrderedDict
 import warnings
 import os
 import json
+import importlib
+import pandas
 from sparse.utilities.utils import Base
 from sparse.utilities.utils import interpret_nested_dict
 from sparse.frameworks.tune import tune_imports
@@ -56,27 +58,15 @@ class Tuner(Base):
 		self._lut = None
 		self.update()
 
-	def _remove_non_configs(self, files):
-		# DEPRECATED
-		non_configs = ['.DS_Store']
-		output = []
-		for f in files:
-			if f in non_configs:
-				pass
-			else:
-				output.append(f)
-		return output
-
 	def update(self):
 		self._config = {}
 		reload(tune_imports)
 		root = tune_imports.CONFIG_PATH
 		self._config_path = root
 
-		# all_files = self._remove_non_configs(os.listdir(root))
 		all_files = os.listdir(root)
 		all_files = [os.path.join(root, x) for x in all_files]
-		configs = [x for x in all_files if os.path.splittext(x)[1] == '.config']
+		configs = [x for x in all_files if os.path.splitext(x)[1] == '.config']
 		for conf in configs:
 			with open(os.path.join(root, conf)) as config:
 				config = json.loads(config.read())
@@ -88,15 +78,18 @@ class Tuner(Base):
 							warnings.warn('Non-unique primary keys detected: ' + value, Warning)
 					self._config[key] = value
 
-		luts = [x for x in ls if os.path.splittext(x)[1] == '.lut']
-		master_lut = []
+		luts = [x for x in all_files if os.path.splitext(x)[1] == '.lut']
+		master_luts = []
 		for lut in luts:
 			data = pandas.read_table(lut, delim_whitespace=True, index_col=False)
-			master_lut.append(data)
+			master_luts.append(data)
 		
-		if len(master_lut) > 0:
-			if len(master_lut) > 1:
-				master_lut = pandas.concat(master_lut, axis=1)
+		master_lut = None
+		if len(master_luts) > 0:
+			if len(master_luts) > 1:
+				master_lut = pandas.concat(master_luts, axis=1)
+			else:
+				master_lut = master_luts[0]
 			self._lut = SparseLUT(master_lut)
 
 	def resolve_config(self):
@@ -106,6 +99,15 @@ class Tuner(Base):
 		self._imports = IMPORTS
 		self._config = interpret_nested_dict(self._config,
 						lambda x: IMPORTS[x] if x in IMPORTS.keys() else x)
+
+	def resolve(self, config):
+		path = config['path']
+		module = os.path.basename(path).split('.')[0]
+
+		if 'class' in config.keys():
+			key = getattr(importlib.import_module(module, path), config['class']) 
+		else:
+			key = importlib.import_module(module, path)
 
 	def tune(self, items, lut_index):
 		input_lut = self._config[lut_index]['input_lut']

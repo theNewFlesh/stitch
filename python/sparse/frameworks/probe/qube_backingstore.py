@@ -47,9 +47,9 @@ from pandas import DataFrame, Series
 
 from sparse.core.sparse_dataframe import SparseDataFrame
 from sparse.frameworks.probe.backingstore import BackingStore
-from sparse.utilities.mock import qb
 from sparse.utilities.utils import *
 from sparse.utilities.errors import *
+import sparse.utilities.mock.qb as qb
 from sparse.frameworks.tune.tuner import Tuner
 TUNER = Tuner()
 # ------------------------------------------------------------------------------
@@ -59,7 +59,7 @@ class QubeBackingStore(BackingStore):
 						jobinfo=False,
 						hostinfo=False,
 						group=False,
-						supervisor='',
+						supervisor=None,
 						agenda=False,
 						callbacks=False,
 						fields=[],
@@ -67,10 +67,9 @@ class QubeBackingStore(BackingStore):
 						id=None,
 						name=None,
 						state=None,
-						status=['running', 'failed'],
+						status=None,
 						subjobs=False,
-						embed_graphs=False,
-						name=None):
+						embed_graphs=False):
 
 		super(QubeBackingStore, self).__init__(name=name)
 		self._cls = 'QubeBackingStore'
@@ -98,43 +97,43 @@ class QubeBackingStore(BackingStore):
 	# --------------------------------------------------------------------------
 
 	def _flatten_qube_field(self, database, fields):   
-	    new_db = []
-	    for job in database:       
-	        frames = []
-	        for field in fields:
-	        	for item in job[field]:
-	            	if type(item) != dict:
-	            		item = eval(str(item))
-	            	temp = {}
-	            for key, value in item.iteritems():
-	                temp[field + '_' + key] = value    
-	            frames.append(temp)
+		new_db = []
+		for job in database:       
+			frames = []
+			for field in fields:
+				for item in job[field]:
+					if type(item) != dict:
+						item = eval(str(item))
+					temp = {}
+				for key, value in item.iteritems():
+					temp[field + '_' + key] = value    
+				frames.append(temp)
 
-	        head = job
-	        
-	        for frame in frames:
-	            new_job = copy(head)
-	            for key, value in frame.iteritems():
-	                new_job[key] = value
-	            new_db.append(new_job)
-	            
-	    return new_db
+			head = job
+			
+			for frame in frames:
+				new_job = copy(head)
+				for key, value in frame.iteritems():
+					new_job[key] = value
+				new_db.append(new_job)
+				
+		return new_db
 
-	   def _fix_missing_fields(self, database, fields):
-	   	for field in fields:
-	   		keys = []
-	   		for job in database:
-	   			try:
-	   				job[field] = job[field]
-	   			except:
-	   				continue
-	   			for items in job[field]:
-	   				if item.__class__.__name__ != 'dict':
-	   					items = eval(str(items))
-	   				for key in items:
-	   					keys.append(key)
-	   		
-	   		replacement = {}
+	def _fix_missing_fields(self, database, fields):
+		for field in fields:
+			keys = []
+			for job in database:
+				try:
+					job[field] = job[field]
+				except:
+					continue
+				for items in job[field]:
+					if item.__class__.__name__ != 'dict':
+						items = eval(str(items))
+					for key in items:
+						keys.append(key)
+			
+			replacement = {}
 			for key in keys:
 				replacement[key] = None
 			replacement = [replacement]
@@ -154,7 +153,7 @@ class QubeBackingStore(BackingStore):
 			return {'used': None, 'total': None}
 
 	def _str_to_nan(self, item):
-		if item == u'' or item == '';
+		if item == u'' or item == '':
 			return numpy.nan
 		else:
 			return item
@@ -176,7 +175,7 @@ class QubeBackingStore(BackingStore):
 		return ''
 
 	def _get_ram(self, item):
-		ram_re = re.compile('memory=(\d+)'
+		ram_re = re.compile('memory=(\d+)')
 		found = ram_re.search(item)
 		if found:
 			return int(found.group(1))
@@ -184,7 +183,7 @@ class QubeBackingStore(BackingStore):
 			return numpy.nan
 
 	def _get_plus_ram(self, item):
-		pram_re = re.compile('memory=\d+(.))'
+		pram_re = re.compile('memory=\d+(.)')
 		found = pram_re.search(item)
 		if found:
 			if found.group(1) == '+':
@@ -192,58 +191,58 @@ class QubeBackingStore(BackingStore):
 		return ''
 	# --------------------------------------------------------------------------
 
-	def _get_agenda_stats(self, data):
-		def __get_agenda_stats(item):
-			data = DataFrame(item)
-			rounding = 2
-			epoch = 946800000
-			
-			# Coerce bad timestamps
-			data['timestart'] = data['timestart'].apply(lambda x: numpy.nan if x < epoch else x)
+	def _get_agenda_stat(self, item):
+		data = DataFrame(item)
+		rounding = 2
+		epoch = 946800000
+		
+		# Coerce bad timestamps
+		data['timestart'] = data['timestart'].apply(lambda x: numpy.nan if x < epoch else x)
 
-			# Add framespan and failedframes
-			mask = data[data['status'] == 'running']
-			data.loc[mask.index, 'lastupdate'] = time.time()
-			data['span'] = (data['lastupdate'] - data['timestart']) / 3600
+		# Add framespan and failedframes
+		mask = data[data['status'] == 'running']
+		data.loc[mask.index, 'lastupdate'] = time.time()
+		data['span'] = (data['lastupdate'] - data['timestart']) / 3600
 
-			output = {}
-			mask = data[data['span']] > (o.5 / 60) # Drop frames under 30 sec
-			output['frame_max']              = round_to(mask['span'].max(), rounding)
-			output['frame_min']              = round_to(mask['span'].min(), rounding) 
-			output['frame_sum']              = round_to(mask['span'].sum(), rounding)
-			output['frame_retry']            = round_to(mask['retry'].max(), rounding)
-			output['frame_total']            = len(data)
-			output['frame_complete_total']   = len(mask[mask['status'] == 'complete'])
-			frmcomp = output['frame_complete_total'] / output['frame_total']
-			output['frame_complete_percent'] = round_to(frmcomp, 3)
+		output = {}
+		mask = data[data['span'] > (0.5 / 60)] # Drop frames under 30 sec
+		output['frame_max']              = round_to(mask['span'].max(), rounding)
+		output['frame_min']              = round_to(mask['span'].min(), rounding) 
+		output['frame_sum']              = round_to(mask['span'].sum(), rounding)
+		output['frame_retry']            = round_to(mask['retry'].max(), rounding)
+		output['frame_total']            = len(data)
+		output['frame_complete_total']   = len(mask[mask['status'] == 'complete'])
+		frmcomp = output['frame_complete_total'] / output['frame_total']
+		output['frame_complete_percent'] = round_to(frmcomp, 3)
 
-			c = len(mask)
-			s = output['frame_sum'] - (output['frame_min'] * c)
-			f = (output['frame_max'] - output['frame_min']) * c
-			d = numpy.nan
-			try:
-				d = s/f
-			except ZeroDivisionError:
-				pass
-			output['frame_distribution'] = round_to(d, 3)
+		c = len(mask)
+		s = output['frame_sum'] - (output['frame_min'] * c)
+		f = (output['frame_max'] - output['frame_min']) * c
+		d = numpy.nan
+		try:
+			d = s/f
+			d = round_to(d, 3)
+		except ZeroDivisionError:
+			pass
+		output['frame_distribution'] = d
 
-			mask = data[data['status'] == 'failed']
-			output['failed_frame_names'] = ', '.join(mask['name'].tolist())
-			output['failed_frame_hosts'] = ', '.join(mask['host'].tolist())
-			output['host_total']         = data['host'].nuunique()
-			output['pid_total']          = data['pid'].nuunique()
-			output['status_total']       = data['status'].nuunique()
-			output['subid_total']        = data['subid'].nuunique()
-			output['name_total']         = data['name'].nuunique()
-			
-			output['count_max']          = data['count'].max()
-			output['id_max']             = data['id'].max()
-			output['retry_max']          = data['retry'].max()
-			output['retrydelay_max']     = data['retrydelay'].max	
-			output['timecomplete_max']   = data['timecomplete'].max()
-			output['timecumulative_max'] = data['timecumulative'].max
+		mask = data[data['status'] == 'failed']
+		output['failed_frame_names'] = ', '.join(mask['name'].tolist())
+		output['failed_frame_hosts'] = ', '.join(mask['host'].tolist())
+		output['host_total']         = data['host'].nunique()
+		output['pid_total']          = data['pid'].nunique()
+		output['status_total']       = data['status'].nunique()
+		output['subid_total']        = data['subid'].nunique()
+		output['name_total']         = data['name'].nunique()
+		
+		output['count_max']          = data['count'].max()
+		output['id_max']             = data['id'].max()
+		output['retry_max']          = data['retry'].max()
+		output['retrydelay_max']     = data['retrydelay'].max()
+		output['timecomplete_max']   = data['timecomplete'].max()
+		output['timecumulative_max'] = data['timecumulative'].max()
 
-			output['timestart_min']      = data['timestart'].min()
+		output['timestart_min']      = data['timestart'].min()
 
 		if self._embed_graphs:
 			fg = data[['span']].copy()
@@ -273,19 +272,17 @@ class QubeBackingStore(BackingStore):
 							['all', 'failed', 'complete', 'running']]
 			output['frame_graph_detailed'] = fg.to_dict()
 
-			return output
+		return output
 
+	def _get_agenda_stats(self, data):
 		sdata = SparseDataFrame(data)
-		sdata.cross_map('id', 'agenda', lambda x: True, __get_agenda_stats, inplace=True)
-		sdata.flatten(prefix=False, inplace=True)
-		data = sdata.data
-
+		sdata.cross_map('id', 'agenda', lambda x: True, self._get_agenda_stat, inplace=True)
+		data = sdata.flatten(prefix=True)
 		return data
 	# --------------------------------------------------------------------------
 
 	def _job_update(self):
-		data = json.loads(self.source_data)
-		data = DataFrame(data)
+		data = pandas.read_json(self._job_data, orient='records')
 		data = data.applymap(lambda x: {} if x is None else x)
 
 		sdata = SparseDataFrame(data)
@@ -294,10 +291,10 @@ class QubeBackingStore(BackingStore):
 		data = data.applymap(lambda x: self._str_to_nan(x))
 
 		# Add custom fields
-		data['procs'] = data['reservations'].applymap(lambda x: self._get_procs(x))
-		data['procs+'] = data['reservations'].applymap(lambda x: self._get_plus_procs(x))
-		data['ram'] = data['reservations'].applymap(lambda x: self._get_ram(x))
-		data['ram+'] = data['reservations'].applymap(lambda x: self._get_plus_ram(x))
+		data['procs'] = data['reservations'].apply(lambda x: self._get_procs(x))
+		data['procs+'] = data['reservations'].apply(lambda x: self._get_plus_procs(x))
+		data['ram'] = data['reservations'].apply(lambda x: self._get_ram(x))
+		data['ram+'] = data['reservations'].apply(lambda x: self._get_plus_ram(x))
 		data['failed_frame_total'] = data['todotally_failed']
 		data['dependency'] = data['pgrp']
 		mask = data['dependency'] - data['id']
@@ -354,14 +351,14 @@ class QubeBackingStore(BackingStore):
 	# --------------------------------------------------------------------------
 
 	def _host_update(self):
-		data = json.loads(self.source_data)
+		data = json.loads(self._host_data)
 
 		fields = []
-		if self._subjobs
+		if self._subjobs:
 			fields.append('subjobs')
 		if fields:
 			data = self._fix_missing_fields(data, fields)
-			data self._flatten_qube_field(data, fields)
+			data = self._flatten_qube_field(data, fields)
 
 		data = DataFrame(data)
 		data = data.applymap(lambda x: numpy.nan if x is {} else x)
@@ -411,23 +408,12 @@ class QubeBackingStore(BackingStore):
 			raise NotFound('Database not specified')
 
 	def update(self):
-		data = []
-		for datum in self.source_data:
-			data.append(Series(datum))
-		sdata = SparseDataFrame(data)
-		sdata.flatten(inplace=True)
-		sdata.coerce_nulls(inplace=True)
-		data = sdata.data
-		data.dropna(how='all', axis=1, inplace=True)
-		data['probe_id'] = data.index
-
-		try:
-			data.columns = TUNER.tune(data.columns, 'qube_backingstore')
-		except ValueError:
-			warning.warn('Luts not set. Cannot assign non-unique values.')
-
-		sdata.data = data
-		self._data = sdata
+		if self._jobinfo:
+			self._job_update()
+		elif self._hostinfo:
+			self._host_update()
+		else:
+			raise NotFound('Database not specified')
 	# --------------------------------------------------------------------------
 
 	def set_priority(self, priority): 

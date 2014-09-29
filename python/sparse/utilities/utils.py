@@ -72,21 +72,21 @@ class Base(object):
 		'''
 		return self._name
 
-	def _printPublic(self):
+	def _print_public(self):
 		nonPublicRE = re.compile('^_')
 		for item in dir(self):
 			found = nonPublicRE.match(item)
 			if not found:
 				print item
 
-	def _printSemiPrivate(self):
+	def _print_semiprivate(self):
 		semiPrivateRE = re.compile('^_[^_]+')
 		for item in dir(self):
 			found = semiPrivateRE.match(item)
 			if found:
 				print item
 
-	def _printPrivate(self):
+	def _print_private(self):
 		privateRE = re.compile('^__')
 		for item in dir(self):
 			found = privateRE.match(item)

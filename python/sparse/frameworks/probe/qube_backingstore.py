@@ -47,6 +47,7 @@ from pandas import DataFrame, Series
 
 from sparse.core.sparse_dataframe import SparseDataFrame
 from sparse.frameworks.probe.backingstore import BackingStore
+from sparse.utilities.qube_utils import *
 from sparse.utilities.utils import *
 from sparse.utilities.errors import *
 import sparse.utilities.mock.qb as qb
@@ -95,102 +96,6 @@ class QubeBackingStore(BackingStore):
 
 		self._database.setsupervisor(self._supervisor)
 	# --------------------------------------------------------------------------
-
-	def _flatten_qube_field(self, database, fields):   
-		new_db = []
-		for job in database:       
-			frames = []
-			for field in fields:
-				for item in job[field]:
-					if type(item) != dict:
-						item = eval(str(item))
-					temp = {}
-				for key, value in item.iteritems():
-					temp[field + '_' + key] = value    
-				frames.append(temp)
-
-			head = job
-			
-			for frame in frames:
-				new_job = copy(head)
-				for key, value in frame.iteritems():
-					new_job[key] = value
-				new_db.append(new_job)
-				
-		return new_db
-
-	def _fix_missing_fields(self, database, fields):
-		for field in fields:
-			keys = []
-			for job in database:
-				try:
-					job[field] = job[field]
-				except:
-					continue
-				for items in job[field]:
-					if item.__class__.__name__ != 'dict':
-						items = eval(str(items))
-					for key in items:
-						keys.append(key)
-			
-			replacement = {}
-			for key in keys:
-				replacement[key] = None
-			replacement = [replacement]
-
-			for job in database:
-				if not field in job.keys():
-					job[field] = replacement
-
-		return database
-
-	def _get_slots(self, item):
-		slots_re = re.compile('host.processor(\d+)/(\d+)')
-		found = slots_re.search(item)
-		if found:
-			return {'used': int(found.group(1)), 'total': int(found.group(2))}
-		else:
-			return {'used': None, 'total': None}
-
-	def _str_to_nan(self, item):
-		if item == u'' or item == '':
-			return numpy.nan
-		else:
-			return item
-
-	def _get_procs(self, item):
-		procs_re = re.compile('processors=(\d+)')
-		found = procs_re.search(item)
-		if found:
-			return int(found.group(1))
-		else:
-			return numpy.nan
-
-	def _get_plus_procs(self, item):
-		procs_re = re.compile('processors=\d+(.)')
-		found = procs_re.search(item)
-		if found:
-			if found.group(1) == '+':
-				return '+'
-		return ''
-
-	def _get_ram(self, item):
-		ram_re = re.compile('memory=(\d+)')
-		found = ram_re.search(item)
-		if found:
-			return int(found.group(1))
-		else:
-			return numpy.nan
-
-	def _get_plus_ram(self, item):
-		pram_re = re.compile('memory=\d+(.)')
-		found = pram_re.search(item)
-		if found:
-			if found.group(1) == '+':
-				return '+'
-		return ''
-	# --------------------------------------------------------------------------
-
 	def _get_agenda_stat(self, item):
 		data = DataFrame(item)
 		rounding = 2
@@ -288,13 +193,13 @@ class QubeBackingStore(BackingStore):
 		sdata = SparseDataFrame(data)
 		sdata.flatten(inplace=True)
 		data= sdata.data
-		data = data.applymap(lambda x: self._str_to_nan(x))
+		data = data.applymap(lambda x: str_to_nan(x))
 
 		# Add custom fields
-		data['procs'] = data['reservations'].apply(lambda x: self._get_procs(x))
-		data['procs+'] = data['reservations'].apply(lambda x: self._get_plus_procs(x))
-		data['ram'] = data['reservations'].apply(lambda x: self._get_ram(x))
-		data['ram+'] = data['reservations'].apply(lambda x: self._get_plus_ram(x))
+		data['procs'] = data['reservations'].apply(lambda x: get_procs(x))
+		data['procs+'] = data['reservations'].apply(lambda x: get_plus_procs(x))
+		data['ram'] = data['reservations'].apply(lambda x: get_ram(x))
+		data['ram+'] = data['reservations'].apply(lambda x: get_plus_ram(x))
 		data['failed_frame_total'] = data['todotally_failed']
 		data['dependency'] = data['pgrp']
 		mask = data['dependency'] - data['id']
@@ -339,7 +244,7 @@ class QubeBackingStore(BackingStore):
 		cols_.insert(0, 'name')
 
 		temp = data[cols_]
-		temp = temp.groupby('name', as_index=False).agg(lambda x: x.nuunique())
+		temp = temp.groupby('name', as_index=False).agg(lambda x: x.nunique())
 		data = data.groupby('name', as_index=False).first()
 		data[cols] = temp[cols]
 
@@ -357,12 +262,12 @@ class QubeBackingStore(BackingStore):
 		if self._subjobs:
 			fields.append('subjobs')
 		if fields:
-			data = self._fix_missing_fields(data, fields)
-			data = self._flatten_qube_field(data, fields)
+			data = fix_missing_fields(data, fields)
+			data = flatten_qube_field(data, fields)
 
 		data = DataFrame(data)
 		data = data.applymap(lambda x: numpy.nan if x is {} else x)
-		data['slots'] = data['resources'].apply(lambda x: self._get_slots(x))
+		data['slots'] = data['resources'].apply(lambda x: get_slots(x))
 
 		sdata = SparseDataFrame(data)
 		sdata.flatten(inplace=True)
@@ -385,13 +290,13 @@ class QubeBackingStore(BackingStore):
 
 	@property
 	def _host_data(self):
-		hosts = self._database.jobinfo( fields=self._fields,
+		hosts = self._database.hostinfo( fields=self._fields,
 										filters=self._filters,
 										name=self._name,
 										state=self._state,
 										subjobs=self._subjobs)
-		jobs = json.dumps([dict(job) for job in jobs])
-		return jobs
+		hosts = json.dumps([dict(host) for host in hosts])
+		return hosts
 
 	@property
 	def supervisor(self):
@@ -417,8 +322,8 @@ class QubeBackingStore(BackingStore):
 	# --------------------------------------------------------------------------
 
 	def set_priority(self, priority): 
-		jobs = self._results['jobs'].tolist()
-		slef._database.set_priority(jobs=jobs, priority=priority)
+		job_ids = self._results.data['id'].tolist()
+		self._database.set_priority(job_ids, priority)
 # ------------------------------------------------------------------------------
 
 def main():

@@ -752,7 +752,7 @@ class SparseDataFrame(Base):
 			self.data = data
 		return data
 
-	def read_json(self, json, orient='records'):
+	def read_json(self, string, orient='records'):
 		'''Reads json into SparseDataFrame
 
 		Args:
@@ -763,7 +763,7 @@ class SparseDataFrame(Base):
 			None
 		'''
 
-		self.data = pandas.read_json(json, orient=orient)
+		self.data = pandas.read_json(string, orient=orient)
 
 	def to_json(self, orient='records'):
 		'''Reads SparseDataFrame into json string

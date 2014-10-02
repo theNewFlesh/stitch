@@ -93,14 +93,17 @@ class BackingStore(Base):
 		kwargs = instruction['kwargs']	
 		getattr(self, func)(*args, **kwargs)
 
-	def process_order(self, package):
-		package = json.loads(package)
-		if package['metadata']['data_type'] is 'json orient=records, DataFrame':
-			self._results = SparseDataFrame.read_json(package['data'], orient='records')
+	def process_order(self, order):
+		order = json.loads(order)
+		dtype = order['metadata']['data_type']
+		if dtype == u'json orient=records, DataFrame':
+			results = SparseDataFrame()
+			results.read_json(order['data'], orient='records')
+			self._results = results
 		else:
-			raise TypeError('Unrecognized data type')
+			raise TypeError('Unrecognized data type: ' + dtype)
 
-		for instruction in package['instructions']:
+		for instruction in order['instructions']:
 			self._execute_instruction(instruction)
 # ------------------------------------------------------------------------------
 

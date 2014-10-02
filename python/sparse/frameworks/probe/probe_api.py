@@ -37,6 +37,7 @@
 
 from __future__ import with_statement
 from collections import OrderedDict
+import json
 import pandas
 from sparse.utilities.errors import *
 from sparse.utilities.utils import *
@@ -63,7 +64,7 @@ class ProbeAPI(Base):
 	@property
 	def database(self):
 		if self._updates is 'automatic':
-			self._database = self._backingstore.get_database()
+			self.update()
 		return self._database
 
 	@property
@@ -81,6 +82,9 @@ class ProbeAPI(Base):
 	@property
 	def results(self):
 		return self._results
+
+	def update(self):
+		self._database = self._backingstore.get_database()
 
 	def issue_order(self):
 		self._backingstore.process_order(self.order)
@@ -152,6 +156,7 @@ class ProbeAPI(Base):
 		order['data'] = self._results
 		order['metadata'] = self.metadata
 		order['instructions'] = instructions
+		order = json.dumps(order)
 
 		self._backingstore.process_order(order)
 # ------------------------------------------------------------------------------

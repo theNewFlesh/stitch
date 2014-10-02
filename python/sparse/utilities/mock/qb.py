@@ -114,6 +114,9 @@ def jobinfo(filters={}, agenda=True, subjobs=False, fields=None, callbacks=None,
 
 	return jobs
 
+def set_priority(job_ids, priority):
+	for job_id in job_ids:
+		print job_id, 'set to', priority
 # ------------------------------------------------------------------------------
 
 def main():
@@ -124,7 +127,7 @@ def main():
 	import __main__
 	help(__main__)
 
-__all__ = ['setsupervisor', 'jobinfo']
+__all__ = ['setsupervisor', 'jobinfo', 'set_priority']
 
 if __name__ == '__main__':
 	main()

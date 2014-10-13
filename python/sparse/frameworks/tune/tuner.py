@@ -40,11 +40,11 @@ from collections import OrderedDict
 import warnings
 import os
 import json
-import importlib
+import imp
 import pandas
 from sparse.utilities.utils import Base
 from sparse.utilities.utils import interpret_nested_dict
-from sparse.frameworks.tune import tune_imports
+from sparse.frameworks.tune import config_path
 from sparse.core.sparse_lut import SparseLUT
 # ------------------------------------------------------------------------------
 
@@ -52,16 +52,34 @@ class Tuner(Base):
 	def __init__(self, name=None):
 		super(Tuner, self).__init__(name=name)
 		self._cls = 'Tuner'
-		self._imports = {}
 		self._config = {}
 		self._config_path = None
 		self._lut = None
 		self.update()
 
+	@property
+	def config(self):
+		return self._config
+
+	@property
+	def config_path(self):
+		return self._config_path
+
+	@property
+	def modules(self):
+		return self._config['modules']
+
+	def __getitem__(self, key):
+		if key in self.modules.keys():
+			return self.get_module(self.modules[key])
+			pass
+		else:
+			return self._config[key]
+
 	def update(self):
 		self._config = {}
-		reload(tune_imports)
-		root = tune_imports.CONFIG_PATH
+		reload(config_path)
+		root = config_path.CONFIG_PATH
 		self._config_path = root
 
 		all_files = os.listdir(root)
@@ -92,39 +110,15 @@ class Tuner(Base):
 				master_lut = master_luts[0]
 			self._lut = SparseLUT(master_lut)
 
-	def resolve_config(self):
-		self._imports = {}
-		from sparse.frameworks.tune import tune_imports
-		IMPORTS = tune_imports.get_imports()
-		self._imports = IMPORTS
-		self._config = interpret_nested_dict(self._config,
-						lambda x: IMPORTS[x] if x in IMPORTS.keys() else x)
-
-	def resolve(self, config):
-		path = config['path']
-		module = os.path.basename(path).split('.')[0]
-
-		if 'class' in config.keys():
-			key = getattr(importlib.import_module(module, path), config['class']) 
-		else:
-			key = importlib.import_module(module, path)
-
+	def get_module(self, filepath):
+		module = os.path.basename(filepath)
+		module = os.path.splitext(module)[0]
+		return imp.load_source(module, filepath)
+		
 	def tune(self, items, lut_index):
 		input_lut = self._config[lut_index]['input_lut']
 		output_lut = self._config[lut_index]['output_lut']
-		return self._lut.transform_items(items, input_lut, output_lut)
-			
-	@property
-	def config(self):
-		return self._config
-
-	@property
-	def config_path(self):
-		return self._config_path
-
-	@property
-	def imports(self):
-		return self._imports
+		return self._lut.transform_items(items, input_lut, output_lut)			
 # ------------------------------------------------------------------------------
 def main():
 	'''

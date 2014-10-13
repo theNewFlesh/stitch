@@ -727,6 +727,37 @@ class SparseDataFrame(Base):
 		if inplace:
 			self.data = data
 		return data
+
+	def merge_list_dict_columns(self, source, target, source_key, target_key,
+                            new_column='default', remove_key=False, inplace=False):
+		'''Merge columns containing lists of dicts
+
+		Args:
+			source (source column): source column
+			target (target column): target column
+			source_key (key): source dict key to merge on
+			target_key (key): target dict key to merge on
+			new_column (str, optional): name of new merge column
+			remove_key (bool, optional): remove merge keys from results
+			inplace (bool, optional): Apply changes in place. Default: False
+
+		Returns: 
+			DataFrame
+		'''
+
+	    data = self.data
+	    merge_name = 'merge_' + str(source) + '_' + str(target)
+	    source = data[source].apply(lambda x: [x])
+	    target = data[target].apply(lambda x: [x]) 
+	    merge_col = source + target
+	    merge_col = merge_col.apply(lambda x: merge_list_dicts(x[0], x[1], source_key, target_key, remove_key=remove_key))
+	    if new_column != 'default':
+	        merge_name = new_column
+	    data[merge_name] = merge_col
+	    
+	    if inplace:
+	        self.data = data
+	    return data    
 	# --------------------------------------------------------------------------
 	
 	def read_nested_dict(self, item, name, inplace=False):

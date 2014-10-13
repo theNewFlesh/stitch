@@ -26,25 +26,16 @@
 # ------------------------------------------------------------------------------
 
 '''
-.. module:: tune_imports
+.. module:: config_path
 	:date: 08.22.2014
 	:platform: Unix
-	:synopsis: Imports configuration file
+	:synopsis: Tune configuration path
 
 .. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
 '''
 # ------------------------------------------------------------------------------
 import os
 # ------------------------------------------------------------------------------
-
-def get_imports():
-	# import sparse.utilities.mock.qb as qb
-	from sparse.frameworks.probe.qube_backingstore import QubeBackingStore
-	IMPORTS = {
-		# '<qb>': qb,
-		'<QubeBackingStore>': QubeBackingStore
-	}
-	return IMPORTS
 
 CONFIG_PATH = os.path.join(os.getcwd(), 'sparse/frameworks/tune/config')
 # ------------------------------------------------------------------------------
@@ -57,7 +48,7 @@ def main():
 	import __main__
 	help(__main__)
 
-__all__ = ['IMPORTS', 'CONFIG']
+__all__ = ['CONFIG_PATH']
 
 if __name__ == '__main__':
 	main()

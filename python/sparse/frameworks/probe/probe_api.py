@@ -121,8 +121,8 @@ class ProbeAPI(Base):
 		return self._mongodb
 
 	def spql_search(self, string, data_type='sparse', field_operator='==', display_fields=[]):
-		if string in TUNER.config['probe_api']['custom_search_words'].keys():
-			string = TUNER.config['probe_api']['custom_search_words'][string]
+		if string in TUNER['probe_api']['custom_search_words'].keys():
+			string = TUNER['probe_api']['custom_search_words'][string]
 			print 'SpQL search:', string
 
 		if data_type == 'sparse':

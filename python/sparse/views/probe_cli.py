@@ -44,8 +44,8 @@ from sparse.frameworks.tune.tuner import Tuner
 TUNER = Tuner()
 
 import pandas
-pandas.options.display.width = TUNER.config['probe_cli']['line_width']
-pandas.options.display.max_rows = TUNER.config['probe_cli']['max_rows']
+pandas.options.display.width = TUNER['probe_cli']['line_width']
+pandas.options.display.max_rows = TUNER['probe_cli']['max_rows']
 pandas.options.display.expand_frame_repr = False
 # ------------------------------------------------------------------------------
 

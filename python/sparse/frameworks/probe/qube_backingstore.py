@@ -46,13 +46,14 @@ import pandas
 from pandas import DataFrame, Series
 
 from sparse.core.sparse_dataframe import SparseDataFrame
+from sparse.core.sparse_series import SparseSeries
 from sparse.frameworks.probe.backingstore import BackingStore
 from sparse.utilities.qube_utils import *
 from sparse.utilities.utils import *
 from sparse.utilities.errors import *
-import sparse.utilities.mock.qb as qb
 from sparse.frameworks.tune.tuner import Tuner
 TUNER = Tuner()
+qb = TUNER['qb']
 # ------------------------------------------------------------------------------
 
 class QubeBackingStore(BackingStore):
@@ -184,6 +185,15 @@ class QubeBackingStore(BackingStore):
 		sdata.cross_map('id', 'agenda', lambda x: True, self._get_agenda_stat, inplace=True)
 		data = sdata.flatten(prefix=True)
 		return data
+
+	def _get_callbacks(self, data):
+		mask = data['callbacks']
+		data['dependency'] = mask
+		mask = callbacks.applymap(lambda x: pandas.notnull(x))
+		mask = callbacks[mask].dropna()
+		data.loc[mask.index, 'dependency'] = mask.apply( lambda x: x[0]['triggers'])		
+		data.loc[mask.index, 'dependency'] = mask.apply( lambda x: get_dependency(x))
+		return data
 	# --------------------------------------------------------------------------
 
 	def _job_update(self):
@@ -207,12 +217,19 @@ class QubeBackingStore(BackingStore):
 		data['percent_done'] = data['todotally_complete'] / data['todo']
 		data['percent_done'] = data['percent_done'].apply(lambda x: round_to(x, 3) * 100)
 
+		data['percent_utilized'] = data['todotally_running'] / (data['todo'] - data['todotally_complete'])
+		data['percent_utilized'] = data['percent_utilized'].apply(lambda x: round_to(x, 3) * 100)
+
 		if self._agenda:
 			data = self._get_agenda_stats(data)
 
+		if self._callbacks:
+			data = self._get_callbacks(self, data)
+
+		data.fillna('', inplace=True)
+
 		data.reset_index(drop=True, inplace=True)
 		data['probe_id'] = data.index
-
 		data.columns = TUNER.tune(data.columns, 'qube_backingstore')
 		data = SparseDataFrame(data)
 
@@ -232,7 +249,8 @@ class QubeBackingStore(BackingStore):
 	# --------------------------------------------------------------------------
 
 	def _append_custom_host_subjob_fields(self, data):
-		mask = data[data['slots_total'] ==0]
+		mask = data[data['state'] == 'active']
+		mask = mask[mask['slots_total'] == 0]
 		data.loc[mask.index, 'state'] = 'locked'
 		return data
 
@@ -273,8 +291,8 @@ class QubeBackingStore(BackingStore):
 		sdata.flatten(inplace=True)
 		data = sdata.data
 
-		data['slot_percent'] = data['slots_used'] / data['slots_total']
-		data['slot_percent'] = data['slot_percent'].apply(lambda x: round_to(x, 3) * 100)
+		data['slots_percent'] = data['slots_used'] / data['slots_total']
+		data['slots_percent'] = data['slot_percent'].apply(lambda x: round_to(x, 3) * 100)
 
 		if self._subjobs:
 			data = self._append_custom_host_subjob_fields(data)
@@ -284,6 +302,7 @@ class QubeBackingStore(BackingStore):
 
 		data.reset_index(drop=True, inplace=True)
 		data['probe_id'] = data.index
+		data.columns = TUNER.tune(data.columns, 'qube_backingstore')
 		sdata.data = data
 
 		self._data = sdata

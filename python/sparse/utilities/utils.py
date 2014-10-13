@@ -309,6 +309,36 @@ def interpret_nested_dict(item, predicate):
 				cursor[key] = predicate(val)
 		return cursor
 	return _interpret_nested_dict(item, {})
+
+def stack_dict(item, key, remove_key=False):
+	output = {}
+	new_key = str(item[key])
+	if remove_key:
+		del item[key]
+	output[new_key] = item
+	return output
+
+def list_dict_to_dict(items, key, remove_key=False):
+	output = {}
+	for item in items:
+		value = stack_dict(item, key, remove_key=remove_key)
+		out_key = value.keys()[0]
+		out_value = value[out_key]
+		output[out_key] = out_value
+	return output
+
+def merge_list_dicts(source, target, source_key, target_key, remove_key=False):
+	source = list_dict_to_dict(source, source_key, remove_key=remove_key)
+	target = list_dict_to_dict(target, target_key, remove_key=remove_key)
+	output = []
+	for key, value in source.iteritems():
+		row = {}
+		for k, v in value.iteritems():
+			row[source_key + '_' + str(k)] = v
+		for k, v in target[key].iteritems():
+			row[target_key + '_' + str(k)] = v
+		output.append(row)
+	return output	
 # ------------------------------------------------------------------------------
 
 def irregular_concat(items, axis=0, ignore_index=True):
@@ -379,7 +409,8 @@ __all__ = ['Base', 'to_type', 'is_iterable', 'make_iterable', 'iprint',
 			'keep_type', 'set_decimal_expansion', 'try_', 'round_to', 'eval_',
 			'bool_test', 'regex_match', 'regex_search', 'regex_sub', 'regex_split',
 			'dict_to_namedtuple', 'flatten_nested_dict', 'nested_dict_to_index',
-			'interpret_nested_dict', 'irregular_concat', 'double_lut_transform',
+			'interpret_nested_dict', 'stack_dict', 'list_dict_to_dict',
+			'merge_list_dicts', 'irregular_concat', 'double_lut_transform',
 			'list_to_lut']
 
 if __name__ == '__main__':

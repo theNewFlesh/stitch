@@ -36,6 +36,8 @@
 # ------------------------------------------------------------------------------
 
 import re
+from copy import copy
+import numpy
 # ------------------------------------------------------------------------------
 
 def flatten_qube_field(database, fields):   
@@ -96,7 +98,7 @@ def get_slots(item):
 
 def str_to_nan(item):
 	if item == u'' or item == '':
-		return numpy.nan
+		return ''
 	else:
 		return item
 
@@ -106,7 +108,7 @@ def get_procs(item):
 	if found:
 		return int(found.group(1))
 	else:
-		return numpy.nan
+		return ''
 
 def get_plus_procs(item):
 	procs_re = re.compile('processors=\d+(.)')
@@ -122,7 +124,7 @@ def get_ram(item):
 	if found:
 		return int(found.group(1))
 	else:
-		return numpy.nan
+		return ''
 
 def get_plus_ram(item):
 	pram_re = re.compile('memory=\d+(.)')
@@ -131,6 +133,14 @@ def get_plus_ram(item):
 		if found.group(1) == '+':
 			return '+'
 	return ''
+
+def get_dependency(item):
+	dep_re = re.compile('.*(complete|job)- ?(\d+|\w[^-]*)[ -]?')
+	found = dep_re.search(item)
+	if found:
+		return found.group(2)
+	else:
+		return ''
 # ------------------------------------------------------------------------------
 
 def main():
@@ -141,8 +151,9 @@ def main():
 	import __main__
 	help(__main__)
 
-__all__ = ['flatten_qube_field', 'fix_missing_fields', 'get_slots', 'str_to_nan',
-			'get_procs', 'get_plus_procs', 'get_ram', 'get_plus_ram']
+__all__ = [ 'flatten_qube_field', 'fix_missing_fields', 'get_slots', 'str_to_nan',
+			'get_procs', 'get_plus_procs', 'get_ram', 'get_plus_ram', 
+			'get_dependency']
 
 if __name__ == '__main__':
 	main()

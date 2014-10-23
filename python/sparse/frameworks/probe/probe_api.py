@@ -48,18 +48,22 @@ TUNER = Tuner()
 # ------------------------------------------------------------------------------
 
 class ProbeAPI(Base):
-	def __init__(self, backingstore, updates='automatic', user_mode='automatic', name=None):
+	def __init__(self, backingstore, updates='automatic', name=None):
 		super(ProbeAPI, self).__init__(name=name)
 		self._cls = 'ProbeAPI'
 
+		if updates not in ['manual', 'automatic']:
+			raise NameError('Improper update mode supplied. Should be manual or automatic. Value provided: ' + updates)
+
 		self._backingstore = backingstore
 		self._updates = updates
-		self._user_mode = user_mode
-		self._database = None
+		self._database = None		
 		self._results = None
 		self._spql = SpQLInterpreter()
 		self._mongodb = None
 		self._elasticsearch = None
+		if self._updates == 'manual':
+			self.update()
 
 	@property
 	def database(self):
@@ -88,17 +92,6 @@ class ProbeAPI(Base):
 
 	def issue_order(self):
 		self._backingstore.process_order(self.order)
-	# --------------------------------------------------------------------------
-
-	@property
-	def user_mode(self):
-		return self._user_mode
-
-	def manual_mode(self):
-		self._user_mode = 'manual'
-
-	def automatic_mode(self):
-		self._user_mode = 'automatic'
 	# --------------------------------------------------------------------------
 
 	@property

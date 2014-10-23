@@ -48,6 +48,7 @@ from pandas import DataFrame, Series
 from sparse.core.sparse_dataframe import SparseDataFrame
 from sparse.core.sparse_series import SparseSeries
 from sparse.frameworks.probe.backingstore import BackingStore
+from sparse.frameworks.probe.renderlog_backingstore import RenderLogBackingStore
 from sparse.utilities.qube_utils import *
 from sparse.utilities.utils import *
 from sparse.utilities.errors import *
@@ -60,7 +61,6 @@ class QubeBackingStore(BackingStore):
 	def __init__(self, 
 						jobinfo=False,
 						hostinfo=False,
-						group=False,
 						supervisor=None,
 						agenda=False,
 						callbacks=False,
@@ -68,7 +68,6 @@ class QubeBackingStore(BackingStore):
 						filters={},
 						id=None,
 						name=None,
-						state=None,
 						status=None,
 						subjobs=False,
 						embed_graphs=False):
@@ -78,7 +77,6 @@ class QubeBackingStore(BackingStore):
 
 		self._jobinfo = jobinfo
 		self._hostinfo = hostinfo
-		self._group = group
 		self._supervisor = supervisor
 		self._agenda = agenda
 		self._callbacks = callbacks
@@ -86,114 +84,87 @@ class QubeBackingStore(BackingStore):
 		self._filters = filters
 		self._id = id
 		self._name = name
-		self._state = state
 		self._status = status
 		self._subjobs = subjobs
 		self._embed_graphs = embed_graphs
 		self._database = qb
 		self._data = None
 		self._results = None
-		self._instruction_map = {}
 
 		self._database.setsupervisor(self._supervisor)
 	# --------------------------------------------------------------------------
-	def _get_agenda_stat(self, item):
-		data = DataFrame(item)
-		rounding = 2
-		epoch = 946800000
-		
-		# Coerce bad timestamps
-		data['timestart'] = data['timestart'].apply(lambda x: numpy.nan if x < epoch else x)
-
-		# Add framespan and failedframes
-		mask = data[data['status'] == 'running']
-		data.loc[mask.index, 'lastupdate'] = time.time()
-		data['span'] = (data['lastupdate'] - data['timestart']) / 3600
-
-		output = {}
-		mask = data[data['span'] > (0.5 / 60)] # Drop frames under 30 sec
-		output['frame_max']              = round_to(mask['span'].max(), rounding)
-		output['frame_min']              = round_to(mask['span'].min(), rounding) 
-		output['frame_sum']              = round_to(mask['span'].sum(), rounding)
-		output['frame_retry']            = round_to(mask['retry'].max(), rounding)
-		output['frame_total']            = len(data)
-		output['frame_complete_total']   = len(mask[mask['status'] == 'complete'])
-		frmcomp = output['frame_complete_total'] / output['frame_total']
-		output['frame_complete_percent'] = round_to(frmcomp, 3)
-
-		c = len(mask)
-		s = output['frame_sum'] - (output['frame_min'] * c)
-		f = (output['frame_max'] - output['frame_min']) * c
-		d = numpy.nan
-		try:
-			d = s/f
-			d = round_to(d, 3)
-		except ZeroDivisionError:
-			pass
-		output['frame_distribution'] = d
-
-		mask = data[data['status'] == 'failed']
-		output['failed_frame_names'] = ', '.join(mask['name'].tolist())
-		output['failed_frame_hosts'] = ', '.join(mask['host'].tolist())
-		output['host_total']         = data['host'].nunique()
-		output['pid_total']          = data['pid'].nunique()
-		output['status_total']       = data['status'].nunique()
-		output['subid_total']        = data['subid'].nunique()
-		output['name_total']         = data['name'].nunique()
-		
-		output['count_max']          = data['count'].max()
-		output['id_max']             = data['id'].max()
-		output['retry_max']          = data['retry'].max()
-		output['retrydelay_max']     = data['retrydelay'].max()
-		output['timecomplete_max']   = data['timecomplete'].max()
-		output['timecumulative_max'] = data['timecumulative'].max()
-
-		output['timestart_min']      = data['timestart'].min()
-
-		if self._embed_graphs:
-			fg = data[['span']].copy()
-			fg.columns = ['all']
-			
-			fg['failed'] = fg['all']
-			mask = data[data['status'] != 'failed']
-			fg.loc[mask.index, 'failed'] = numpy.nan
-
-			fg['complete'] = fg['all']
-			mask = data[data['status'] != 'complete']
-			fg.loc[mask.index, 'complete'] = numpy.nan
-
-			fg['running'] = fg['all']
-			mask = data[data['status'] != 'running']
-			fg.loc[mask.index, 'running'] = numpy.nan
-
-			fg = fg.sort(columns=['all'], ascending=False)
-			fg.dropna(how='all', inplace=True)
-			fg.reset_index(drop=True, inplace=True)
-
-			fg2 = fg.copy()[['all']]
-			fg2.columns = [data['pid'].head(1).tolist(), ['all']]
-			output['frame_graph'] = fg2.to_dict()
-
-			fg.columns = [data['pid'].head(1).tolist() * 4, 
-							['all', 'failed', 'complete', 'running']]
-			output['frame_graph_detailed'] = fg.to_dict()
-
-		return output
 
 	def _get_agenda_stats(self, data):
+		data['agenda_'] = data['agenda']
 		sdata = SparseDataFrame(data)
-		sdata.cross_map('id', 'agenda', lambda x: True, self._get_agenda_stat, inplace=True)
-		data = sdata.flatten(prefix=True)
-		return data
+		sdata.merge_columns(['agenda', 'id'], 
+			func=lambda x: get_agenda_stats(x[x.index[0]], x[x.index[1]], self._embed_graphs),
+			new_column='agenda', inplace=True)
+		return sdata.data
 
 	def _get_callbacks(self, data):
-		mask = data['callbacks']
-		data['dependency'] = mask
-		mask = callbacks.applymap(lambda x: pandas.notnull(x))
-		mask = callbacks[mask].dropna()
-		data.loc[mask.index, 'dependency'] = mask.apply( lambda x: x[0]['triggers'])		
-		data.loc[mask.index, 'dependency'] = mask.apply( lambda x: get_dependency(x))
+		sdata = SparseDataFrame(data)
+		data = sdata.merge_columns(['pgrp', 'callbacks'], 
+			func=lambda x: [ x[x.index[0]], x[x.index[1]] ], new_column='dependency')
+
+		def _get_dependency(item):
+			if item:
+				pgrp = item[0]
+				jobs = self._database.jobinfo(filters={'pgrp':pgrp})
+				labels = {}
+				for job in jobs:
+					labels[job['label']] = job['id']
+
+				output = []
+
+				deps = json.loads(item[1])
+				deps = deps['triggers'].split('and')
+				if deps[0] not in [u'', '', None]:
+					deps = [x.split('-')[2].strip(' ') for x in deps]
+					for dep in deps:
+						new_item = dep
+						if dep in labels:
+							new_item = labels[dep]
+						output.append(new_item)
+				else:
+					output.append(pgrp)
+				return output
+
+			return numpy.nan
+			
+		data['dependency'] = data['dependency'].apply(lambda x: _get_dependency(x))
 		return data
+
+	def _get_stdout_data(self, item):
+		temp = []
+		if len(item) > 1:
+			temp = self._database.stdout(item[0], *item[1:])
+		else:
+			temp = self._database.stdout(item[0])
+
+		text = ''
+		for t in temp:
+			text += t['data']
+		
+		if text:
+			return text
+		else:
+			return numpy.nan
+
+	def _get_stdout_stats(self, item):
+		output = {'progress': numpy.nan, 'warning': numpy.nan, 'error': numpy.nan}
+		if item.__class__.__name__ == 'str':
+			output = {}
+			rbs = RenderLogBackingStore(text=item)
+			rbs.update()
+			data = rbs.data.data
+			output['progress'] = ' '.join(data['progress'].unique().tolist())
+			output['warning'] = ' '.join(data['warning'].unique().tolist())
+			output['error'] = ' '.join(data['error'].unique().tolist())
+			# output['progress'] = data['progress']
+			# output['warning'] = data['warning']
+			# output['error'] = data['error']
+		return output
 	# --------------------------------------------------------------------------
 
 	def _job_update(self):
@@ -202,7 +173,7 @@ class QubeBackingStore(BackingStore):
 
 		sdata = SparseDataFrame(data)
 		sdata.flatten(inplace=True)
-		data= sdata.data
+		data = sdata.data
 		data = data.applymap(lambda x: str_to_nan(x))
 
 		# Add custom fields
@@ -211,29 +182,46 @@ class QubeBackingStore(BackingStore):
 		data['ram'] = data['reservations'].apply(lambda x: get_ram(x))
 		data['ram+'] = data['reservations'].apply(lambda x: get_plus_ram(x))
 		data['failed_frame_total'] = data['todotally_failed']
-		data['dependency'] = data['pgrp']
-		mask = data['dependency'] - data['id']
-		data['dependency'][mask == 0] = None
 		data['percent_done'] = data['todotally_complete'] / data['todo']
 		data['percent_done'] = data['percent_done'].apply(lambda x: round_to(x, 3) * 100)
-
 		data['percent_utilized'] = data['todotally_running'] / (data['todo'] - data['todotally_complete'])
 		data['percent_utilized'] = data['percent_utilized'].apply(lambda x: round_to(x, 3) * 100)
+		
+		data['jobtype'] = data['name'].apply(lambda x: get_jobtype(x))
+
+		# mask = data['status'].apply(lambda x: x in ['failed', 'running'])
+		data['stdout_subids'] = numpy.nan
+		# data['stdout_subids'][mask] = data['id'].apply(lambda x: str(x))
+
+		data['stdout_subids'] = data['id'].apply(lambda x: str(x))
 
 		if self._agenda:
 			data = self._get_agenda_stats(data)
 
 		if self._callbacks:
-			data = self._get_callbacks(self, data)
-
-		data.fillna('', inplace=True)
+			data = self._get_callbacks(data)	
 
 		data.reset_index(drop=True, inplace=True)
 		data['probe_id'] = data.index
-		data.columns = TUNER.tune(data.columns, 'qube_backingstore')
-		data = SparseDataFrame(data)
+		sdata = SparseDataFrame(data)
+		sdata.flatten(inplace=True)
 
-		self._data = data
+		mask = sdata.data['agenda_subids'].dropna()
+		sdata.data.loc[mask.index, 'stdout_subids'] = sdata.data['id'].apply(lambda x: str(x))
+
+		sdata.merge_columns(['stdout_subids', 'agenda_subids'], 
+			func=lambda x: create_complete_subids( x[x.index[0]], x[x.index[1]] ),
+			new_column='stdout_subids', iterables=True, inplace=True)
+
+		sdata.data['stdout'] = sdata.data['stdout_subids'].apply(lambda x: self._get_stdout_data(x))
+		mask = sdata.data['stdout'].dropna()
+		sdata.data['stdout'] = sdata.data['stdout'].apply(lambda x: self._get_stdout_stats(x))
+		sdata.flatten(inplace=True)
+
+		sdata.data.fillna('', inplace=True)	
+
+		sdata.data.columns = TUNER.tune(sdata.data.columns, 'qube_backingstore')
+		self._data = sdata
 
 	@property
 	def _job_data(self):
@@ -246,31 +234,6 @@ class QubeBackingStore(BackingStore):
 										callbacks=self._callbacks)
 		jobs = json.dumps([dict(job) for job in jobs])
 		return jobs
-	# --------------------------------------------------------------------------
-
-	def _append_custom_host_subjob_fields(self, data):
-		mask = data[data['state'] == 'active']
-		mask = mask[mask['slots_total'] == 0]
-		data.loc[mask.index, 'state'] = 'locked'
-		return data
-
-	def _group_host_data(self, data):
-		cols = ['count', 'data', 'host', 'id', 'lastupdate', 'pid', 'result',
-				'retry', 'status', 'timecomplete', 'timestart']
-		cols = ['subjobs_' + x for x in cols]
-		cols_ = cols
-		cols_.insert(0, 'name')
-
-		temp = data[cols_]
-		temp = temp.groupby('name', as_index=False).agg(lambda x: x.nunique())
-		data = data.groupby('name', as_index=False).first()
-		data[cols] = temp[cols]
-
-		mask = data[data['state'] == 'active']
-		mask = mask[mask['subjobs_pid'] == 0]
-		data.loc[mask.index, 'state'] = 'idle'
-
-		return data
 	# --------------------------------------------------------------------------
 
 	def _host_update(self):
@@ -287,18 +250,24 @@ class QubeBackingStore(BackingStore):
 		data = data.applymap(lambda x: numpy.nan if x is {} else x)
 		data['slots'] = data['resources'].apply(lambda x: get_slots(x))
 
+		data['subjobs'] = data['subjobs'].apply(lambda x: x[0])
+
 		sdata = SparseDataFrame(data)
 		sdata.flatten(inplace=True)
 		data = sdata.data
 
-		data['slots_percent'] = data['slots_used'] / data['slots_total']
-		data['slots_percent'] = data['slot_percent'].apply(lambda x: round_to(x, 3) * 100)
+		slot_pct = data['slots_used'] / data['slots_total']
+		slot_pct = slot_pct.apply(lambda x: 0 if x == float('inf') else x)
+		data['slots_percent'] = slot_pct.apply(lambda x: round_to(x, 3) * 100.0)
 
-		if self._subjobs:
-			data = self._append_custom_host_subjob_fields(data)
-
-		if self._group:
-			data = self._group_host_data(data)
+		mask = data[data['state'] == 'active']
+		
+		lmask = mask[mask['slots_total'] == 0]
+		data.loc[lmask.index, 'state'] = 'locked'
+		
+		imask = mask['subjobs_pid'].apply(lambda x: x in [0, None])
+		imask  = mask[imask].dropna()
+		data.loc[imask.index, 'state'] = 'idle'
 
 		data.reset_index(drop=True, inplace=True)
 		data['probe_id'] = data.index
@@ -309,11 +278,11 @@ class QubeBackingStore(BackingStore):
 
 	@property
 	def _host_data(self):
-		hosts = self._database.hostinfo( fields=self._fields,
+		hosts = self._database.hostinfo(fields=self._fields,
 										filters=self._filters,
 										name=self._name,
-										state=self._state,
-										subjobs=self._subjobs)
+										state=['active', 'down'],
+										subjobs=True)
 		hosts = json.dumps([dict(host) for host in hosts])
 		return hosts
 

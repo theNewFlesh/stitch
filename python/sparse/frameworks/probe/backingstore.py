@@ -81,7 +81,7 @@ class BackingStore(Base):
 		sdata.flatten(inplace=True)
 		sdata.coerce_nulls(inplace=True)
 		data = sdata.data
-		data.dropna(how='all', axis=1, inplace=True)
+		# data.dropna(how='all', axis=1, inplace=True)
 		data['probe_id'] = data.index
 		sdata.data = data
 		self._data = sdata

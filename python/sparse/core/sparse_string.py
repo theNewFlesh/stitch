@@ -57,6 +57,58 @@ class SparseString(Base):
 		self._regex_index = {}
 		self.set_parse_index(parse_index)
 
+		all_chars            = printables + ' '
+		regex                = Suppress('"') + Word(all_chars, excludeChars=',")') + Suppress('"')
+		word                 = Word(printables, excludeChars=',")')
+		float_               = Word(nums + '.' + nums).setParseAction(lambda s,l,t: float(t[0]))
+		integer              = Word(nums).setParseAction(lambda s,l,t: int(t[0]))
+		number               = Or([float_, integer])
+		bool_ 				 = Or('True', 'False')
+		none 				 = Word('None').setParseAction(lambda s,l,t: None)
+		
+		left_square_bracket  = '['
+		right_square_bracket = ']'
+		null_list 			 = left_square_bracket + right_square_bracket
+		__list_item          = Or([bool_, number, word, regex, none, null_list])
+		__list  			 = Suppress('[') + delimitedList(__list_item, delim=',') + Suppress(']')
+		_list_item           = Or([bool_, number, word, regex, none, null_list, __list])
+		_list                = delimitedList(OneOrMore(_list_item), delim=',')	
+
+		left_curly_bracket	 = '{'
+		right_curly_bracket  = '}'
+		null_dict 			 = left_curly_bracket + right_curly_bracket
+		__dict_value    	 = Or([bool_, number, word, regex, none, null_dict])
+		__dict_item          = Group(word + Suppress(':') + __dict_value).setParseAction(lambda s,l,t: {'key': t[0], 'value': t[1]})
+		__dict  			 = Suppress(left_curly_bracket) + delimitedList(__dict_item, delim=',') + Suppress(right_curly_bracket)
+		_dict_item           = Or([bool_, number, word, regex, none, '{}', __dict])
+		_dict                = Suppress('{') + delimitedList(OneOrMore(_dict_item), delim=',') + Suppress('}')
+
+
+
+
+		fields               = Group(Suppress('(') + items + Suppress(')')).setResultsName('fields')
+		values               = Group(Suppress('(') + items + Suppress(')')).setResultsName('values')
+		is_                  = oneOf(['is',                                '='], caseless=True).setParseAction(lambda s,l,t: '==')
+		isnot                = oneOf(['is not',                 'isnot',  '!='], caseless=True).setParseAction(lambda s,l,t: '!=')
+		contains             = oneOf(['contains',                'cont',   '~'], caseless=True).setParseAction(lambda s,l,t: 're.IGNORECASE')
+		does_not_contain     = oneOf(['does not contain',     'notcont',  '!~'], caseless=True).setParseAction(lambda s,l,t: 'nre.IGNORECASE')
+		cs_contains          = oneOf(['cscontains',            'cscont',  '~~'], caseless=True).setParseAction(lambda s,l,t: 're')
+		cs_does_not_contain  = oneOf(['does not cscontain', 'csnotcont', '!~~'], caseless=True).setParseAction(lambda s,l,t: 'nre')
+		greater_than         = oneOf(['greater than',              'gt',   '>'], caseless=True).setParseAction(lambda s,l,t: '>')
+		greater_than_equal   = oneOf(['greater than equal to',    'gte',  '>='], caseless=True).setParseAction(lambda s,l,t: '>=')
+		less_than            = oneOf(['less than',                 'ls',   '<'], caseless=True).setParseAction(lambda s,l,t: '<')
+		less_than_equal      = oneOf(['less than equal to',       'lte',  '<='], caseless=True).setParseAction(lambda s,l,t: '<=')
+		operator             = isnot | is_ | cs_contains | cs_does_not_contain | contains | does_not_contain | greater_than_equal | greater_than | less_than_equal | less_than
+		operator             = operator.setResultsName('operator')
+		and_                 = Keyword('&')
+		or_                  = Keyword('|')
+		query                = Group(fields + operator + values)
+		compound_query       = Group(delimitedList(query, delim=and_))
+		fragment             = OneOrMore(compound_query)
+		self._line           = delimitedList(fragment, delim=or_)		
+
+		self._last_search = None
+
 	@property
 	def parse_index(self):
 		return self._parse_index
@@ -120,6 +172,9 @@ class SparseString(Base):
 						warnings.warn(message, Warning)
 					else:
 						pass
+
+	def parse_command(self, command):
+		pass
 # ------------------------------------------------------------------------------
 
 def main():

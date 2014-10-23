@@ -46,15 +46,16 @@ TUNER = Tuner()
 import pandas
 pandas.options.display.width = TUNER['probe_cli']['line_width']
 pandas.options.display.max_rows = TUNER['probe_cli']['max_rows']
+pandas.options.display.max_colwidth = TUNER['probe_cli']['max_colwidth']
 pandas.options.display.expand_frame_repr = False
 # ------------------------------------------------------------------------------
 
 class ProbeCLI(Cmd):
-	def __init__(self, backingstore, display_fields=[], debug_mode=False, 
-				 prompt='SpQL>', custom_search_index={}):
+	def __init__(self, backingstore, updates='automatic', display_fields=[],
+				 debug_mode=False, prompt='SpQL>'):
 		Cmd.__init__(self)
 		self.prompt = prompt
-		self._api = ProbeAPI(backingstore)
+		self._api = ProbeAPI(backingstore, updates=updates)
 		self._results = None
 		self._display_fields = display_fields
 		self._debug_mode = debug_mode

@@ -1,0 +1,217 @@
+Traceback (most recent call last):
+  File "probe", line 99, in <module>
+    main()
+  File "probe", line 96, in main
+    run()
+  File "probe", line 93, in run
+    cli.cmdloop()
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/cmd.py", line 142, in cmdloop
+    stop = self.onecmd(line)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/cmd.py", line 215, in onecmd
+    return self.default(line)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/views/probe_cli.py", line 69, in default
+    self._api.spql_search(arg, display_fields=self._display_fields)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 130, in spql_search
+    results.read_json(self.data)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 72, in data
+    return self.database['data']
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 67, in database
+    self.update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 87, in update
+    self._database = self._backingstore.get_database()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/backingstore.py", line 69, in get_database
+    self.update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/qube_backingstore.py", line 256, in update
+    self._job_update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/qube_backingstore.py", line 158, in _job_update
+    data['jobtype'] = data['name'].apply(lambda x: get_jobtype(x))
+  File "/Library/Python/2.7/site-packages/pandas/core/series.py", line 1998, in apply
+    mapped = lib.map_infer(values, f, convert=convert_dtype)
+  File "inference.pyx", line 1016, in pandas.lib.map_infer (pandas/lib.c:51482)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/qube_backingstore.py", line 158, in <lambda>
+    data['jobtype'] = data['name'].apply(lambda x: get_jobtype(x))
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/utilities/qube_utils.py", line 142, in get_jobtype flags=RE.IGNORECASE)
+TypeError: Cannot convert type str to float
+
+vrayProgressBegin "VRay rendering...";
+// Warning: Bitmap file "/Users/alexbraun/Documents/Project Folders/wastedTime/maya//textures/skies/sky.plate.006.tga" failed to load: [LoadImageFile] Failed to open file: no such file // 
+import sys; sys.path.append('/Users/alexbraun/Documents/Python/misc/'); from postRender import *; renderNotify('Maya')
+updateEditorFeedbackRenderLayer RenderLayerTab beauty;
+renderWindowRenderCamera render renderView renderCam;
+import maya.app.stereo.stereoCameraRig as stereoCameraRig
+stereoCameraRig.isRigRoot('renderCam')
+
+updateRendererUI;
+file -f -options "v=0"  -typ "mayaAscii" -o "/Users/alexbraun/Documents/Project Folders/Pallor Mortis/3D/maya/shots/scenes/ihd/007-008/ihd_007-008.RNDR.v007.ma";addRecentFile("/Users/alexbraun/Documents/Project Folders/Pallor Mortis/3D/maya/shots/scenes/ihd/007-008/ihd_007-008.RNDR.v007.ma", "mayaAscii");
+# mental ray for Maya 2011 
+// Mental ray for Maya: using startup file /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/maya.rayrc.
+# mental ray for Maya: setup
+# mental ray for Maya: initialize
+# mental ray for Maya: using 1 license
+# mental ray for Maya: register extensions
+// mental ray Node Factory: loaded
+# mental ray for Maya: successfully registered
+# mental ray for Maya: loading startup file: /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/maya.rayrc
+// parsing /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/include/AdskShaderSDKWrappers.mi
+// generating Maya nodes...
+// parsing /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/include/architectural.mi
+// loading /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/lib/architectural.dylib
+// generating Maya nodes...
+// parsing /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/include/base.mi
+// loading /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/lib/base.dylib
+// generating Maya nodes...
+// parsing /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/include/contour.mi
+// loading /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/lib/contour.dylib
+// generating Maya nodes...
+// parsing /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/include/paint.mi
+// loading /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/lib/paint.dylib
+// generating Maya nodes...
+// parsing /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/include/physics.mi
+// loading /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/lib/physics.dylib
+// generating Maya nodes...
+// parsing /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/include/production.mi
+// loading /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/lib/production.dylib
+// generating Maya nodes...
+// parsing /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/include/subsurface.mi
+// loading /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/lib/subsurface.dylib
+// generating Maya nodes...
+// parsing /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/include/surfaceSampler.mi
+// loading /Applications/Autodesk/maya2011/Maya.app/Contents/mentalray/lib/surfaceSampler.dylib
+// generating Maya nodes...
+# Error: file: /Users/alexbraun/Documents/Project Folders/Pallor Mortis/3D/maya/shots/scenes/ihd/007-008/ihd_007-008.RNDR.v007.ma line 9: RuntimeError: file <maya console> line 1: Plug-in, "anzovinRigNodes.bundle", was not found on MAYA_PLUG_IN_PATH. # 
+# Error: file: /Users/alexbraun/Documents/Project Folders/Pallor Mortis/3D/maya/shots/scenes/ihd/007-008/ihd_007-008.RNDR.v007.ma line 10: RuntimeError: file <maya console> line 1: Plug-in, "maxwell.bundle", was not found on MAYA_PLUG_IN_PATH. # 
+// File read in 95 seconds.
+// Error: Minimum grid size is 1.0 // 
+setAttr multi.precompTemplate -type "string" "";
+setAttr alphaKey.precompTemplate -type "string" "";
+setAttr line.precompTemplate -type "string" "";
+updateRendererUI;
+currentTime 268 ;
+currentTime 335 ;
+select -r lights_spotLight3 ;
+select -r eggCamera lights_spotLight1 lights_spotLight3 ;
+select -d lights_spotLight1 lights_spotLight3 ;
+select -cl  ;
+// Error: Unable to load the image file, 'C:/Program Files/Autodesk/Maya2011/bin/plug-ins/faceMachine/gray.png', for soldierLres_FM_faceMapCamImagePlane // 
+currentTime 236 ;
+currentTime 197 ;
+currentTime 263 ;
+updateRendererUI;
+// Error: Plug-in, "Mayatomr", cannot be unloaded because it defines a MPxData derived type that is still in use. // 
+// Warning: Render view: Selected region is too small // 
+// Warning: defaultRenderLayer has no renderable passes, the layer passes can be modified in the Render Settings window. // 
+// Warning: (Mayatomr.Shader) : psdFileTex1: no texture file referenced // 
+// Warning: Render view: Selected region is too small // 
+setAttr "defaultRenderGlobals.endFrame" 100;
+// Warning: defaultRenderLayer has no renderable passes, the layer passes can be modified in the Render Settings window. // 
+// Warning: (Mayatomr.Shader) : psdFileTex1: no texture file referenced // 
+optionVar -q "scriptEditorKeywordsFile";
+// 0 // 
+createModelPanelMenu modelPanel1;
+createModelPanelMenu modelPanel2;
+createModelPanelMenu modelPanel3;
+
+Traceback (most recent call last):
+  File "probe", line 99, in <module>
+    main()
+  File "probe", line 96, in main
+    run()
+  File "probe", line 93, in run
+    cli.cmdloop()
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/cmd.py", line 142, in cmdloop
+    stop = self.onecmd(line)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/cmd.py", line 215, in onecmd
+    return self.default(line)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/views/probe_cli.py", line 69, in default
+    self._api.spql_search(arg, display_fields=self._display_fields)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 130, in spql_search
+    results.read_json(self.data)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 72, in data
+    return self.database['data']
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 67, in database
+    self.update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 87, in update
+    self._database = self._backingstore.get_database()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/backingstore.py", line 69, in get_database
+    self.update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/qube_backingstore.py", line 256, in update
+    self._job_update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/qube_backingstore.py", line 158, in _job_update
+    data['jobtype'] = data['name'].apply(lambda x: get_jobtype(x))
+  File "/Library/Python/2.7/site-packages/pandas/core/series.py", line 1998, in apply
+    mapped = lib.map_infer(values, f, convert=convert_dtype)
+  File "inference.pyx", line 1016, in pandas.lib.map_infer (pandas/lib.c:51482)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/qube_backingstore.py", line 158, in <lambda>
+    data['jobtype'] = data['name'].apply(lambda x: get_jobtype(x))
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/utilities/qube_utils.py", line 142, in get_jobtype
+    flags=RE.IGNORECASE)
+NameError: global name 'RE' is not defined
+
+createModelPanelMenu modelPanel4;
+buildPanelPopupMenu hyperShadePanel1;
+buildPanelPopupMenu renderView;
+buildPanelPopupMenu scriptEditorPanel1;
+// Warning: Render view: Selected region is too small // 
+renderWindowRender redoPreviousRender renderView;
+import maya.app.stereo.stereoCameraRig as stereoCameraRig
+stereoCameraRig.isRigRoot('eggCamera')
+# Result: False # 
+editRenderLayerGlobals -currentRenderLayer "defaultRenderLayer";
+about -p;
+// Result: Maya 2011 // 
+mentalrayUI "";
+workspace -q -rte images;
+file -q -exn;
+// Result: /Users/alexbraun/Documents/Project Folders/Pallor Mortis/3D/maya/shots/scenes/ihd/007-008/ihd_007-008.RNDR.v007.ma // 
+// Warning: defaultRenderLayer has no renderable passes, the layer passes can be modified in the Render Settings window. // 
+import maya.app.mentalray.textureFileConversionUtils
+mrProgress -e -bp -pd 0 -l "analyzing";
+miPmCreate;
+miPmSetCancelMode 0;
+miPmSetMessage "analyzing";
+miPmSetPercent 0;
+miPmSetVisible 1;
+mrProgress -e -ep;
+miPmClose;
+mrProgress -e -bp -pd 0 -l "translating";
+miPmCreate;
+miPmSetCancelMode 0;
+miPmSetMessage "translating";
+miPmSetPercent 0;
+miPmSetVisible 1;
+format -stringArg "24" "number of render thread(s): ^1s";
+// Result: number of render thread(s): 24 // 
+mrProgress -e -l "translating frame 263" -pd 0;
+miPmSetMessage "translating frame 263";
+untitledFileName;
+// Result: untitled // 
+untitledFileName;
+// Result: untitled // 
+untitledFileName;
+// Result: untitled // 
+doPsdToIffConversion("psdFileTex1", 0);
+// Warning: (Mayatomr.Shader) : psdFileTex1: no texture file referenced // 
+doPsdToIffConversion("psdFileTex1", 0);
+mrProgress -e -ep;
+miPmClose;
+mrProgress -e -bp -pd 0 -l "mental ray";
+miPmCreate;
+miPmSetCancelMode 0;
+miPmSetMessage "mental ray";
+miPmSetPercent 0;
+miPmSetVisible 1;
+updateMayaSoftwareTargetFilePreview;
+mrProgress -e -l "mental ray rendering image" -pd 0;
+miPmSetMessage "mental ray rendering image";
+mrProgress -e -l "mental ray rendering image" -pd 5;
+miPmSetMessage "mental ray rendering image";
+miPmSetPercent 5;
+mrProgress -e -l "mental ray rendering image" -pd 10;
+miPmSetMessage "mental ray rendering image";
+miPmSetPercent 10;
+mrProgress -e -ep;
+miPmClose;
+untitledFileName;
+// Result: untitled // 
+mrProgress -e -ep;
+updateEditorFeedbackRenderLayer RenderLayerTab defaultRenderLayer;

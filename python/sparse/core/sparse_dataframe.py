@@ -70,9 +70,9 @@ class SparseDataFrame(Base):
 
 	Example:
 		>>> data = [[ 'joe',  12, 'mechanic'],
-        >>> ['bill',  22,  'soldier'],
-        >>> [ 'sue',  65,    'pilot'],
-        >>> ['jane',  43,  'teacher']]
+		>>> ['bill',  22,  'soldier'],
+		>>> [ 'sue',  65,    'pilot'],
+		>>> ['jane',  43,  'teacher']]
 		
 		>>> columns = ['name', 'age', 'profession']
 		
@@ -135,15 +135,15 @@ class SparseDataFrame(Base):
 			3  jane   43    teacher
 
 			>>>	print sdf.data.applymap(type)
-				       name                   age    profession
+					   name                   age    profession
 			0  <type 'str'>  <type 'numpy.int64'>  <type 'str'>
 			1  <type 'str'>  <type 'numpy.int64'>  <type 'str'>
 			2  <type 'str'>  <type 'numpy.int64'>  <type 'str'>
 			3  <type 'str'>  <type 'numpy.int64'>  <type 'str'>
 
-		    >>> sdf.to_type(str, inplace=True)
+			>>> sdf.to_type(str, inplace=True)
 			>>> print sdf.data.applymap(type)
-			           name           age    profession
+					   name           age    profession
 			0  <type 'str'>  <type 'str'>  <type 'str'>
 			1  <type 'str'>  <type 'str'>  <type 'str'>
 			2  <type 'str'>  <type 'str'>  <type 'str'>
@@ -245,7 +245,7 @@ class SparseDataFrame(Base):
 			3        43    teacher
 
 			>>> print sdf.coerce_nulls()
-			   	   name  age profession
+				   name  age profession
 				0   joe   12   mechanic
 				1  bill  NaN        NaN
 				2   sue   65        NaN
@@ -462,7 +462,7 @@ class SparseDataFrame(Base):
 
 		Example:
 			>>> print sdf.data
-			                   foo             bar
+							   foo             bar
 			0  {u'a': 1, u'b': 10}     some string
 			1  {u'a': 2, u'b': 20}  another string
 			2  {u'a': 3, u'b': 30}            blah
@@ -544,7 +544,7 @@ class SparseDataFrame(Base):
 		This method is usefull for generating tables that can be easily graphed
 
 		Args:
-			column (column name): column by which to split data into chunks
+			column (column name): Column by which to split data into chunks
 			inplace (bool, optional): Apply changes in place. Default: False
 
 		Returns: 
@@ -673,10 +673,10 @@ class SparseDataFrame(Base):
 		the results of a source predicate applied to a source column
 
 		Args:
-			source_column (column name): column by which to derive a mask
-			target_column (column name): column to be changed
-			source_predicate (lambda or func): rule by which to create a mask, (ie lambda x: x == 'foo').
-			target_predicate (lambda or func): rule by which to change target column, (ie lambda x: 'bar')
+			source_column (column name): Column by which to derive a mask
+			target_column (column name): Column to be changed
+			source_predicate (lambda or func): Rule by which to create a mask, (ie lambda x: x == 'foo').
+			target_predicate (lambda or func): Rule by which to change target column, (ie lambda x: 'bar')
 			inplace (bool, optional): Apply changes in place. Default: False
 
 		Returns: 
@@ -700,11 +700,11 @@ class SparseDataFrame(Base):
 		the results of a source predicate applied to a source column
 
 		Args:
-			group_column (column name): column by which to group data
-			value_column (str): new column for storing concatenated results
-			source_column (column name): column by which to derive a mask
-			target_column (column name): column to be changed
-			predicate (lambda or func): rule by which to create a mask, (ie lambda x: x == 'foo')
+			group_column (column name): Column by which to group data
+			value_column (str): New column for storing concatenated results
+			source_column (column name): Column by which to derive a mask
+			target_column (column name): Column to be changed
+			predicate (lambda or func): Rule by which to create a mask, (ie lambda x: x == 'foo')
 			concat (bool, optional): Concatenate results into comma separated string. Default: True
 			inplace (bool, optional): Apply changes in place. Default: False
 
@@ -728,36 +728,117 @@ class SparseDataFrame(Base):
 			self.data = data
 		return data
 
+	def merge_columns(self, columns, func='default', new_column='default', 
+					iterables=False, drop=False, inplace=False):
+		'''Merge columns according to supplied or default function
+
+		Args:
+			columns (list): Columns to be merged
+			func (func optional): Func used to merge columns. Default: default
+			new_column (str optional): Name of merged column. Default: merge_a_b...
+			iterables (bool optional): True if any column contains an iterable. Default: False
+			drop (bool optional): Drop columns to be merged. Default: False
+			inplace (bool, optional): Apply changes in place. Default: False
+
+		Example:
+			>>> print sdf.data		
+			  first_name last_name  age    job_1    job_2
+			0       john   jenkins   23    pilot     None
+			1       jane     smith   46  surgeon     None
+			2      harry    harmon   27  teacher  chemist
+			3        sue     marie   78    nurse    baker
+
+			>>> print sdf.merge_columns(['first_name', 'last_name'])
+			  first_name last_name  age    job_1    job_2 merged_first_name_last_name
+			0       john   jenkins   23    pilot     None                johnjenkins
+			1       jane     smith   46  surgeon     None                  janesmith
+			2      harry    harmon   27  teacher  chemist                harryharmon
+			3        sue     marie   78    nurse    baker                   suemarie
+
+			>>> print sdf.merge_columns(['job_1', 'job_2'], 
+				func=lambda x: [ x[x.index[0]], x[x.index[1]] ],
+				new_column='jobs')
+
+			  first_name last_name  age    job_1    job_2                jobs
+			0       john   jenkins   23    pilot     None       [pilot, None]
+			1       jane     smith   46  surgeon     None     [surgeon, None]
+			2      harry    harmon   27  teacher  chemist  [teacher, chemist]
+			3        sue     marie   78    nurse    baker      [nurse, baker]
+
+			>>> print sdf.merge_columns(['job_1', 'job_2'], 
+				func=lambda x: {'1st': x[x.index[0]], '2nd': x[x.index[1]] },
+				new_column='jobs', drop=True)
+			  first_name last_name  age                                      jobs
+			0       john   jenkins   23          {u'2nd': None, u'1st': u'pilot'}
+			1       jane     smith   46        {u'2nd': None, u'1st': u'surgeon'}
+			2      harry    harmon   27  {u'2nd': u'chemist', u'1st': u'teacher'}
+			3        sue     marie   78      {u'2nd': u'baker', u'1st': u'nurse'}
+
+		Returns: 
+			DataFrame
+		'''
+
+		def _add(item):
+			output = item[item.index[0]]
+			for i, col in enumerate(columns[1:]):
+				output += item[item.index[i + 1]]
+			return output
+		
+		def _append(item):
+			output = []
+			for i, col in enumerate(columns):
+				output.append(item[item.index[i]])
+			return output
+		
+		if func == 'default':
+			func = _add
+			if iterables:
+				func = _append
+		
+		data = self.data.copy()
+		result = data[columns]
+		result = result.T.apply(lambda x: [func(x)]).T
+		result = result.apply(lambda x: x[0])
+		
+		col = 'merged_' + '_'.join([str(x) for x in columns])
+		if new_column != 'default':
+			col = new_column
+		data[col] = result
+
+		if drop:
+			for col in columns:
+				del data[col]
+
+		if inplace:
+			self.data = data
+		return data
+
 	def merge_list_dict_columns(self, source, target, source_key, target_key,
-                            new_column='default', remove_key=False, inplace=False):
+							new_column='default', remove_key=False, drop=False, inplace=False):
 		'''Merge columns containing lists of dicts
 
 		Args:
-			source (source column): source column
-			target (target column): target column
-			source_key (key): source dict key to merge on
-			target_key (key): target dict key to merge on
-			new_column (str, optional): name of new merge column
-			remove_key (bool, optional): remove merge keys from results
+			source (source column): Source column
+			target (target column): Target column
+			source_key (key): Source dict key to merge on
+			target_key (key): Target dict key to merge on
+			new_column (str, optional): Name of new merge column
+			remove_key (bool, optional): Remove merge keys from
+
 			inplace (bool, optional): Apply changes in place. Default: False
 
 		Returns: 
 			DataFrame
 		'''
 
-	    data = self.data
-	    merge_name = 'merge_' + str(source) + '_' + str(target)
-	    source = data[source].apply(lambda x: [x])
-	    target = data[target].apply(lambda x: [x]) 
-	    merge_col = source + target
-	    merge_col = merge_col.apply(lambda x: merge_list_dicts(x[0], x[1], source_key, target_key, remove_key=remove_key))
-	    if new_column != 'default':
-	        merge_name = new_column
-	    data[merge_name] = merge_col
-	    
-	    if inplace:
-	        self.data = data
-	    return data    
+		func = lambda x: merge_list_dicts( x[x.index[0]], x[x.index[1]],
+                                           source_key, target_key, remove_key=remove_key)
+
+		data = self.merge_columns([source, target], func=func, new_column=new_column, drop=drop)
+		
+		if inplace:
+			self.data = data
+		return data    
 	# --------------------------------------------------------------------------
 	
 	def read_nested_dict(self, item, name, inplace=False):
@@ -822,7 +903,7 @@ class SparseDataFrame(Base):
 
 		Example:
 			>>> print sdf.data
-			    name  age
+				name  age
 			0    abe   15
 			1  carla   22
 			2   jack   57

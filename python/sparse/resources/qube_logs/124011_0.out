@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/qube_backingstore.py", line 158, in <lambda>
+    data['jobtype'] = data['name'].apply(lambda x: get_jobtype(x))
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/utilities/qube_utils.py", line 142, in get_jobtype
+    flags=RE.IGNORECASE)
+TypeError: Invalid datatype provided

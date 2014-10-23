@@ -1,0 +1,78 @@
+Traceback (most recent call last):
+  File "probe", line 99, in <module>
+    main()
+  File "probe", line 96, in main
+    run()
+  File "probe", line 93, in run
+    cli.cmdloop()
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/cmd.py", line 142, in cmdloop
+    stop = self.onecmd(line)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/cmd.py", line 215, in onecmd
+    return self.default(line)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/views/probe_cli.py", line 69, in default
+    self._api.spql_search(arg, display_fields=self._display_fields)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 130, in spql_search
+    results.read_json(self.data)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 72, in data
+    return self.database['data']
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 67, in database
+    self.update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 87, in update
+    self._database = self._backingstore.get_database()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/backingstore.py", line 69, in get_database
+    self.update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/qube_backingstore.py", line 256, in update
+    self._job_update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/qube_backingstore.py", line 158, in _job_update
+    data['jobtype'] = data['name'].apply(lambda x: get_jobtype(x))
+  File "/Library/Python/2.7/site-packages/pandas/core/series.py", line 1998, in apply
+    mapped = lib.map_infer(values, f, convert=convert_dtype)
+  File "inference.pyx", line 1016, in pandas.lib.map_infer (pandas/lib.c:51482)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/qube_backingstore.py", line 158, in <lambda>
+    data['jobtype'] = data['name'].apply(lambda x: get_jobtype(x))
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/utilities/qube_utils.py", line 142, in get_jobtype flags=RE.IGNORECASE)
+NameError: global name 'RE' is not defined
+
+Traceback (most recent call last):
+  File "probe", line 104, in <module>
+    main()
+  File "probe", line 101, in main
+    run()
+  File "probe", line 92, in run
+    prompt=prompt)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/views/probe_cli.py", line 57, in __init__
+    self._api = ProbeAPI(backingstore, updates=updates)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 63, in __init__
+    self.update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 88, in update
+    self._database = self._backingstore.get_database()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/backingstore.py", line 69, in get_database
+    self.update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/renderlog_backingstore.py", line 89, in update
+    data = self.source_data
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/renderlog_backingstore.py", line 83, in source_data
+    with open(self._path, 'r') as log:
+IOError: [Errno 2] No such file or directory: '/Users/alexbraun/Desktop/test.log'
+
+ALF_PROGRESS =   0%
+ALF_PROGRESS =   1%
+ALF_PROGRESS =   2%
+ALF_PROGRESS =   3%
+ALF_PROGRESS =   4%
+ALF_PROGRESS =   5%
+ALF_PROGRESS =   6%
+ALF_PROGRESS =   7%
+ALF_PROGRESS =   8%
+ALF_PROGRESS =   9%
+ALF_PROGRESS =  10%
+ALF_PROGRESS =  11%
+ALF_PROGRESS =  12%
+ALF_PROGRESS =  13%
+ALF_PROGRESS =  14%
+ALF_PROGRESS =  15%
+ALF_PROGRESS =  16%
+ALF_PROGRESS =  17%
+ALF_PROGRESS =  18%
+ALF_PROGRESS =  19%
+ALF_PROGRESS =  20%
+ALF_PROGRESS =  21%

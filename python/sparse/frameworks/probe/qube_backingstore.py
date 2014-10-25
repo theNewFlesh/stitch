@@ -95,12 +95,29 @@ class QubeBackingStore(BackingStore):
 	# --------------------------------------------------------------------------
 
 	def _get_agenda_stats(self, data):
-		data['agenda_'] = data['agenda']
 		sdata = SparseDataFrame(data)
 		sdata.merge_columns(['agenda', 'id'], 
 			func=lambda x: get_agenda_stats(x[x.index[0]], x[x.index[1]], self._embed_graphs),
 			new_column='agenda', inplace=True)
-		return sdata.data
+		sdata.flatten(columns=['agenda'], inplace=True)
+		data = sdata.data
+		return data
+
+	def _get_log_data(self, data):
+		mask = data['agenda_subids'].dropna()
+		data.loc[mask.index, 'stdout_subids'] = data['id'].apply(lambda x: str(x))
+
+		sdata = SparseDataFrame(data)
+		sdata.merge_columns(['stdout_subids', 'agenda_subids'], 
+			func=lambda x: create_complete_subids( x[x.index[0]], x[x.index[1]] ),
+			new_column='stdout_subids', iterables=True, inplace=True)
+
+		sdata.data['stdout'] = sdata.data['stdout_subids'].apply(lambda x: self._get_stdout_data(x))
+		mask = sdata.data['stdout'].dropna()
+		sdata.data['stdout'] = sdata.data['stdout'].apply(lambda x: self._get_stdout_stats(x))
+		sdata.flatten(columns=['stdout'], inplace=True)
+		data = sdata.data
+		return data
 
 	def _get_callbacks(self, data):
 		sdata = SparseDataFrame(data)
@@ -114,7 +131,6 @@ class QubeBackingStore(BackingStore):
 				labels = {}
 				for job in jobs:
 					labels[job['label']] = job['id']
-
 				output = []
 
 				deps = json.loads(item[1])
@@ -161,9 +177,6 @@ class QubeBackingStore(BackingStore):
 			output['progress'] = ' '.join(data['progress'].unique().tolist())
 			output['warning'] = ' '.join(data['warning'].unique().tolist())
 			output['error'] = ' '.join(data['error'].unique().tolist())
-			# output['progress'] = data['progress']
-			# output['warning'] = data['warning']
-			# output['error'] = data['error']
 		return output
 	# --------------------------------------------------------------------------
 
@@ -172,7 +185,7 @@ class QubeBackingStore(BackingStore):
 		data = data.applymap(lambda x: {} if x is None else x)
 
 		sdata = SparseDataFrame(data)
-		sdata.flatten(inplace=True)
+		sdata.flatten(columns=['todotally'], inplace=True)
 		data = sdata.data
 		data = data.applymap(lambda x: str_to_nan(x))
 
@@ -197,41 +210,28 @@ class QubeBackingStore(BackingStore):
 
 		if self._agenda:
 			data = self._get_agenda_stats(data)
+			data = self._get_log_data(data)
 
 		if self._callbacks:
 			data = self._get_callbacks(data)	
 
-		data.reset_index(drop=True, inplace=True)
+		data.fillna('', inplace=True)	
 		data['probe_id'] = data.index
+		data.reset_index(drop=True, inplace=True)
+
 		sdata = SparseDataFrame(data)
-		sdata.flatten(inplace=True)
-
-		mask = sdata.data['agenda_subids'].dropna()
-		sdata.data.loc[mask.index, 'stdout_subids'] = sdata.data['id'].apply(lambda x: str(x))
-
-		sdata.merge_columns(['stdout_subids', 'agenda_subids'], 
-			func=lambda x: create_complete_subids( x[x.index[0]], x[x.index[1]] ),
-			new_column='stdout_subids', iterables=True, inplace=True)
-
-		sdata.data['stdout'] = sdata.data['stdout_subids'].apply(lambda x: self._get_stdout_data(x))
-		mask = sdata.data['stdout'].dropna()
-		sdata.data['stdout'] = sdata.data['stdout'].apply(lambda x: self._get_stdout_stats(x))
-		sdata.flatten(inplace=True)
-
-		sdata.data.fillna('', inplace=True)	
-
 		sdata.data.columns = TUNER.tune(sdata.data.columns, 'qube_backingstore')
 		self._data = sdata
 
 	@property
 	def _job_data(self):
-		jobs = self._database.jobinfo(  fields=self._fields,
-										filters=self._filters,
-										id=self._id,
-										status=self._status,
-										agenda=self._agenda,
-										subjobs=self._subjobs,
-										callbacks=self._callbacks)
+		jobs = self._database.jobinfo(fields=self._fields,
+									  filters=self._filters,
+									  id=self._id,
+									  status=self._status,
+									  agenda=self._agenda,
+									  subjobs=self._subjobs,
+								      callbacks=self._callbacks)
 		jobs = json.dumps([dict(job) for job in jobs])
 		return jobs
 	# --------------------------------------------------------------------------
@@ -249,12 +249,10 @@ class QubeBackingStore(BackingStore):
 		data = DataFrame(data)
 		data = data.applymap(lambda x: numpy.nan if x is {} else x)
 		data['slots'] = data['resources'].apply(lambda x: get_slots(x))
-
 		data['subjobs'] = data['subjobs'].apply(lambda x: x[0])
 
 		sdata = SparseDataFrame(data)
-		sdata.flatten(inplace=True)
-		data = sdata.data
+		data = sdata.flatten()
 
 		slot_pct = data['slots_used'] / data['slots_total']
 		slot_pct = slot_pct.apply(lambda x: 0 if x == float('inf') else x)

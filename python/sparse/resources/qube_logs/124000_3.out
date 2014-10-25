@@ -1,0 +1,43 @@
+Traceback (most recent call last):
+  File "probe", line 104, in <module>
+    main()
+  File "probe", line 101, in main
+    run()
+  File "probe", line 92, in run
+    prompt=prompt)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/views/probe_cli.py", line 57, in __init__
+    self._api = ProbeAPI(backingstore, updates=updates)
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 63, in __init__
+    self.update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/probe_api.py", line 88, in update
+    self._database = self._backingstore.get_database()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/backingstore.py", line 69, in get_database
+    self.update()
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/renderlog_backingstore.py", line 89, in update
+    data = self.source_data
+  File "/Users/alexbraun/google_drive/code/projects/sparse/python/sparse/frameworks/probe/renderlog_backingstore.py", line 83, in source_data
+    with open(self._path, 'r') as log:
+IOError: [Errno 2] No such file or directory: '/Users/alexbraun/Desktop/test.log'
+
+ALF_PROGRESS =   0%
+ALF_PROGRESS =   1%
+ALF_PROGRESS =   2%
+ALF_PROGRESS =   3%
+ALF_PROGRESS =   4%
+ALF_PROGRESS =   5%
+ALF_PROGRESS =   6%
+ALF_PROGRESS =   7%
+ALF_PROGRESS =   8%
+ALF_PROGRESS =   9%
+ALF_PROGRESS =  10%
+ALF_PROGRESS =  11%
+ALF_PROGRESS =  12%
+ALF_PROGRESS =  13%
+ALF_PROGRESS =  14%
+ALF_PROGRESS =  15%
+ALF_PROGRESS =  16%
+ALF_PROGRESS =  17%
+ALF_PROGRESS =  18%
+ALF_PROGRESS =  19%
+ALF_PROGRESS =  20%
+ALF_PROGRESS =  21%

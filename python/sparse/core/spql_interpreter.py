@@ -91,7 +91,7 @@ class SpQLInterpreter(SpQLParser):
 		return dataframe
 
 	def dataframe_query(self, dataframe, field_operator='=='):
-		dataframe['__probe_id'] = dataframe.index
+		dataframe['__sparse_id'] = dataframe.index
 		results = []
 		for query in self._last_search:
 			result = dataframe
@@ -101,16 +101,11 @@ class SpQLInterpreter(SpQLParser):
 			
 		if len(results) > 1:
 			results = pandas.concat(results)
-			mask = results['__probe_id'].duplicated()
+			mask = results['__sparse_id'].duplicated()
 			results = results[~mask]
 			results.reset_index(drop=True, inplace=True)
 		else:
-			results = results[0]	
-			
-		try:
-			del results['__probe_id']
-		except KeyError:
-			pass
+			results = results[0]
 
 		return results
 # ------------------------------------------------------------------------------

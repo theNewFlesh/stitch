@@ -192,40 +192,81 @@ def _jobinfo(filters={}, agenda=False, subjobs=False, fields=None, callbacks=Fal
 	return jobs
 
 def _hostinfo(filters={}, subjobs=False, fields=None, id=None, state=None, name=None):
-	slots = ['0/0', '16/16', '32/32', '64/64', '1/16', '5/16', '12/16',
-			 '15/32', '20/32', '30/32', '1/64', '32/64', '54/64']
-	down_slots = ['0/16', '0/32', '0/64']
+	slots = ['16/16', '24/24', '32/32', '1/16', '5/16', '12/16',
+			 '1/24', '17/24', '21/24', '15/32', '20/32', '30/32']
+	down_slots = ['0/16', '0/24', '0/32']
 	clusters = ['/atlas', '/hyperion', '/vancouver', '/los_angeles']
-	pids = [0, None, 'random']
+	states = ['active', 'idle', 'locked', 'down', 'random']
 	
 	hosts = []
-	names = ['render_node_' + str(x).zfill(4) for x in range(1, 91)]
-	for name in names:
+	names = ['render_node_' + str(x).zfill(4) for x in range(1, 101)]
+
+
+	for i in range(0, 5):	
 		host = {}
-		host['name'] = name
+		host['name'] = names[0]
+		host['cluster'] = clusters[0]
+
 		host['state'] = 'active'
-		host['cluster'] = clusters[randint(0, 3)]
-		host['resources'] = 'host.processors=' + str(slots[randint(0, 11)])
-		subjob = {}
-		pid = pids[randint(0, 2)]
-		if pid == 'random':
-			pid = randint(123000, 124000)
-		subjob['pid'] = pid
-		subjob['id'] = randint(0, 90)
+		host['resources'] = 'host.processors=' + str(slots[0])
+		
+		subjob = {}	
+		subjob['pid'] = JOBIDS[i][:-2]
+		subjob['id'] = i
+
 		host['subjobs'] = [subjob]
 		hosts.append(host)
 
-	names = ['render_node_' + str(x).zfill(4) for x in range(91, 101)]
-	for name in names:
+	for i, name in enumerate(names[1:16]):
+
+		host = {}
+		host['name'] = names[i]
+		host['cluster'] = clusters[randint(0, 3)]
+		host['state'] = 'active'
+		host['resources'] = 'host.processors=' + str(slots[randint(0, 10)])
+		
+		subjob = {}
+		subjob['pid'] = JOBIDS[i][:-2]
+		subjob['id'] = randint(0, 101)
+		host['subjobs'] = [subjob]
+		hosts.append(host)
+
+	for name in names[16:]:
 		host = {}
 		host['name'] = name
-		host['state'] = 'down'
 		host['cluster'] = clusters[randint(0, 3)]
-		host['resources'] = 'host.processors=' + str(down_slots[randint(0, 2)])
+
 		subjob = {}
-		pid = pids[randint(0, 1)]
-		subjob['pid'] = pid
-		subjob['id'] = None
+		state = states[randint(0, 4)]
+		if state is 'active':
+			host['state'] = 'active'
+			pid = randint(0, len(JOBIDS) - 1)
+			pid = JOBIDS[pid][:-2]
+			subjob['pid'] = pid
+			host['resources'] = 'host.processors=' + str(slots[randint(0, 10)])
+
+		if state is 'idle':
+			host['state'] = 'active'
+			subjob['pid'] = 0
+			host['resources'] = 'host.processors=' + str(slots[randint(0, 10)])
+
+		elif state is 'locked':
+			host['state'] = 'active'
+			subjob['pid'] = None
+			host['resources'] = 'host.processors=' + '0/0'
+
+		elif state is 'down':
+			host['state'] = 'down'
+			subjob['pid'] = 0
+			host['resources'] = 'host.processors=' + str(down_slots[randint(0, 2)])
+
+		else:
+			host['state'] = 'active'
+			pid = randint(123000, 124000)
+			subjob['pid'] = pid
+			host['resources'] = 'host.processors=' + str(slots[randint(0, 10)])
+
+		subjob['id'] = randint(0, 101)
 		host['subjobs'] = [subjob]
 		hosts.append(host)
 

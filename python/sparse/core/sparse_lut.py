@@ -91,9 +91,7 @@ class SparseLUT(Base):
 
 		keys = self._keys
 		keys.unique(inplace=True)
-		keys.nan_to_bottom(inplace=True)
-		keys.data.dropna(how='all', inplace=True)
-		keys.data[keys.data.apply(pandas.isnull)] = self._null
+		keys.data = keys.data.applymap(lambda x: self._null if pandas.isnull(x) else x)
 
 	def ingest(self, data):
 		self._keys = SparseDataFrame(data, name='keys')
@@ -184,14 +182,14 @@ class SparseLUT(Base):
 			columns = self._keys._spql.last_search[0][0]['fields']
 			index = output.dropna(how='all').index
 			output = self._values.data.loc[index, columns]
-
+			
 		if len(output) == 0:
 			message = 'No search results found. SpQL search: ' + string
 			if verbosity == 'error':
 				raise NotFound(message)
 			if verbosity == 'warn':
 				warnings.warn(message, Warning)
-			return None
+			return numpy.nan
 
 		if not return_dataframe:
 			output = output.values.tolist()[0][0]
@@ -211,18 +209,48 @@ class SparseLUT(Base):
 			Numeric equivalent of key. 
 		'''
 
-		output = []
-		for item in items:
+		def _transform_item(item):
 			source = '(' + source_column + ') ' + operator + ' (' + item + ')'
 			found = self.spql_lookup(source, verbosity=verbosity)
-			if found:
+			if pandas.notnull(found):
 				target = '(' + target_column + ') ' + operator + ' (' + str(found) + ')'
 				new_item = self.spql_lookup(target, reverse=True, verbosity=verbosity)
-				output.append(new_item)
+				return new_item
 			else:
-				output.append(item)
+				return item
 
-		return output
+		if is_iterable(items):
+			return [_transform_item(item) for item in items]
+		else:
+			return _transform_item(item)
+
+	def make_numerical(self, data, spql=False):
+		data = data.copy()
+		columns = data.columns.tolist()
+		for col in columns:
+			data[col] = data[col].apply(lambda x: self.lookup_item(x, col, spql=spql))
+		return data
+
+	def lookup_item(self, item, column, spql=False, operator='=', verbosity=None):
+		output = numpy.nan
+		if spql:
+			search = '(' + str(column) + ') ' + operator + ' (' + str(item) + ')'
+			output = self.spql_lookup(search, verbosity=verbosity)
+			return output
+		
+		mask = self._keys.data[column].apply(lambda x: x == item)
+		result = self._values.data[mask]
+		result = result[column]
+		if not result.empty:
+			output = result.tolist()[0]
+			return output
+		else:
+			message = 'No results found. item: ' + str(item) + ' column: ' + str(column)
+			if verbosity == 'error':
+				raise NotFound(message)
+			if verbosity == 'warn':
+				warnings.warn(message, Warning)
+			return numpy.nan
 # ------------------------------------------------------------------------------
 
 def main():

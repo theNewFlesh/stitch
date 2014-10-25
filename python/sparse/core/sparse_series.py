@@ -50,7 +50,6 @@ import pandas
 from pandas import DataFrame, Series
 import numpy
 from sparse.utilities.utils import *
-from sparse.core.sparse_dataframe import SparseDataFrame
 # ------------------------------------------------------------------------------
 
 class SparseSeries(Base):
@@ -68,7 +67,7 @@ class SparseSeries(Base):
 		data (Series): Internal Series where data is actually stored
 	'''
 
-	def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False, name=None):
+	def __init__(self, data=None, index=None, dtype=None, copy=False, name=None):
 		'''SparseSeries initializer
 
 		Args:
@@ -86,7 +85,7 @@ class SparseSeries(Base):
 		if type(data) is Series:
 			self.data = data
 		else:
-			self.data = DataFrame(data=data, index=index, columns=columns, dtype=dtype, copy=copy)
+			self.data = Series(data=data, index=index, dtype=dtype, copy=copy)
 	# --------------------------------------------------------------------------
 
 	def to_type(self, dtype, inplace=False):
@@ -382,21 +381,6 @@ class SparseSeries(Base):
 			data = data.str.strip()
 			data.remove_null_lines(inplace=True)
 		self.data = data
-		return data
-
-	def to_SparseDataFrame(self, flatten=True):
-		'''Converts data to a SparseDataFrame
-
-		Args:
-			flatten (bool, optional): Flattens data. Default: True.
-
-		Returns:
-			SparseDataFrame.
-		'''
-
-		data = SparseDataFrame(self.data)
-		if flatten:
-			data.flatten(dtype=list, inplace=True)
 		return data
 # ------------------------------------------------------------------------------
 

@@ -51,6 +51,7 @@ from pandas import DataFrame, Series
 import numpy
 from sparse.utilities.utils import *
 from sparse.core.spql_interpreter import SpQLInterpreter
+from sparse.core.sparse_series import SparseSeries
 from sparse.core.sparse_string import SparseString
 # ------------------------------------------------------------------------------
 
@@ -294,14 +295,7 @@ class SparseDataFrame(Base):
 			3   NaN  NaN        NaN
 		'''
 
-		def _nan_to_bottom(item):
-			data = item.dropna()
-			buf = [numpy.nan] * (item.size - data.size)
-			data = data.append(Series(buf))
-			data = Series(list(data), index=item.index)
-			return data
-
-		data = self.data.apply(lambda x: _nan_to_bottom(x))
+		data = self.data.apply(lambda x: SparseSeries(x).nan_to_bottom())
 
 		if inplace:
 			self.data = data
@@ -449,7 +443,7 @@ class SparseDataFrame(Base):
 		return data
 	# --------------------------------------------------------------------------
 
-	def flatten(self, dtype=dict, prefix=True, inplace=False):
+	def flatten(self, columns=None, prefix=True, drop=True, dtype=dict, inplace=False):
 		'''Split items of iterable elements into separate columns
 
 		Args:
@@ -473,23 +467,50 @@ class SparseDataFrame(Base):
 			0  		1 		10     some string
 			1  		2 		20  another string
 			2  		3 		30            blah
-		'''
+		'''	
 
-		mask = self.data.applymap(lambda x: bool_test(type(x), '==', dtype))
-		iterables = self.data[mask]
-		iterables = iterables.dropna(how='all', axis=1)
+		def _flatten(data, columns):
+			frames = []
+			for col in columns:
+				frame = DataFrame(data[col].tolist())
+				if prefix:
+					columns = {}
+					for k in frame.columns:
+						columns[k] = str(col) + '_' + str(k)
+					frame.rename(columns=columns, inplace=True)
+				frames.append(frame)
+			data = pandas.concat(frames, axis=1)
+			return data
+		
+		data = self.data
+		flatdata = data
 
-		new_data = self.data.drop(iterables.columns, axis=1)
-		frames = [new_data]
-		for col in iterables.columns:
-			frame = DataFrame(self.data[col].tolist())
-			if prefix:
-				columns = {}
-				for k in frame.columns:
-					columns[k] = str(col) + '_' + str(k)
-				frame.rename(columns=columns, inplace=True)
-			frames.append(frame)
-		data = pandas.concat(frames, axis=1)
+		# determine flatenable columns via column mask
+		if columns:
+			flatdata = flatdata[columns]
+		else:
+			mask = data.applymap(lambda x: bool_test(type(x), '==', dtype))
+			iterables = data[mask]
+			iterables = iterables.dropna(how='all', axis=1)
+			columns = iterables.columns.tolist()
+		
+		# Get right-hand flattened columns
+		flatdata = _flatten(flatdata, columns)	
+		
+		# drop original columns
+		if drop:
+			data = data.T.drop(columns).T
+		
+		# attach right-hand flattened columns to  original columns
+		data = pandas.concat([data, flatdata], axis=1)
+
+		if inplace:
+			self.data = data
+		return data
+
+	def drop_columns(self, columns, inplace=True):
+		data = self.data
+		data = data.T.drop(columns).T
 
 		if inplace:
 			self.data = data
@@ -660,9 +681,11 @@ class SparseDataFrame(Base):
 			Unique DataFrame
 		'''
 
-		data = self.data
+		data = self.data	
 		mask = data.apply(lambda x: x.duplicated())
 		data[mask] = numpy.nan
+		data = data.apply(lambda x: SparseSeries(x).nan_to_bottom(inplace=True).data)
+		data = data.dropna(how='all')
 
 		if inplace:
 			self.data = data

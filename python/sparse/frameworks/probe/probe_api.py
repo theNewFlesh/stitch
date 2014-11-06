@@ -89,9 +89,6 @@ class ProbeAPI(Base):
 
 	def update(self):
 		self._database = self._backingstore.get_database()
-
-	def issue_order(self):
-		self._backingstore.process_order(self.order)
 	# --------------------------------------------------------------------------
 
 	@property
@@ -144,7 +141,7 @@ class ProbeAPI(Base):
 			raise TypeError('Database type not recognized')
 	# --------------------------------------------------------------------------
 
-	def _send_order(self, instructions):
+	def send_order(self, instructions):
 		order = {}
 		order['data'] = self._results
 		order['metadata'] = self.metadata

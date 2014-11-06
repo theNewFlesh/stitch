@@ -1,57 +1,59 @@
-QUBE_MASTER_LUT						QUBE_SHORT_NAME_LUT
-id 									id
-jobtype 							jobtype
-name 								name
-pgrp								pgrp
-priority 							pri
-prototype							proto
-reservations 						reserv
-status 								status
-state								state
-subjobs 							sjob
-subjobs_id 							sjob_id
-subjobs_pid 						sjob_pid
-timecomplete 						tmcomp
-timestart 							tmstrt
-todo 								todo
-todotally_complete 					todotly_comp
-todotally_failed 					totdotly_fl
-todotally_pending 					todotly_pend
-todotally_running 					todotly_run
-instances 							inst
-instances+							inst+
-ram 								ram
-ram+ 								ram+
-slots_percent 						slot_pct
-slots_total 						slot_tot
-slots_used 							slot_used
-failed_frame_total					flfrm_tot
-dependency 							dep
-percent_done 						pct_done
-percent_utilized					pct_util
-agenda_failed_frames_total 			flfrms
-agenda_count_max					ag_count_max
-agenda_failed_frame_hosts 			ag_flfrm_host
-agenda_failed_frame_names 			ag_flfrm_name
-agenda_frame_complete_percent 		ag_pct_comp
-agenda_frame_complete_total 		ag_pct_tot
-agenda_frame_distribution			dist
-agenda_frame_max					max
-agenda_frame_min 					ag_frm_min
-agenda_frame_retry					ag_frm_rtry
-agenda_frame_sum					ag_frm_sum
-agenda_frame_total 					ag_frm_tot
-agenda_host_total 					ag_host_tot
-agenda_id_max 						ag_id_max
-agenda_name_total 					ag_name_max
-agenda_pid_total 					ag_pid_tot
-agenda_retry_max 					ag_rtry_max
-agenda_retrydelay_max 				ag_rtrydly_max
-agenda_status_total 				ag_stat_tot
-agenda_subid_total 					ag_subid_tot
-agenda_timecomplete_max 			ag_tmcomp_max
-agenda_timecumulative_max 			ag_tmcum_max
-agenda_timestart_min 				ag_tmstrt_max
-stdout_warning 						log_warn
-stdout_error 						log_err
-stdout_progress 					log_prog
+QUBE_MASTER_LUT					 QUBE_SHORT_NAME_LUT 		QUBE_LONG_NAME_LUT
+id 								 id 						id
+jobtype 						 jobtype 					jobtype
+name 							 name 						name
+pgrp							 pgrp 						parent_group
+priority 						 pri 						priority
+prototype						 proto 						prototype
+reservations 					 reserv 					reservervations
+status 							 status 					status
+state							 state 						state
+subjobs 						 sjob 						subjob
+subjobs_id 						 sjob_id 					subjob_id
+subjobs_pid 					 sjob_pid 					subjob_pid
+timecomplete 					 tmcomp 					timecomplete
+timestart 						 tmstrt 					timestart
+todo 							 todo 						todo
+todotally_complete 				 todotly_comp 				todo_complete
+todotally_failed 				 totdotly_fl 				todo_failed
+todotally_pending 				 todotly_pend 				todo_pending
+todotally_running 				 todotly_run 				todo_running
+instances 						 inst 						instances
+instances+						 inst+ 						instances+
+ram 							 ram 						memory
+ram+ 							 ram+ 						memory+
+procs 							 procs 						processors
+procs+							 procs+ 					processors+
+slots_percent 					 slot_pct 					slot_percentage
+slots_total 					 slot_tot 					slot_total
+slots_used 						 slot_used 					slot_used
+failed_frame_total				 flfrm_tot 					failed_frame_total
+dependency 						 dep 						dependency
+percent_done 					 pct_done 					percent_done
+percent_utilized				 pct_util 					percent_utilized
+agenda_failed_frames_total 		 flfrms 					failed_frames
+agenda_count_max				 ag_count_max 				frame_count
+agenda_failed_frame_hosts 		 ag_flfrm_host 				failed_frame_hosts
+agenda_failed_frame_names 		 ag_flfrm_name 				failed_frame_names
+agenda_frame_complete_percent 	 ag_pct_comp 				frame_percent_complete
+agenda_frame_complete_total 	 ag_pct_tot 				ag_pct_tot
+agenda_frame_distribution		 dist 						distribution
+agenda_frame_max				 max 						frame_length_maximum
+agenda_frame_min 				 ag_frm_min 				frame_minimum
+agenda_frame_retry				 ag_frm_rtry 				frame_retry
+agenda_frame_sum				 ag_frm_sum 				frame_sum
+agenda_frame_total 				 ag_frm_tot 				frame_total
+agenda_host_total 				 ag_host_tot 				frame_host_total
+agenda_id_max 					 ag_id_max 					frame_id_maximum
+agenda_name_total 				 ag_name_max 				frame_name_maximum
+agenda_pid_total 				 ag_pid_tot 				frame_pid_total
+agenda_retry_max 				 ag_rtry_max 				frame_retry_maximum
+agenda_retrydelay_max 			 ag_rtrydly_max 			frame_retry_delay_maximum
+agenda_status_total 			 ag_stat_tot 				frame_status_total
+agenda_subid_total 				 ag_subid_tot 				frame_subid_total
+agenda_timecomplete_max 		 ag_tmcomp_max 				frame_time_complete_maximum
+agenda_timecumulative_max 		 ag_tmcum_max 				frame_time_cumulative_maximum
+agenda_timestart_min 			 ag_tmstrt_max 				frame_timestart_maximum
+stdout_warning 					 log_warn 					log_warning
+stdout_error 					 log_err 					log_error
+stdout_progress 				 log_prog 					log_progress

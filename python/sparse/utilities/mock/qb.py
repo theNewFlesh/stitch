@@ -220,7 +220,7 @@ def _hostinfo(filters={}, subjobs=False, fields=None, id=None, state=None, name=
 	for i, name in enumerate(names[1:16]):
 
 		host = {}
-		host['name'] = names[i]
+		host['name'] = names[i] 
 		host['cluster'] = clusters[randint(0, 3)]
 		host['state'] = 'active'
 		host['resources'] = 'host.processors=' + str(slots[randint(0, 10)])

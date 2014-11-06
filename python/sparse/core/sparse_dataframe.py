@@ -443,7 +443,7 @@ class SparseDataFrame(Base):
 		return data
 	# --------------------------------------------------------------------------
 
-	def flatten(self, columns=None, prefix=True, drop=True, dtype=dict, inplace=False):
+	def flatten(self, columns=None, prefix=True, drop=True, dtype=dict, attach='inplace', inplace=False):
 		'''Split items of iterable elements into separate columns
 
 		Args:
@@ -469,7 +469,21 @@ class SparseDataFrame(Base):
 			2  		3 		30            blah
 		'''	
 
+		def _reorder_columns(columns, index):
+			new_cols = []
+			for col in columns:
+				if col in index:
+					if not drop:
+						new_cols.append(col)
+					new_cols.extend( index[col] )
+				else:
+					new_cols.append(col)
+			return new_cols
+
+		col_index = OrderedDict()
 		def _flatten(data, columns):
+			for col in columns:
+				col_index[col] = [] 
 			frames = []
 			for col in columns:
 				frame = DataFrame(data[col].tolist())
@@ -479,11 +493,13 @@ class SparseDataFrame(Base):
 						columns[k] = str(col) + '_' + str(k)
 					frame.rename(columns=columns, inplace=True)
 				frames.append(frame)
+				col_index[col].extend( frame.columns.tolist() )
 			data = pandas.concat(frames, axis=1)
 			return data
 		
 		data = self.data
 		flatdata = data
+		old_cols = data.columns.tolist()
 
 		# determine flatenable columns via column mask
 		if columns:
@@ -495,14 +511,21 @@ class SparseDataFrame(Base):
 			columns = iterables.columns.tolist()
 		
 		# Get right-hand flattened columns
-		flatdata = _flatten(flatdata, columns)	
+		flatdata = _flatten(flatdata, columns)
 		
+		old_cols = data.columns.tolist()
+
 		# drop original columns
 		if drop:
 			data = data.T.drop(columns).T
-		
+
 		# attach right-hand flattened columns to  original columns
 		data = pandas.concat([data, flatdata], axis=1)
+
+		# reorganize columns
+		if attach == 'inplace':
+			cols = _reorder_columns(old_cols, col_index)
+			data = data[cols]
 
 		if inplace:
 			self.data = data
@@ -684,7 +707,7 @@ class SparseDataFrame(Base):
 		data = self.data	
 		mask = data.apply(lambda x: x.duplicated())
 		data[mask] = numpy.nan
-		data = data.apply(lambda x: SparseSeries(x).nan_to_bottom(inplace=True).data)
+		data = data.apply(lambda x: SparseSeries(x).nan_to_bottom())
 		data = data.dropna(how='all')
 
 		if inplace:
@@ -855,7 +878,7 @@ class SparseDataFrame(Base):
 		'''
 
 		func = lambda x: merge_list_dicts( x[x.index[0]], x[x.index[1]],
-                                           source_key, target_key, remove_key=remove_key)
+										   source_key, target_key, remove_key=remove_key)
 
 		data = self.merge_columns([source, target], func=func, new_column=new_column, drop=drop)
 		
@@ -964,6 +987,27 @@ class SparseDataFrame(Base):
 		if inplace:
 			self.data = data
 		return data
+	# --------------------------------------------------------------------------
+	
+	def plot(self, embedded_column=None, ax=None, colormap=None, figsize=None, 
+			 fontsize=None, grid=None, kind='line', legend=True, loglog=False, 
+			 logx=False, logy=False, mark_right=True, rot=None, secondary_y=False,
+			 sharex=True, sharey=False, sort_columns=False, stacked=False, style=None,
+			 subplots=False, table=False, title=None, use_index=True, x=None, xerr=None,
+			 xlabel=None, xlim=None, xticks=None, xtick_labels=None, y=None, yerr=None,
+			 ylabel=None, ylim=None, yticks=None, ytick_labels=None, 
+			 bbox_to_anchor=(0.99, 0.99), loc=0, borderaxespad=0., **kwds):
+
+		plot(self.data, embedded_column=embedded_column, ax=ax, colormap=colormap, 
+			 figsize=figsize, fontsize=fontsize, grid=grid, kind=kind, legend=legend,
+			 loglog=loglog, logx=logx, logy=logy, mark_right=mark_right, rot=rot,
+			 secondary_y=secondary_y, sharex=sharex, sharey=sharey,
+			 sort_columns=sort_columns, stacked=stacked, style=style,
+			 subplots=subplots, table=table, title=title, use_index=use_index,
+			 x=x, xerr=xerr, xlabel=xlabel, xlim=xlim, xticks=xticks,
+			 xtick_labels=xtick_labels, y=y, yerr=yerr, ylabel=ylabel, ylim=ylim,
+			 yticks=yticks, ytick_labels=ytick_labels, bbox_to_anchor=bbox_to_anchor,
+			 loc=loc, borderaxespad=borderaxespad, **kwds)
 # ------------------------------------------------------------------------------
 
 def main():

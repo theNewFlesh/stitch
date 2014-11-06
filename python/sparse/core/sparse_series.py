@@ -269,7 +269,7 @@ class SparseSeries(Base):
 		data = self.data.dropna()
 		buf = [numpy.nan] * (self.data.size - data.size)
 		data = data.append(Series(buf))
-		data = SparseSeries(list(data), index=self.data.index)
+		data = Series(list(data), index=self.data.index)
 
 		if inplace:
 			self.data = data
@@ -374,12 +374,13 @@ class SparseSeries(Base):
 			Series with each file line as an element.
 		'''
 		
-		data = None
+		sdata = None
 		with open(filepath, 'r') as file_:
-			data = SparseSeries(file_.readlines(), name=filepath)
+			sdata = SparseSeries(file_.readlines(), name=filepath)
 		if cleanup:
-			data = data.str.strip()
-			data.remove_null_lines(inplace=True)
+			sdata.data = sdata.data.str.strip()
+			sdata.remove_null_lines(inplace=True)
+		data = sdata.data
 		self.data = data
 		return data
 # ------------------------------------------------------------------------------

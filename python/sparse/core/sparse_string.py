@@ -27,9 +27,8 @@
 
 '''The sparse_string module contains the SparseString class.
 
-The SparseString class is used for performing advanced operations on strings.
-Such as, parsing a string according to a parse index and then splitting it into
-dictionary items.
+The SparseString class is used for parsing strings and generating regular
+expressions according to the DTT (determiner, token, terminator) paradigm. 
 
 Date:
 	09.06.2014
@@ -42,139 +41,169 @@ Author:
 '''
 # ------------------------------------------------------------------------------
 
-from __future__ import with_statement
-import warnings
 import re
+from pandas import DataFrame
 from sparse.utilities.utils import Base
 # ------------------------------------------------------------------------------
+class SparseToken(Base):
+    def __init__(self, descriptor='token', determiner='', terminator='', 
+                 token='.*', greedy=False, ignore_case=False, tokens_only=True,
+                 name=None):
+    	super(SparseToken, self).__init__(name=name)
+    	self._cls = 'SparseToken'
 
+        self._descriptor  = descriptor
+        self._determiner  = determiner
+        self._terminator  = terminator
+        self._token       = token
+        self._greedy      = greedy
+        self._ignore_case = ignore_case
+        self._tokens_only = tokens_only
+
+    @property
+    def descriptor(self):
+        return self._descriptor
+        
+    @property
+    def token(self):
+        token = '(?P<' + self._descriptor + '>' + self._token
+        if self._token != '.*':
+            token += ')'
+            return token
+        
+        if self._greedy:
+            token += ')'
+        else:
+            token += '?)'
+        return token
+        
+    @property
+    def determiner(self):
+        if self._tokens_only:
+            return self._determiner
+        else:
+            return '(?P<' + self._descriptor + '_determiner>' + self._determiner + ')'
+    
+    @property
+    def terminator(self):
+        if self._tokens_only:
+            return self._terminator
+        else:
+            return '(?P<' + self._descriptor + '_terminator>' + self._terminator + ')'
+        
+    @property
+    def determiner_type(self):
+        if self._determiner:
+            return 'explicit'
+        else:
+            return 'implicit'
+            
+    @property
+    def terminator_type(self):
+        if self._terminator:
+            return 'explicit'
+        else:
+            return 'implicit'
+    
+    @property
+    def regex(self):
+        return self.determiner + self.token + self.terminator
+    
+    @property
+    def greedy(self):
+        if self._greedy:
+            return 'greedy'
+        else:
+            return 'not greedy'
+
+    def parse_string(self, string):
+        found = None
+        if self._ignore_case:
+            found = re.search(self.regex, string, flags=re.IGNORECASE)
+        else:    
+            found = re.search(self.regex, string)
+        if found:
+            return found.groupdict()
+        else:
+            return None
+# ------------------------------------------------------------------------------
+        
 class SparseString(Base):
-	def __init__(self, parse_index, verbose=False, name=None):
-		super(SparseString, self).__init__(name=name)
-		self._cls = 'SparseString'
-		self._verbose = verbose
-		self._parse_index = {}
-		self._regex_index = {}
-		self.set_parse_index(parse_index)
+    def __init__(self, tokens, name=None):
+    	super(SparseString, self).__init__(name=name)
+    	self._cls = 'SparseString'
 
-		all_chars            = printables + ' '
-		regex                = Suppress('"') + Word(all_chars, excludeChars=',")') + Suppress('"')
-		word                 = Word(printables, excludeChars=',")')
-		float_               = Word(nums + '.' + nums).setParseAction(lambda s,l,t: float(t[0]))
-		integer              = Word(nums).setParseAction(lambda s,l,t: int(t[0]))
-		number               = Or([float_, integer])
-		bool_ 				 = Or('True', 'False')
-		none 				 = Word('None').setParseAction(lambda s,l,t: None)
-		
-		left_square_bracket  = '['
-		right_square_bracket = ']'
-		null_list 			 = left_square_bracket + right_square_bracket
-		__list_item          = Or([bool_, number, word, regex, none, null_list])
-		__list  			 = Suppress('[') + delimitedList(__list_item, delim=',') + Suppress(']')
-		_list_item           = Or([bool_, number, word, regex, none, null_list, __list])
-		_list                = delimitedList(OneOrMore(_list_item), delim=',')	
+        self._tokens = tokens
+        data = []
+        for item in tokens:
+            data.append(['determiner', item.determiner_type, item.descriptor, item._determiner, item.determiner])
+            data.append(['token',      item.greedy,          item.descriptor, item._token,      item.token])
+            data.append(['terminator', item.terminator_type, item.descriptor, item._terminator, item.terminator])
+        data = DataFrame(data, columns=['component', 'type', 'descriptor', 'raw', 'regex'])
+        self.data = data
+    
+    def create_regex(self, drop=None):
+        data = self.data
+        data = data[data['type'] != 'implicit']
+        mask = mask_pairs(data['regex'])
+        data = data[mask]
+        if drop == 'determiner':
+            data = data[data['component'] != 'determiner']
+        elif drop == 'terminator':
+            data = data[data['component'] != 'terminator']
+        regex = data['regex'].tolist()
+        regex = ''.join(regex)
+        return re.compile(regex)
+    
+    def parse(self, string, drop=None):
+        regex = self.create_regex(drop=drop)
+        found = regex.search(string)
+        output = None
+        if found:
+            output = found.groupdict()
+        return output
+    
+    def compound_parse(self, string):
+        output = {}
+        for token in self._tokens:
+            found = token.parse_string(string)
+            if found:
+                for key in found:
+                    output[key] = found[key]
+        return output
 
-		left_curly_bracket	 = '{'
-		right_curly_bracket  = '}'
-		null_dict 			 = left_curly_bracket + right_curly_bracket
-		__dict_value    	 = Or([bool_, number, word, regex, none, null_dict])
-		__dict_item          = Group(word + Suppress(':') + __dict_value).setParseAction(lambda s,l,t: {'key': t[0], 'value': t[1]})
-		__dict  			 = Suppress(left_curly_bracket) + delimitedList(__dict_item, delim=',') + Suppress(right_curly_bracket)
-		_dict_item           = Or([bool_, number, word, regex, none, '{}', __dict])
-		_dict                = Suppress('{') + delimitedList(OneOrMore(_dict_item), delim=',') + Suppress('}')
-
-
-
-
-		fields               = Group(Suppress('(') + items + Suppress(')')).setResultsName('fields')
-		values               = Group(Suppress('(') + items + Suppress(')')).setResultsName('values')
-		is_                  = oneOf(['is',                                '='], caseless=True).setParseAction(lambda s,l,t: '==')
-		isnot                = oneOf(['is not',                 'isnot',  '!='], caseless=True).setParseAction(lambda s,l,t: '!=')
-		contains             = oneOf(['contains',                'cont',   '~'], caseless=True).setParseAction(lambda s,l,t: 're.IGNORECASE')
-		does_not_contain     = oneOf(['does not contain',     'notcont',  '!~'], caseless=True).setParseAction(lambda s,l,t: 'nre.IGNORECASE')
-		cs_contains          = oneOf(['cscontains',            'cscont',  '~~'], caseless=True).setParseAction(lambda s,l,t: 're')
-		cs_does_not_contain  = oneOf(['does not cscontain', 'csnotcont', '!~~'], caseless=True).setParseAction(lambda s,l,t: 'nre')
-		greater_than         = oneOf(['greater than',              'gt',   '>'], caseless=True).setParseAction(lambda s,l,t: '>')
-		greater_than_equal   = oneOf(['greater than equal to',    'gte',  '>='], caseless=True).setParseAction(lambda s,l,t: '>=')
-		less_than            = oneOf(['less than',                 'ls',   '<'], caseless=True).setParseAction(lambda s,l,t: '<')
-		less_than_equal      = oneOf(['less than equal to',       'lte',  '<='], caseless=True).setParseAction(lambda s,l,t: '<=')
-		operator             = isnot | is_ | cs_contains | cs_does_not_contain | contains | does_not_contain | greater_than_equal | greater_than | less_than_equal | less_than
-		operator             = operator.setResultsName('operator')
-		and_                 = Keyword('&')
-		or_                  = Keyword('|')
-		query                = Group(fields + operator + values)
-		compound_query       = Group(delimitedList(query, delim=and_))
-		fragment             = OneOrMore(compound_query)
-		self._line           = delimitedList(fragment, delim=or_)		
-
-		self._last_search = None
-
-	@property
-	def parse_index(self):
-		return self._parse_index
-
-	@property
-	def regex_index(self):
-		return self._regex_index
-
-	def _update(self):
-		self._regex_index = {}
-		for name, entry in self._parse_index.iteritems():
-			regex = entry['regex']
-			for key, value in entry['keywords'].iteritems():
-				kw_re = re.sub('\(', '(?P<' + key + '>', value)
-				regex = re.sub(key, kw_re, regex)
-			regex = re.compile(regex)
-			self._regex_index[name] = regex
-
-	def set_parse_index(self, parse_index):
-		self._parse_index = parse_index
-		self._update()
-		self.test(verbose=self._verbose)
-
-	def parse(self, string):
-		for name, regex in self._regex_index.iteritems():
-			found = regex.search(string)
-			if found:
-				if self._verbose:
-					print 'matched:', name
-				return found.groupdict()
-		return {}
-
-	def test(self, verbose=True):
-		# test each entry's example
-		for name, entry in self._parse_index.iteritems():
-			if verbose:
-				print name
-			test_re = self._regex_index[name]
-			test = test_re.search(entry['example'])
-			if test:
-				test = test.groupdict()
-				if verbose:
-					for key, value in test.iteritems():
-						print '\t{:<20}: {:<20}'.format(key, value)
-			else:
-				message = "parse of ['" + name + "']['example'] failed to yield results"
-				if verbose:
-					print '\tWarning:', message
-				warnings.warn(message, Warning)
-			if verbose:
-				print ''
-
-		# test each entry against all other entry's examples
-		examples = []
-		for name, entry in self._parse_index.iteritems():
-			for key, regex in self._regex_index.iteritems():
-				if name != key:
-					found = regex.search(entry['example'])
-					if found:
-						message = "['" + key + "']" + " matched ['" + name + "']['example']" 
-						warnings.warn(message, Warning)
-					else:
-						pass
-
-	def parse_command(self, command):
-		pass
+    def test_parse(self, string):
+        def iter_print(item):
+            for k, v in item.iteritems():
+                print '\t{:<20}: {:<20}'.format(k,v)
+        
+        print 'parse:'
+        iter_print(self.parse(string))
+        print '\n'
+        
+        print 'parse drop=determiner:'
+        iter_print(self.parse(string, drop='determiner'))
+        print '\n'
+        
+        print 'parse drop=terminator:'
+        iter_print(self.parse(string, drop='terminator'))      
+        print '\n'
+        
+        print 'compound parse:'
+        iter_print(self.compound_parse(string))
+        print '\n'
+# ------------------------------------------------------------------------------
+       
+def mask_pairs(items):
+    prev = items[0]
+    output = [True]
+    for item in items[1:]:
+        if item != prev:
+            output.append(True)
+        else:
+            output.append(False)
+        prev = item
+    return output
 # ------------------------------------------------------------------------------
 
 def main():
@@ -185,7 +214,7 @@ def main():
 	import __main__
 	help(__main__)
 
-__all__ = ['SparseString']
+__all__ = ['SparseToken', 'SparseString']
 
 if __name__ == '__main__':
 	main()

@@ -42,6 +42,7 @@ from decimal import Decimal
 import numpy
 import pandas
 from pandas import DataFrame
+from matplotlib import pyplot
 from collections import OrderedDict, namedtuple
 # ------------------------------------------------------------------------------
 
@@ -397,6 +398,50 @@ def list_to_lut(items, interchange_lut):
 	return lut
 # ------------------------------------------------------------------------------
 
+def plot(frame, embedded_column=None, ax=None, colormap=None, figsize=None, 
+		 fontsize=None, grid=None, kind='line', legend=True, loglog=False, 
+		 logx=False, logy=False, mark_right=True, rot=None, secondary_y=False,
+		 sharex=True, sharey=False, sort_columns=False, stacked=False, style=None,
+		 subplots=False, table=False, title=None, use_index=True, x=None, xerr=None,
+		 xlabel=None, xlim=None, xticks=None, xtick_labels=None, y=None, yerr=None,
+		 ylabel=None, ylim=None, yticks=None, ytick_labels=None, 
+		 bbox_to_anchor=(0.99, 0.99), loc=0, borderaxespad=0., **kwds):
+
+	fig = pyplot.figure()
+	
+	if embedded_column:
+		frame = frame[embedded_column]
+		frame = frame.apply(DataFrame).tolist()
+		frame = pandas.concat(frame, axis=1)
+	
+	if not style:
+		style = ['#5F95DE', '#FFFFFF', '#F77465', '#EDED9F', '#AC92DE', 
+				 '#7EC4CF', '#A3C987', '#919191']
+		style = style * len(frame)
+		
+	frame.plot(ax=ax, colormap=colormap, figsize=figsize, fontsize=fontsize, 
+			   grid=grid, kind=kind, legend=legend, loglog=loglog, logx=logx,
+			   logy=logy, mark_right=mark_right, rot=rot, secondary_y=secondary_y, 
+			   sharex=sharex, sharey=sharey, sort_columns=sort_columns,
+			   stacked=stacked, style=style, subplots=subplots, table=table,
+			   title=title, use_index=use_index, x=x, xerr=xerr, xlim=xlim, 
+			   xticks=xticks, y=y, yerr=yerr, ylim=ylim, yticks=yticks, **kwds)
+	
+	if legend:
+		pyplot.legend(bbox_to_anchor=bbox_to_anchor, loc=loc, borderaxespad=borderaxespad)
+
+	plt = pyplot.gca()
+	if xtick_labels:
+		plt.set_xticklabels(xtick_labels)
+	if ytick_labels:
+		plt.set_yticklabels(ytick_labels)
+	if xlabel:
+		plt.axes.set_xlabel(xlabel, size='large')
+	if ylabel:
+		plt.axes.set_ylabel(ylabel, size='large')
+	pyplot.show()
+# ------------------------------------------------------------------------------
+
 def main():
 	'''
 	Run help if called directly
@@ -411,7 +456,7 @@ __all__ = ['Base', 'to_type', 'is_iterable', 'make_iterable', 'iprint',
 			'dict_to_namedtuple', 'flatten_nested_dict', 'nested_dict_to_index',
 			'interpret_nested_dict', 'stack_dict', 'list_dict_to_dict',
 			'merge_list_dicts', 'irregular_concat', 'double_lut_transform',
-			'list_to_lut']
+			'list_to_lut', 'plot']
 
 if __name__ == '__main__':
 	main()

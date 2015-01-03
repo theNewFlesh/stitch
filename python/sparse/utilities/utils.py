@@ -360,6 +360,51 @@ def irregular_concat(items, axis=0, ignore_index=True):
 	
 	data = pandas.concat(items, axis=axis)
 	return data
+
+def index_to_matrix(index):
+    if index.__class__.__name__ == 'MultiIndex':
+        index = [list(x) for x in index]
+        index = DataFrame(index)
+        index = [x[1].tolist() for x in index.iteritems()]
+    else:
+        index = [index.tolist()]
+    return index
+
+def insert_level(index, item, level=0):
+	index = index_to_matrix(index)
+	item = [item] * len(index[0])
+	index.insert(level, item)
+	return index
+
+def combine(items):
+	'''Combines multiple DataFrames with hierarchical indexes
+
+		Args:
+			items (list): List of DataFrames to be combined.
+
+		Returns:
+			DataFrame
+	'''
+
+	items = [x.copy() for x in items]
+	max_ = 0
+	indexes = []
+	for item in items:
+		index = index_to_matrix(item.index)
+		if max_ < len(index):
+			max_ = len(index)
+		indexes.append(index)
+		
+	for i, index in enumerate(indexes):
+		top_level = index[0]
+		for r in range(max_ - len(index)):
+			index.insert(0, top_level)
+		items[i].index = index
+		
+	output = items[0]
+	for item in items[1:]:
+		output = output.append(item)
+	return output
 # ------------------------------------------------------------------------------
 
 def double_lut_transform(items, input_lut, output_lut):
@@ -455,8 +500,8 @@ __all__ = ['Base', 'to_type', 'is_iterable', 'make_iterable', 'iprint',
 			'bool_test', 'regex_match', 'regex_search', 'regex_sub', 'regex_split',
 			'dict_to_namedtuple', 'flatten_nested_dict', 'nested_dict_to_index',
 			'interpret_nested_dict', 'stack_dict', 'list_dict_to_dict',
-			'merge_list_dicts', 'irregular_concat', 'double_lut_transform',
-			'list_to_lut', 'plot']
+			'merge_list_dicts', 'irregular_concat', 'index_to_matrix',
+			'insert_level', 'combine', 'double_lut_transform', 'list_to_lut', 'plot']
 
 if __name__ == '__main__':
 	main()

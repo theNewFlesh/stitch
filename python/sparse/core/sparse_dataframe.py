@@ -52,7 +52,7 @@ import numpy
 from sparse.utilities.utils import *
 from sparse.core.spql_interpreter import SpQLInterpreter
 from sparse.core.sparse_series import SparseSeries
-from sparse.core.sparse_string import SparseString
+# from sparse.core.sparse_string import SparseString
 # ------------------------------------------------------------------------------
 
 class SparseDataFrame(Base):
@@ -887,7 +887,7 @@ class SparseDataFrame(Base):
 		return data    
 	# --------------------------------------------------------------------------
 	
-	def read_nested_dict(self, item, name, inplace=False):
+	def read_nested_dict(self, item, inplace=False):
 		'''Reads nested dictionary into a DataFrame
 
 		Args:
@@ -900,7 +900,7 @@ class SparseDataFrame(Base):
 		'''
 
 		values = flatten_nested_dict(item).values()
-		index = nested_dict_to_index(item, name)
+		index = nested_dict_to_index(item)
 		data = DataFrame(values, index=index)
 		mask = data.apply(lambda x: x != 'null')
 		mask = mask[mask].dropna()
@@ -968,25 +968,25 @@ class SparseDataFrame(Base):
 			self.data = data
 		return data
 
-	def parse(self, columns, parse_index, verbose=False, inplace=True):
-		'''Parse column elements according to parse index
+	# def parse(self, columns, parse_index, verbose=False, inplace=True):
+	# 	'''Parse column elements according to parse index
 
-		Args:
-			columns (list): Columns to be parsed
-			parse_index (dict): A nested dictionary formatted for a SparseString
-			inplace (bool, optional): Apply changes in place. Default: False
+	# 	Args:
+	# 		columns (list): Columns to be parsed
+	# 		parse_index (dict): A nested dictionary formatted for a SparseString
+	# 		inplace (bool, optional): Apply changes in place. Default: False
 
-		Returns: 
-			Parsed DataFrame
-		'''
+	# 	Returns: 
+	# 		Parsed DataFrame
+	# 	'''
 
-		string = SparseString(parse_index, verbose=verbose)
-		data = self.data
-		data[columns] = data[columns].applymap(string.parse)
+	# 	string = SparseString(parse_index, verbose=verbose)
+	# 	data = self.data
+	# 	data[columns] = data[columns].applymap(string.parse)
 
-		if inplace:
-			self.data = data
-		return data
+	# 	if inplace:
+	# 		self.data = data
+	# 	return data
 	# --------------------------------------------------------------------------
 	
 	def plot(self, embedded_column=None, ax=None, colormap=None, figsize=None, 

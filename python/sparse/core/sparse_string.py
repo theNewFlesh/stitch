@@ -147,7 +147,7 @@ class SparseWord(Base):
 		regex = re.compile(regex, flags=data.ix[1]['flags'])
 		return regex
 
-	def parse(self, string, smart=True):
+	def parse(self, string):
 		found = self.regex.search(string)
 		if found:
 			return found.groupdict()

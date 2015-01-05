@@ -147,13 +147,22 @@ class SparseWord(Base):
 		regex = re.compile(regex, flags=data.ix[1]['flags'])
 		return regex
 
-	def parse(self, string):
+	def parse(self, string, smart=True):
 		found = self.regex.search(string)
 		if found:
 			return found.groupdict()
 		else:
 			return None
 
+	def smart_parse(self, string):
+		found = self.parse(string)
+		if not found:
+			diagnosis = self.diagnose(string)
+			if diagnosis['error']:
+				if diagnosis['fix']:
+					self.repair(diagnosis['fix'])
+		return self.parse(string)
+		
 	def repair(self, fix):
 		self.mutate(fix[0]['mutation'])
 
@@ -399,6 +408,15 @@ class SparsePhrase(Base):
 			return found.groupdict()
 		else:
 			return None
+
+	def smart_parse(self, string):
+		found = self.parse(string)
+		if not found:
+			diagnosis = self.diagnose(string)
+			if diagnosis['error']:
+				if diagnosis['fix']:
+					self.repair(diagnosis['fix'])
+		return self.parse(string)
 
 	def reset(self):
 		for element in self._elements.values():

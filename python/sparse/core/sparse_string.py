@@ -54,9 +54,12 @@ from sparse.utilities.utils import flatten_nested_dict, combine, insert_level
 class SparseWord(Base):
 	def __init__(self, descriptor='token', 
 				 determiners=[''], tokens=['.*'], terminators=[''],
-				 flags=0, capture=[0, 1, 0], data=None, name=None):
+				 flags=0, capture=[0, 1, 0], restricted=True,
+				 data=None, name=None):
 		super(SparseWord, self).__init__(name=name)
 		self._cls = 'SparseWord'
+
+		self._restricted = restricted
 		
 		def reduce(raw):
 			raw = re.sub('(?<!\\\\)\{.*(?<!\\\\)\}', '', raw)
@@ -82,7 +85,6 @@ class SparseWord(Base):
 			terminators.append('$')
 			terminators.extend(end)
 
-
 			capture = [bool(x) for x in capture]
 			d_desc = descriptor + '_determiner'
 			t_desc = descriptor + '_terminator'
@@ -90,7 +92,7 @@ class SparseWord(Base):
 			data = DataFrame([[ 'determiner',  d_desc,       determiners[0],  determiners, capture[0]],
 							  [ 'token',       descriptor,   tokens[0],       tokens,      capture[1]],
 							  [ 'terminator',  t_desc,       terminators[0],  terminators, capture[2]]],
-							 columns=cols, index=[[descriptor] * 3, [0, 1, 2]])
+							 columns=cols) #, index=[[descriptor] * 3, [0, 1, 2]])
 
 			data['class'] = self._cls
 			data['phrase'] = descriptor
@@ -109,9 +111,13 @@ class SparseWord(Base):
 			data = data[cols]
 			self.data = data
 			self.mutate([0,0,0])
+			self._backup = data.copy()
 	
 		self._descriptor = self.data[self.data['component'] == 'determiner']['phrase'].item()
 
+
+	def reset(self):
+		self.data = self._backup.copy()
 
 	def mutate(self, mutation):
 		def _mutate(component, integer):
@@ -129,6 +135,10 @@ class SparseWord(Base):
 			_mutate(key, val)
 		return self.data
 
+	def nullify(self):
+		self.mutate([-1, -2, -1])
+		self.data['capture'] = False
+
 	@property
 	def regex(self):
 		data = self.data	
@@ -144,6 +154,9 @@ class SparseWord(Base):
 		else:
 			return None
 
+	def repair(self, fix):
+		self.mutate(fix[0]['mutation'])
+
 	def diagnose(self, string):
 		def test(mutation):
 			self.mutate(mutation)
@@ -155,7 +168,9 @@ class SparseWord(Base):
 		def mutate_test(component, mutate):		
 			data = self.data
 			data = data[data['component'] == component]
-			total = data['total_mutations']  - 4
+			total = data['total_mutations']
+			if self._restricted:
+				total -= 4
 			for i in range(0, total):
 				found_token = False
 				if component == 'determiner':
@@ -178,37 +193,21 @@ class SparseWord(Base):
 			return o
 
 		o['error'] = True
-		o['token_mutation'] = False
-		o['suggested_token_mutation'] = 0
-		o['determiner_mutation'] = False
-		o['suggested_determiner_mutation'] = 0
-		o['terminator_mutation'] = False
-		o['suggested_terminator_mutation'] = 0
-		o['suggested_mutation'] = [0, 0, 0]
+		o['fix'] = []
 
-		o['token_mutation'] = not test([-1, 0, -1])
-		if o['token_mutation']:
-			o['suggested_token_mutation'] = mutate_test('token', [-1, 0, -1])
+		mutation = [0, 0, 0]
+		mutation[1] = mutate_test('token', [-1, 0, -1])
+		t = mutation[1]
+		if t != None:
+			if not test([0, t, -1]):
+				mutation[0] = mutate_test('determiner', [0, t, -1])
+			if not test([-1, t, 0]):
+				mutation[2] = mutate_test('terminator', [-1, t, 0])
 
-		if o['suggested_token_mutation'] != None:
-			t = o['suggested_token_mutation']
-
-			o['determiner_mutation'] = not test([0, t, -1])
-			if o['determiner_mutation']:
-				o['suggested_determiner_mutation'] = mutate_test('determiner', [0, t, -1])
-			
-			o['terminator_mutation'] = not test([-1, t, 0])
-			if o['terminator_mutation']:
-				o['suggested_terminator_mutation'] = mutate_test('terminator', [-1, t, 0])
-
-		sdm = o['suggested_determiner_mutation']
-		skm = o['suggested_token_mutation']
-		stm = o['suggested_terminator_mutation']
-		sm = [sdm, skm, stm]
-		o['perform_mutation'] = False
-		if None not in sm:
-			o['perform_mutation'] = True
-			o['suggested_mutation'] = sm
+		if None not in mutation:
+			o['fix'].append({'element': self._descriptor, 
+							 'type': 'mutation', 
+							 'mutation': mutation})
 
 		self.mutate([0, 0, 0])
 		return o
@@ -219,7 +218,11 @@ class SparsePhrase(Base):
 		super(SparsePhrase, self).__init__(name=name)
 		self._cls = 'SparsePhrase'
 
-		self._elements = elements
+		elem = OrderedDict()
+		for e in elements:
+			elem[e._descriptor] = e
+		self._elements = elem
+
 		self._phrases = []
 		self._words = []
 		self._markers = []
@@ -228,26 +231,29 @@ class SparsePhrase(Base):
 
 		self.data = data
 		if not data:
-			self.construct_data(elements)
+			self.construct_data()
 
-	def construct_data(self, elements):
-		# cols = ['class', 'phrase', 'word', 'component', 'descriptor', 
-		# 		'flags', 'mutation', 'mutations', 'total_mutations',
-		# 		'capture', 'conflict', 'raw', 'regex']
-		# data = DataFrame(columns=cols)
-		# for element in elements:
-		# 	temp = element.data.copy()
-		# 	if element._cls == 'SparsePhrase':
-		# 		self._phrases.append(element)
-		# 		temp['class']  = 'SparsePhrase'
-		# 		temp['phrase'] = element._descriptor
-		# 	else:
-		# 		self._words.append(element)
-		# 	data = pandas.concat([data, temp])
+	def construct_data(self):
+		cols = ['class', 'phrase', 'word', 'component', 'descriptor', 
+				'flags', 'mutation', 'mutations', 'total_mutations',
+				'capture', 'conflict', 'raw', 'regex']
+		
+		data = DataFrame(columns=cols)
+		for element in self._elements.values():
+			temp = element.data.copy()
+			# if element._cls == 'SparsePhrase':
+			# 	self._phrases.append(element)
+			# 	temp['class']  = 'SparsePhrase'
+			# 	temp['phrase'] = element._descriptor
+			# else:
+			# 	self._words.append(element)
+			data = pandas.concat([data, temp])
 	
-		# data.reset_index(drop=True, inplace=True)
-		data = combine([x.data for x in elements])
-		data.index = insert_level(data.index, self._descriptor)
+		data.reset_index(drop=True, inplace=True)
+
+		# data = combine([x.data for x in self._elements.values()])
+		# data.index = insert_level(data.index, self._descriptor)
+
 		self.data = data
 		self.determine_conflicts()
 		self.markers
@@ -356,9 +362,9 @@ class SparsePhrase(Base):
 		data = self.data
 		if index.__class__.__name__ != 'NoneType':
 			data = data.ix[index]
-		if mode == 'internal':
+		if mode == 'conflict':
 			data = data[data['conflict']]
-		elif mode == 'external':
+		elif mode == 'ends':
 			head = data.head(1).index.item()
 			tail = data.tail(1).index.item() 
 			data = data.ix[[head, tail]]
@@ -394,412 +400,187 @@ class SparsePhrase(Base):
 		else:
 			return None
 
-	def diagnose(self, string):
-		def _test(mutation, string, index):
-			self.mutate(mutation, index=index)
+	def reset(self):
+		for element in self._elements.values():
+			element.reset()
+		self.construct_data()
+
+	def repair(self, fix):
+		if fix == []:
+			raise IndexError('fix is empty')
+
+		for instr in fix:
+			if instr['type'] == 'linking':
+				self._linking = instr['linking']
+			elif instr['type'] == 'scaffold':
+				self.mutate(instr['mutation'], mode=instr['mode'])
+			elif instr['type'] == 'phrase_structure':
+				new_order = OrderedDict()
+				for item in instr['element_order']:
+					new_order[item] = self._elements[item]
+				self._elements = new_order
+				self.construct_data()
+			elif instr['type'] == 'element':
+				element = self._elements[instr['element']]
+				element.repair(instr['fix'])
+				self.construct_data()
+			else:
+				pass
+
+	def _scaffold_test(self, string):
+		def mutation_test(string, mutation, mode='all'):
+			self.mutate([0, 0, 0], mode='all')
+			self.mutate(mutation, mode=mode)
 			found = self.parse(string)
 			if found:
 				return True
 			return False
 
-		def test(string, element):
-			# o = OrderedDict()   
-			# found = self.parse(string)
-			# if found:
-			# 	o['error'] = False
-			# 	return o
-			
-			# o['error'] = True
-			# o['perform_mutation'] = False
-			# o['broken_phrase_structure'] = False
-
-			data = self.data
-			self.construct_data(self._elements)        
+		def test():
+			o = OrderedDict()        
 			found = self.parse(string)
 			if found:
+				o['error'] = False
 				return o
-			
+
+			o['error'] = True
+			o['fix'] = []
+
+			# test for incorrect linking state
 			linking = self._linking
-			self._linking = False
+			self._linking = not linking
 			found = self.parse(string)
-			if found:
-				o['linking'] = False
-				return o
 			self._linking = linking
-					
-			index = data.ix[self._descriptor]
-			index = index.ix[element._descriptor]
-			det = index[index['component'] == 'determiner'].index
-			o['drop_determiners'] = _test([-1, 0, 0], string, det)
-			if o['drop_determiners']:
-				o['suggested_mutation'] = [-1, 0, 0]
-				o['suggested_index'] = det
-				o['perform_mutation'] = True
-				return o
-			
-			self.construct_data(self._elements)
-			term = index[index['component'] == 'terminator'].index
-			o['drop_terminators'] = _test([0, 0, -1], string, det)
-			if o['drop_terminators']:
-				o['suggested_mutation'] = [0, 0, -1]
-				o['suggested_index'] = term
-				o['perform_mutation'] = True
-				return o
-			
-			o['broken_phrase_structure'] = True
-			return o
-		
-		o = OrderedDict()   
-		found = self.parse(string)
-		if found:
-			o['error'] = False
-			return o
-		
-		o['error'] = True
-		o['perform_mutation'] = False
-		o['broken_phrase_structure'] = False
-		
-		data = self.data
-		bad_elements = []
-		for element in self._elements:
-			diagnosis = element.diagnose(string)
-			o[element._descriptor] = diagnosis
-			if diagnosis['error']:
-				if diagnosis['perform_mutation']:
-					if diagnosis['class'] == 'SparsePhrase':
-						element.mutate(diagnosis['suggested_mutation'], index=diagnosis['suggested_index'])
-					else:
-						element.mutate(diagnosis['suggested_mutation'])
-				else:
-					bad_elements.append(element)
-		
-		for phrase in self._phrases:
-			o[phrase._descriptor] = test(string, phrase)
-
-		return o
-		
-
-	# def diagnose(self, string):
-	# 	def test(element, mutation, mode=None):
-	# 		if mode:
-	# 			element.mutate(mutation, mode=mode)
-	# 		else:
-	# 			element.mutate(mutation)
-	# 		found = element.parse(string)
-	# 		if found:
-	# 			return True
-	# 		return False
-
-	# 	o = OrderedDict()
-
-	# 	found = self.parse(string)
-	# 	if found:
-	# 		o['error'] = False
-	# 		return o
-
-	# 	o['error'] = True
-	# 	o['descriptor'] = self._descriptor
-	# 	o['class'] = 'SparsePhrase'
-
-	# 	for element in self._elements:
-	# 		diagnosis = element.diagnose(string)
-	# 		if diagnosis['error']:
-	# 			if diagnosis['class'] == 'SparseWord':
-	# 				if diagnosis['perform_mutation']:
-	# 					mask = data['word'] == diagnosis['descriptor']
-	# 					self.mutate(diagnosis['suggested_mutation'], mask=mask)
-	# 				else:
-	# 					print 'broken_phrase_structure'
-	# 			else:
-	# 				pass
-
-	# 	linking = self._linking
-	# 	for state in [False, True]:
-	# 		self._linking = state
-	# 		found = self.parse(string)
-	# 		if found:
-	# 			print state
-	# 	self._linking = linking
-
-	# 	for drop in ['determiner', 'terminator']:
-	# 		data = self.data
-	# 		data = data[data['component'] != drop]
-	# 		regex = data['regex'].tolist()
-	# 		regex = ''.join(regex)
-	# 		found = re.search(regex, string)
-	# 		if found:
-	# 			print drop
-
-
-		# 	found = element.parse(string)
-		# 	if not found:
-		# 		bad_elements.append(element)
-		# if not bad_elements:
-		# 	o['broken_phrase_structure'] = True
-		# 	return o
-		
-		# for element in bad_elements:
-		# 	if element._cls == 'SparseWord': 
-		# 		diagnosis = element.diagnose(string)
-		# 		o[element._descriptor] = diagnosis
-		# 		if diagnosis['error']:
-		# 			if diagnosis['perform_mutation']:
-		# 				element.mutate(diagnosis['suggested_mutation'])
-		# 	if element._cls == 'SparsePhrase':
-		# 		diagnosis = element.diagnose(string)
-		# 		o[element._descriptor] = diagnosis
-		# return o
-
-
-
-		# o['word_mutation'] = test([0, -3, 0])
-		# if o['word_mutation']:
-		# 	o['missing_word'] = not test([0, -2, 0])
-
-		# o['scaffold_mutation'] = test([-3, 0, -3])
-		# if o['scaffold_mutation']:
-		# 	o['determiner_mutation'] = not test([0, 0, -3])
-		# 	o['terminator_mutation'] = not test([-3, 0, 0])	
-			
-		# 	o['missing_scaffold_element'] = not test([-2, 0, -2])
-		# 	if o['missing_scaffold_element']:
-		# 		if not o['determiner_mutation']:
-		# 			o['missing_terminator'] = not test([0, 0, -2])
-		# 		if not o['terminator_mutation']:
-		# 			o['missing_determiner'] = not test([-2, 0, 0])
-
-		# o['broken_phrase_structure'] = False
-		# if o['scaffold_mutation'] and o['word_mutation']:
-		# 	o['broken_phrase_structure'] = True
-
-		# self.mutate([0,0,0], mode='all')
-
-		# def compound_parse(string):
-		# 	output = OrderedDict()
-		# 	substrings = self._get_substrings(string)
-		# 	for sub in substrings:
-		# 		output[sub] = []
-		# 		for phrase in self._phrases:
-		# 			found = phrase.parse(sub)
-		# 			if found:
-		# 				output[sub].append(phrase)
-		# 		for word in self._words:
-		# 			found = word.parse(sub)
-		# 			if found:
-		# 				output[sub].append(word)
-		# 	return output
-		# o['compound_parse'] = compound_parse(string)
-
-		# return o
-
-	# def _compound_parse(substrings, elements, parse_type='simple'):
-	# 	new_elements = []
-	# 	for sub in substrings:
-	# 		for element in elements:
-	# 			found = None
-	# 			if parse_type = 'smart':
-	# 				found = element.smart_parse(sub)
-	# 			else:
-	# 				found = element.parse(sub) 
-	# 			if found:
-	# 				new_elements.append(element)
-	# 				elements.remove(element)
-	# 				substrings.remove(sub)
-	# 				break
-	# 	return 
-
-	def smart_parse(self, string):
-		found = self.parse(string)
-		if found:
-			return found
-		else:
-			diagnosis = self.diagnose(string)
-			if diagnosis == 'broken_phrase_structure':
-				pass
-			elif diagnosis == 'scaffold_mutation':
-				pass
-
-			substrings = self._get_substrings(string)
-			new_elements = []
-
-			phrases = self._phrases
-			for sub in substrings:
-				for phrase in phrases:
-					found = phrase.parse(sub)
-					if found:
-						new_elements.append(phrase)
-						phrases.remove(phrase)
-						substrings.remove(sub)
-						break
-			
-			words = self._words
-			for sub in substrings:
-				for word in words:
-					found = word.parse(sub)
-					if found:
-						new_elements.append(word)
-						words.remove(word)
-						substrings.remove(sub)
-						break
-			
-			if len(substrings) > 0:
-				for sub in substrings:
-					for phrase in phrases:
-						phrase.smart_parse(sub)
-					for phrase in phrases:
-						phrase.smart_parse(sub)
-					
-
-	def compound_parse(self, string, mutate=' |0| '):
-		mutations = [' |0| ', 'd|0| ', ' |0|t']#, 'd| |t']
-		found = None
-		for mutate in mutations:
-			found = self.parse(string, mutate=mutate)
 			if found:
-				print 'parse', mutate, string, found
-				return found
+				o['fix'].append({'element': self._descriptor,
+								 'type': 'linking',
+								 'linking': not linking})
+				return o
+
+			# test for broken scaffold only
+			o['broken_scaffold'] = mutation_test(string, [-2, 0, -2], mode='all')
+			if o['broken_scaffold']:
+				o['conflicting_determiners'] = mutation_test(string, [-1, 0, 0], mode='both')
+				if o['conflicting_determiners']:
+					o['fix'].append({'element': self._descriptor,
+									 'type': 'scaffold',
+									 'mutation': [-1, 0, 0],
+									 'mode': 'both'})
+					
+					if mutation_test(string, [-1, 0, 0], mode='conflict'):
+						o['fix'][-1]['mode'] = 'conflict'
+						return o
+					if mutation_test(string, [-1, 0, 0], mode='ends'):
+						o['fix'][-1]['mode'] = 'ends'
+						return o
+					return o
+
+				o['conflicting_terminators'] = mutation_test(string, [0, 0, -1], mode='both')
+				if o['conflicting_terminators']:
+					o['fix'].append({'element': self._descriptor,
+									 'type': 'scaffold',
+									 'mutation': [0, 0, -1],
+									 'mode': 'both'})
+					if mutation_test(string, [0, 0, -1], mode='conflict'):
+						o['fix'][-1]['mode'] = 'conflict'
+						return o
+					if mutation_test(string, [0, 0, -1], mode='ends'):
+						o['fix'][-1]['mode'] = 'ends'
+						return o
+				return o
+			# no fix
+			return o
+
+		output = test()
+		self.reset()
+		return output
+
+	def _element_test(self, string):
+		def test():
+			desc = self._descriptor
+			o = OrderedDict()
+			o['fix'] = []
+			o['unfound_elements'] = []
+			help_str = string
+			for name, element in self._elements.iteritems():
+				diagnosis = element.diagnose(string)
+				if diagnosis['error']:
+					if diagnosis['fix']:
+						o['fix'].append({'element': name,
+										'type': 'element',
+										'fix': diagnosis['fix']})
+						element.repair(diagnosis['fix'])			
+					else:
+						o['unfound_elements'].append(name)
+						continue
+				# replace element result with marker
+				tail = element.data.tail(1)['regex']
+				element.data.tail(1)['regex'] = ''
+				help_str = element.regex.sub('|||' + name + '|||', help_str)
+				element.data.tail(1)['regex'] = tail
+
+			for key in o['unfound_elements']:
+				element = self._elements[key]
+				element.nullify()
+			unfound = o['unfound_elements']
+
+			# # test mutated elements in orignial order
+			# self.construct_data()
+			# diagnosis = self._scaffold_test(string)
+			# if not diagnosis['error']:
+			# 	return o
+			# if diagnosis['fix']:
+			# 	o['fix'].extend(diagnosis['fix'])
+			# 	return o
+
+			# determine new element order from helper string
+			temp = help_str.split('|||')
+			temp = [x for x in temp if x != '']
+			new_elements = OrderedDict()
+			for item in temp:
+				if item in self._elements:
+					new_elements[item] = self._elements[item]
+				else:
+					if unfound:
+						null = unfound.pop(0)
+						new_elements[null] = self._elements[null]
+			
+			if new_elements == self._elements:
+				o['broken_phrase_structure'] = False
 			else:
-				return self._compound_parse(string)
+				o['broken_phrase_structure'] = True
+				o['element_order'] = new_elements.keys()
 
-	def _compound_parse(self, string):
-		output = {}
-		substrings = self._get_substrings(string)
-		
-		mutations = [' |0| ', 'd|0| ', ' |0|t']#, 'd| |t']
-		for mutate in mutations:
-			new_substrings = substrings
-			elements = self._elements
-			 
-			for s, sub in enumerate(substrings):
-				for e, elem in enumerate(elements):
-					found = elem.parse(sub, mutate=mutate)
-					if found:
-						print 'parse', mutate, sub, elem._descriptor, found
-						for k, v in found.iteritems():
-							output[k] = v
-						new_substrings.pop(s)
-						elements.pop(e)
-						break
+				# test mutated elemetns in new order
+				self._elements = new_elements
+				self.construct_data()
+				diagnosis = self._scaffold_test(string)
+				
+				if not diagnosis['error']:
+					o['fix'].append({'element': self._descriptor,
+									 'type': 'phrase_structure',
+									 'element_order': new_elements.keys()})
+					return o
 
-			for sub in new_substrings:
-				for element in new_elements:
-					found = element.compound_parse(sub, mutate=mutate)
-					if found:
-						print 'compound parse', mutate, sub, element._descriptor, found
-						for k, v in found.iteritems():
-							output[k] = v
-						break
+				if diagnosis['fix']:
+					o['fix'].append({'element': self._descriptor,
+									 'type': 'phrase_structure',
+									 'element_order': new_elements.keys()})
+					return o
+			return o
+				
+		elements = self._elements
+		output = test()
+		self._elements = elements
+		self.reset()
 		return output
 
-		# for sub in new_substrings:
-		# 	for element in self._phrase_elements:
-		# 		found = element.compound_parse(sub)
-		# 		if found:
-		# 			print 'compound parse', sub, element._descriptor, found
-		# 			for k, v in found.iteritems():
-		# 				output[k] = v
-		# 				break
-		
-		# data['class'] = data['raw'].apply(lambda x: 'SparsePhrase' if re.search(self.submarkers, x) else 'SparseWord')
-		# mask = data[data['type'] == 'item']
-		# data.loc[mask.index, 'class'] == 'SparseWord'
-	
-		# substring = data[data['class'] == 'SparsePhrase']
-		# substring = substring['raw'].tolist()
-		# substring = ''.join(substring)
-
-		# tokstring = data[data['class'] == 'SparseWord']
-		# tokstring = tokstring['raw'].tolist()
-		# tokstring = ''.join(tokstring)
-
-		# output = {}
-		# found = None
-		# for token in self._token_elements:
-		# 	found = token.parse(tokstring, drop=drop)
-		# 	if found:
-		# 		for k, v in found.iteritems():
-		# 			output[k] = v
-
-		# for item in self._phrase_elements:
-		# 	found = item.parse(substring, drop=drop)
-		# 	if found:
-		# 		for k, v in found.iteritems():
-		# 			output[k] = v
-		# 	found = item._compound_parse(substring, drop=drop, recursive=recursive)
-		# 	output[item._descriptor] = found
-
-		# return output
-
-	# def compound_parse(self, string, drop='d|k|t', recursive=True):
-	# 	item = self._compound_parse(string, drop=drop, recursive=recursive)
-	# 	data = SparseDataFrame()
-	# 	data = data.read_nested_dict(item)
-	# 	data.columns = ['result']
-		
-	# 	mask = _mask_to_list(mask)
-	# 	data['determiner'] = mask[0]
-	# 	data['token']      = mask[1]
-	# 	data['terminator'] = mask[2]
-		
-	# 	data['recursive'] = recursive
-	# 	data['type'] = 'compound'
-		
-	# 	descriptors = []
-	# 	for row in data.index.tolist():
-	# 		desc = row
-	# 		if recursive:
-	# 			new_row = [x for x in row if x != '-->']
-	# 			desc = new_row[-1]
-	# 		descriptors.append(desc)
-	# 	data['descriptor'] = descriptors
-
-	# 	data['length'] = data['result'].apply(lambda x: len(x) if type(x) == str else 0)
-	# 	return data
-		
-	def master_parse(self, string):
-		recurse = [True, False]
-		drops = ['d|k|t', ' |k|t', 'd|k| ', ' |k| ']
-				# 'd| |t', ' | |t', 'd| | ', ' | | ']
-
-		data = {}
-		for drop in drops:
-			key = ', '.join([d, 'False', 'simple'])
-			data[key] = self.parse(string, drop=drop) 
-
-		for r in recurse:
-			for drop in drops:
-				key = ', '.join([d, str(r), 'compound'])
-				data[key] = self._compound_parse(string, drop=drop, recursive=r)
-		
-		output = SparseDataFrame()
-		output = output.read_nested_dict(data)
-
-		output.columns = ['result']
-		output = output[output['result'] != {}]
-
-		index = output.index.get_level_values(0)
-		index = [x.split(', ') for x in index]
-
-		mask = [_mask_to_list(x[0]) for x in index]
-		output['determiner'] = [x[0] for x in mask]
-		output['token']    = [x[1] for x in mask]
-		output['terminator'] = [x[2] for x in mask]
-
-		output['recursive']  = [x[1] for x in index]
-		output['type']       = [x[2] for x in index]
-		output['recursive']  = output['recursive'].apply(lambda x: eval(x))
-
-		descriptors = []
-		for row in output.index.tolist():
-			new_row = [x for x in row if x != '-->']
-			descriptors.append(new_row[-1])
-		output['descriptor'] = descriptors
-
-		output['length'] = output['result'].apply(lambda x: len(x) if type(x) == str else 0)
-		
-		# output.reset_index(level=0, drop=True, inplace=True)
-
-		return output
+	def diagnose(self, string):
+		o = self._scaffold_test(string)
+		if o['error']:
+			if not o['fix']:
+				o = self._element_test(string)
+		return o
 # ------------------------------------------------------------------------------
 
 def _mutation_handler(mutation):

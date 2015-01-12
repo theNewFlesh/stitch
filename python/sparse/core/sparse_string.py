@@ -50,6 +50,7 @@ from sparse.utilities.utils import Base
 from sparse.core.sparse_dataframe import SparseDataFrame
 from sparse.utilities.utils import flatten_nested_dict, combine, insert_level
 # ------------------------------------------------------------------------------
+SEP = '\xff'
 
 class SparseWord(Base):
 	def __init__(self, descriptor='token', 
@@ -77,7 +78,9 @@ class SparseWord(Base):
 			markers = markers['raw'].unique().tolist()
 			markers_ = '[^' + ''.join(markers) + ']+'
 
-			end = ['.+?', '.*?', '']
+			end = ['[^' + SEP + ']+?',
+				   '[^' + SEP + ']*?',
+				    '']
 			determiners.append('^')
 			determiners.extend(end)
 			tokens.append(markers_)
@@ -100,6 +103,7 @@ class SparseWord(Base):
 			data['flags'] = flags
 			data['mutation'] = 0
 			data['total_mutations'] = data['mutations'].apply(lambda x: len(x))
+			data['restricted'] = self._restricted
 			# data['markers'] = None
 			# data['markers'] = data['markers'].apply(lambda x: markers)
 			data['conflict'] = False	
@@ -107,7 +111,7 @@ class SparseWord(Base):
 
 			cols = ['class', 'phrase', 'word', 'component', 'descriptor', 
 					'flags', 'mutation', 'mutations', 'total_mutations',
-					'capture', 'conflict', 'raw', 'regex']
+					'restricted', 'capture', 'conflict', 'raw', 'regex']
 			data = data[cols]
 			self.data = data
 			self.mutate([0,0,0])
@@ -245,7 +249,7 @@ class SparsePhrase(Base):
 	def construct_data(self):
 		cols = ['class', 'phrase', 'word', 'component', 'descriptor', 
 				'flags', 'mutation', 'mutations', 'total_mutations',
-				'capture', 'conflict', 'raw', 'regex']
+				'restricted', 'capture', 'conflict', 'raw', 'regex']
 		
 		data = DataFrame(columns=cols)
 		for element in self._elements.values():
@@ -394,11 +398,29 @@ class SparsePhrase(Base):
 
 	@property
 	def regex(self):
-		data = self.data
+		def sub_with_wildcard(regex):
+			wild_re = re.compile('\[\^' + SEP + ']')
+			found = wild_re.search(regex)
+			if found:
+				return wild_re.sub('.', regex)
+			return regex
+
+		data = self.data		
 		if self._linking:
+			# mask restricted
+			rmask = data['restricted'].tolist()
+			# unmask all tokens
+			cmask = data['component'].apply(lambda x: x =='token').tolist()
+			for i, item in enumerate(cmask):
+				if item == True:
+					rmask[i] = True
+			data = data[rmask]
 			mask = _mask_pairs(data['raw'].tolist())
 			data = data[mask]
-		regex = data['regex'].tolist()
+
+		# substitute non-separators with wildcard .
+		regex = data['regex'].apply(lambda x: sub_with_wildcard(x))
+		regex = regex.tolist()
 		regex = ''.join(regex)
 		return re.compile(regex)
 	
@@ -518,6 +540,7 @@ class SparsePhrase(Base):
 			desc = self._descriptor
 			o = OrderedDict()
 			o['fix'] = []
+			o['error'] = False
 			o['unfound_elements'] = []
 			help_str = string
 			for name, element in self._elements.iteritems():
@@ -531,10 +554,18 @@ class SparsePhrase(Base):
 					else:
 						o['unfound_elements'].append(name)
 						continue
+					o['error'] = True
+
 				# replace element result with marker
 				tail = element.data.tail(1)['regex']
 				element.data.tail(1)['regex'] = ''
-				help_str = element.regex.sub('|||' + name + '|||', help_str)
+				padded_re = SEP + element.regex.pattern
+				padded_re = re.compile(padded_re)
+				found = padded_re.search(help_str)
+				if found:
+					help_str = padded_re.sub(SEP + name + SEP, help_str)
+				else:
+					help_str = element.regex.sub(SEP + name + SEP, help_str)
 				element.data.tail(1)['regex'] = tail
 
 			for key in o['unfound_elements']:
@@ -542,17 +573,8 @@ class SparsePhrase(Base):
 				element.nullify()
 			unfound = o['unfound_elements']
 
-			# # test mutated elements in orignial order
-			# self.construct_data()
-			# diagnosis = self._scaffold_test(string)
-			# if not diagnosis['error']:
-			# 	return o
-			# if diagnosis['fix']:
-			# 	o['fix'].extend(diagnosis['fix'])
-			# 	return o
-
 			# determine new element order from helper string
-			temp = help_str.split('|||')
+			temp = help_str.split(SEP)
 			temp = [x for x in temp if x != '']
 			new_elements = OrderedDict()
 			for item in temp:
@@ -568,36 +590,35 @@ class SparsePhrase(Base):
 			else:
 				o['broken_phrase_structure'] = True
 				o['element_order'] = new_elements.keys()
-
-				# test mutated elemetns in new order
-				self._elements = new_elements
-				self.construct_data()
-				diagnosis = self._scaffold_test(string)
-				
-				if not diagnosis['error']:
-					o['fix'].append({'element': self._descriptor,
-									 'type': 'phrase_structure',
-									 'element_order': new_elements.keys()})
-					return o
-
-				if diagnosis['fix']:
-					o['fix'].append({'element': self._descriptor,
-									 'type': 'phrase_structure',
-									 'element_order': new_elements.keys()})
-					return o
+				o['fix'].append({'element': self._descriptor,
+								 'type': 'phrase_structure',
+								 'element_order': new_elements.keys()})
 			return o
-				
-		elements = self._elements
+		
 		output = test()
-		self._elements = elements
 		self.reset()
 		return output
 
 	def diagnose(self, string):
-		o = self._scaffold_test(string)
-		if o['error']:
-			if not o['fix']:
-				o = self._element_test(string)
+		elements = self._elements
+		o = self._element_test(string)
+		if o['fix']:
+			self.repair(o['fix'])
+		else:
+			self.reset()
+			o = OrderedDict({'fix': [], 'error': o['error']})
+	
+		p = self._scaffold_test(string)
+		if p['error']:
+			o['error'] = True
+			for key, val in p.iteritems():
+				if key not in o:
+					if key != 'fix':
+						o[key] = val
+					else:
+						o['fix'].extend(val)
+		self._elements = elements
+		self.reset()
 		return o
 # ------------------------------------------------------------------------------
 

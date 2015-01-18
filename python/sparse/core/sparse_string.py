@@ -108,7 +108,7 @@ class SparseWord(Base):
 			# data['markers'] = data['markers'].apply(lambda x: markers)
 			data['conflict'] = False	
 			data['regex'] = data['raw']
-
+		
 			cols = ['class', 'phrase', 'word', 'component', 'descriptor', 
 					'flags', 'mutation', 'mutations', 'total_mutations',
 					'restricted', 'capture', 'conflict', 'raw', 'regex']
@@ -150,6 +150,24 @@ class SparseWord(Base):
 		regex = ''.join(regex)
 		regex = re.compile(regex, flags=data.ix[1]['flags'])
 		return regex
+
+	@property
+	def grok(self):
+		# Logstash grok support
+		word = self._descriptor.upper() + ' (' + self.data['raw'].ix[1] + ')'
+
+		if self.data['capture'].ix[1]:
+			word = '_' + word
+			repl = '%{_' + self._descriptor.upper()
+			repl += ':' + self._descriptor.lower()
+			repl += '}'
+			phrase = self.regex.pattern
+			repl_re = re.compile('\(\?P<' + self._descriptor + '>.*?\)')
+			phrase = repl_re.sub(repl, phrase)
+			phrase = self._descriptor.upper() + ' (?:' + phrase + ')' 
+			return '\n'.join([word, phrase])
+		else:
+			return word
 
 	def parse(self, string):
 		found = self.regex.search(string)
@@ -352,6 +370,11 @@ class SparsePhrase(Base):
 		substrings.append(substring)
 		return substrings
 
+	def nullify(self):
+		self.data['capture'] = False
+		self.mutate([-1, -1, -1])
+		self.mutate([-2, -1, -1], index=[0])
+
 	def mutate(self, mutation, mode='all', index=None):
 		def _mutate(data, component, integer):
 			mask = data[data['component'] == component]
@@ -423,7 +446,23 @@ class SparsePhrase(Base):
 		regex = regex.tolist()
 		regex = ''.join(regex)
 		return re.compile(regex)
-	
+
+	@property
+	def grok(self):
+		output = [x.grok for x in self._elements.values()]
+		regex = self.regex.pattern
+		grok_re = re.compile('\(\?P<(.*?)>.*?\)')
+		found = grok_re.finditer(regex)
+		for item in found:
+			name = item.group(1)
+			repl = '%{_' + name.upper() + ':' + name.lower() + '}'
+			pattern = '\(\?P<' + name + '>.*?\)'
+			regex = re.sub(pattern, repl, regex)
+
+		temp = self._descriptor.upper() + ' (?:' + regex + ')'
+		output.append(temp)
+		return '\n'.join(output)
+
 	def parse(self, string):
 		found = self.regex.search(string)
 		if found:
@@ -568,6 +607,21 @@ class SparsePhrase(Base):
 					help_str = element.regex.sub(SEP + name + SEP, help_str)
 				element.data.tail(1)['regex'] = tail
 
+			# test phrase with mutated elements in original order
+			self.construct_data()
+			p = self._scaffold_test(string)
+			if not p['error']:
+				return o
+			if p['fix']:
+				o['error'] = True
+				for key, val in p.iteritems():
+					if key not in o:
+						if key != 'fix':
+							o[key] = val
+						else:
+							o['fix'].extend(val)
+				return o
+
 			for key in o['unfound_elements']:
 				element = self._elements[key]
 				element.nullify()
@@ -595,19 +649,30 @@ class SparsePhrase(Base):
 								 'element_order': new_elements.keys()})
 			return o
 		
+		elements = self._elements
 		output = test()
+		self._elements = elements
 		self.reset()
 		return output
 
 	def diagnose(self, string):
-		elements = self._elements
-		o = self._element_test(string)
-		if o['fix']:
-			self.repair(o['fix'])
+		o = self._scaffold_test(string)
+		if o['error']:
+			if o['fix']:
+				self.repair(o['fix'])
 		else:
-			self.reset()
-			o = OrderedDict({'fix': [], 'error': o['error']})
-	
+			return o
+
+		o = self._element_test(string)
+		if ['error']:
+			if o['fix']:
+				self.repair(o['fix'])
+			else:
+				self.reset()
+				o = OrderedDict({'fix': [], 'error': o['error']})
+		else:
+			return o
+
 		p = self._scaffold_test(string)
 		if p['error']:
 			o['error'] = True
@@ -617,7 +682,6 @@ class SparsePhrase(Base):
 						o[key] = val
 					else:
 						o['fix'].extend(val)
-		self._elements = elements
 		self.reset()
 		return o
 # ------------------------------------------------------------------------------

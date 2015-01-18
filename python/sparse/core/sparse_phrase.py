@@ -25,7 +25,7 @@
 # THE SOFTWARE.
 # ------------------------------------------------------------------------------
 
-'''The sparse_string module contains the SparsePhrase class.
+'''The sparse_phrase module contains the SparsePhrase class.
 
 The SparsePhrase class is used for parsing strings and generating regular
 expressions according to the DTT (determiner, token, terminator) paradigm. 
@@ -95,8 +95,7 @@ class SparseWord(Base):
 			data = DataFrame([[ 'determiner',  d_desc,       determiners[0],  determiners, capture[0]],
 							  [ 'token',       descriptor,   tokens[0],       tokens,      capture[1]],
 							  [ 'terminator',  t_desc,       terminators[0],  terminators, capture[2]]],
-							 columns=cols) #, index=[[descriptor] * 3, [0, 1, 2]])
-
+							 columns=cols)
 			data['class'] = self._cls
 			data['phrase'] = descriptor
 			data['word'] = descriptor
@@ -104,8 +103,6 @@ class SparseWord(Base):
 			data['mutation'] = 0
 			data['total_mutations'] = data['mutations'].apply(lambda x: len(x))
 			data['restricted'] = self._restricted
-			# data['markers'] = None
-			# data['markers'] = data['markers'].apply(lambda x: markers)
 			data['conflict'] = False	
 			data['regex'] = data['raw']
 		
@@ -272,19 +269,8 @@ class SparsePhrase(Base):
 		data = DataFrame(columns=cols)
 		for element in self._elements.values():
 			temp = element.data.copy()
-			# if element._cls == 'SparsePhrase':
-			# 	self._phrases.append(element)
-			# 	temp['class']  = 'SparsePhrase'
-			# 	temp['phrase'] = element._descriptor
-			# else:
-			# 	self._words.append(element)
-			data = pandas.concat([data, temp])
-	
+			data = pandas.concat([data, temp])	
 		data.reset_index(drop=True, inplace=True)
-
-		# data = combine([x.data for x in self._elements.values()])
-		# data.index = insert_level(data.index, self._descriptor)
-
 		self.data = data
 		self.determine_conflicts()
 		self.markers
@@ -318,6 +304,7 @@ class SparsePhrase(Base):
 		data['conflict'] = conflicts
 		return self.data
 
+	# may be removed
 	@property
 	def markers(self):
 		data = self.data
@@ -330,6 +317,7 @@ class SparsePhrase(Base):
 		self._markers = markers
 		return '|'.join(self._markers)
 
+	# may be removed
 	def _get_substrings(self, string):
 		items = re.split(self.markers, string)
 		items = [x for x in items if x != '']

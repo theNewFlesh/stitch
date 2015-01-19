@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Alex Braun 04.23.2014
+# Alex Braun 01.18.2015
 
 # ------------------------------------------------------------------------------
 # The MIT License (MIT)
@@ -31,7 +31,7 @@ The SparsePhrase class is used for parsing strings and generating regular
 expressions according to the DTT (determiner, token, terminator) paradigm. 
 
 Date:
-	09.06.2014
+	01.18.2015
 
 Platform:
 	Unix
@@ -53,6 +53,28 @@ from sparse.utilities.utils import flatten_nested_dict, combine, insert_level
 SEP = '\xff'
 
 class SparseWord(Base):
+	'''
+	Class for representing a word within the Sparse grammatical paradigm
+
+	A SparseWord functions as a token within a larger combinatorial grammar.
+	They are defined by three components rather a single one.  The first is 
+	called the "determiner", which is a list of regular expressions used to 
+	demarcate the beginning of the word.  The second is called the "token", 
+	which is a list of regular expressions used to capture the substring you are
+	actually interested in.	The last is called the "terminator", which is a 
+	list of regular expressions used to	demarcate the end of the word.  This
+	three-part paradigm is called the DKT (Determiner, Token, Terminator) 
+	paradigm.
+
+	With this paradigm, SparseWords can not only parse strings by internally
+	defined	regular expressions, but they can diagnose what is wrong with them
+	when they fail and repair them. Both diagnostics and repair function by
+	means of component mutations made possible by the DKT paradigm.
+
+	SparseWords are fit into SparsePhrases which utilize these components in
+	order to chain words together into new phrase structures and perform
+	mutations.
+	'''
 	def __init__(self, descriptor='token', 
 				 determiners=[''], tokens=['.*'], terminators=[''],
 				 flags=0, capture=[0, 1, 0], restricted=True,
@@ -242,6 +264,21 @@ class SparseWord(Base):
 # ------------------------------------------------------------------------------
 		
 class SparsePhrase(Base):
+	'''
+	Class for representing a phrase within the Sparse grammatical paradigm
+
+	A SparsePhrase functions as a complete combinatorial (and mutative) grammar
+	comprised of other, simpler SparsePhrases and (ultimately) SparseWords.
+	Based on diagnoses performed after failed parse operatons; SparsePhrases are 
+	able to repair themselves such that they succeed upon reparsing the same 
+	string.  
+
+	Grammars are represented as tables within SparsePhrases.  From the "regex"
+	column of this table a regular expression is derived and used to parse 
+	supllied strings.  When a parse fails, the phrase performs a diagnosis and
+	repair process which reconfigures this table in such a way that the next
+	regular expression derived from succeeds.
+	'''
 	def __init__(self, descriptor, elements, linking=True, data=None, name=None):
 		super(SparsePhrase, self).__init__(name=name)
 		self._cls = 'SparsePhrase'

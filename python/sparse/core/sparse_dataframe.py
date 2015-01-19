@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Alex Braun 04.23.2014
+# Alex Braun 01.18.2015
 
 # ------------------------------------------------------------------------------
 # The MIT License (MIT)
@@ -33,7 +33,7 @@ such as esoteric databases, logs and custom made tables, into SparseDataFrames,
 with the actual data residing within a Pandas DataFrame.  
 
 Date:
-	08.24.2014
+	01.18.2015
 
 Platform:
 	Unix
@@ -89,7 +89,6 @@ class SparseDataFrame(Base):
 		2   sue   65      pilot
 		3  jane   43    teacher
 	'''
-
 	def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False, name=None):
 		'''SparseDataFrame initializer
 
@@ -104,7 +103,6 @@ class SparseDataFrame(Base):
 		Returns:
 			SparseDataFrame
 		'''
-
 		super(SparseDataFrame, self).__init__(name=name)
 		self._cls = 'SparseDataFrame'
 		self._spql = SpQLInterpreter()
@@ -150,7 +148,6 @@ class SparseDataFrame(Base):
 			2  <type 'str'>  <type 'str'>  <type 'str'>
 			3  <type 'str'>  <type 'str'>  <type 'str'>
 		'''
-
 		data = self.data.applymap(lambda x: to_type(x, dtype))
 
 		if inplace:
@@ -189,7 +186,6 @@ class SparseDataFrame(Base):
 			2   sue  NaN      pilot
 			3  jane  NaN    teacher
 		'''
-
 		data = self.data.applymap(lambda x: is_iterable(x))
 
 		if inplace:
@@ -220,7 +216,6 @@ class SparseDataFrame(Base):
 			2   sue  [65]      pilot
 			3  jane  [43]    teacher
 		'''
-
 		data = self.data.applymap(lambda x: make_iterable(x))
 
 		if inplace:
@@ -252,7 +247,6 @@ class SparseDataFrame(Base):
 				2   sue   65        NaN
 				3   NaN   43    teacher
 		'''
-
 		nulls = [   None,      '',      [],      {},      (),      set(),      OrderedDict(),
 				   [None],    [''],    [[]],    [{}],    [()],    [set()],    [OrderedDict()],
 				   (None),    (''),    ([]),    ({}),    (()),    (set()),    (OrderedDict()),
@@ -294,7 +288,6 @@ class SparseDataFrame(Base):
 			2   sue   43        NaN
 			3   NaN  NaN        NaN
 		'''
-
 		data = self.data.apply(lambda x: SparseSeries(x).nan_to_bottom())
 
 		if inplace:
@@ -329,8 +322,7 @@ class SparseDataFrame(Base):
 			1  bill   22    soldier
 			2   sue   65      pilot
 			3  jane   43    teacher
-		'''
-		
+		'''		
 		data = self.data.applymap(lambda x: regex_match(pattern, x, group=group, ignore_case=ignore_case))
 
 		if inplace:
@@ -365,7 +357,6 @@ class SparseDataFrame(Base):
 			2   sue   65      pilot
 			3  jane   43    teacher
 		'''
-
 		data = self.data.applymap(lambda x: regex_search(pattern, x, group=group, ignore_case=ignore_case))
 
 		if inplace:
@@ -401,7 +392,6 @@ class SparseDataFrame(Base):
 			2   sue   65                pilot
 			3  jane   43              teacher
 		'''
-
 		data = self.data.applymap(lambda x: regex_sub(pattern, repl, x, count=count, ignore_case=ignore_case))
 
 		if inplace:
@@ -435,7 +425,6 @@ class SparseDataFrame(Base):
 			2   sue   65     [helicopter, pilot]
 			3  jane   43                 teacher
 		'''
-
 		data = self.data.applymap(lambda x: regex_split(pattern, x, ignore_case=ignore_case))
 
 		if inplace:
@@ -467,8 +456,7 @@ class SparseDataFrame(Base):
 			0  		1 		10     some string
 			1  		2 		20  another string
 			2  		3 		30            blah
-		'''	
-
+		'''
 		def _reorder_columns(columns, index):
 			new_cols = []
 			for col in columns:
@@ -531,7 +519,17 @@ class SparseDataFrame(Base):
 			self.data = data
 		return data
 
-	def drop_columns(self, columns, inplace=True):
+	def drop_columns(self, columns, inplace=False):
+		'''
+		Drop a given set of columns from the DataFrame
+
+		Args:
+			columns (list): Set of columns to drop.
+			inplace (bool, optional): Apply changes in place. Default: False
+		
+		Returns: 
+			Reduced DataFrame
+		'''
 		data = self.data
 		data = data.T.drop(columns).T
 
@@ -567,7 +565,6 @@ class SparseDataFrame(Base):
 			2   sue       pilot
 			3  jane     teacher
 		'''
-
 		mask = self.data[mask]
 		mask = mask.dropna(how=how, axis=axis)
 		data = None
@@ -613,7 +610,6 @@ class SparseDataFrame(Base):
 			1  NaN        NaN    25  policeman   14    student    43    teacher
 			2  NaN        NaN   NaN        NaN   44      nurse   NaN        NaN
 		'''
-
 		frames = []
 		max_len = 0
 		cols = list(self.data.columns.drop(column))
@@ -703,7 +699,6 @@ class SparseDataFrame(Base):
 		Returns: 
 			Unique DataFrame
 		'''
-
 		data = self.data	
 		mask = data.apply(lambda x: x.duplicated())
 		data[mask] = numpy.nan
@@ -728,7 +723,6 @@ class SparseDataFrame(Base):
 		Returns: 
 			Cross-mapped DataFrame
 		'''
-
 		data = self.data
 		mask = data[source_column].apply(source_predicate)
 		if target_predicate:
@@ -757,7 +751,6 @@ class SparseDataFrame(Base):
 		Returns: 
 			DataFrame with new value column
 		'''
-
 		data  = self.data
 		data[value_column] = None
 		mask = data[group_column].duplicated()
@@ -823,7 +816,6 @@ class SparseDataFrame(Base):
 		Returns: 
 			DataFrame
 		'''
-
 		def _add(item):
 			output = item[item.index[0]]
 			for i, col in enumerate(columns[1:]):
@@ -876,7 +868,6 @@ class SparseDataFrame(Base):
 		Returns: 
 			DataFrame
 		'''
-
 		func = lambda x: merge_list_dicts( x[x.index[0]], x[x.index[1]],
 										   source_key, target_key, remove_key=remove_key)
 
@@ -898,7 +889,6 @@ class SparseDataFrame(Base):
 		Returns: 
 			DataFrame
 		'''
-
 		values = flatten_nested_dict(item).values()
 		index = nested_dict_to_index(item)
 		data = DataFrame(values, index=index)
@@ -920,7 +910,6 @@ class SparseDataFrame(Base):
 		Returns: 
 			None
 		'''
-
 		self.data = pandas.read_json(string, orient=orient)
 
 	def to_json(self, orient='records'):
@@ -932,7 +921,6 @@ class SparseDataFrame(Base):
 		Returns: 
 			JSON string
 		'''
-
 		return self.data.to_json(orient=orient)
 	# --------------------------------------------------------------------------
 	
@@ -960,7 +948,6 @@ class SparseDataFrame(Base):
 			0    abe   15
 			1  carla   22
 		'''
-
 		self._spql.search(string)
 		data = self._spql.dataframe_query(self.data, field_operator=field_operator)
 

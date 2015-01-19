@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Alex Braun 08.25.2014
+# Alex Braun 01.18.2015
 
 # ------------------------------------------------------------------------------
 # The MIT License (MIT)
@@ -32,7 +32,7 @@ partially numeric data, into numeric data.  This data can then be graphed using
 the Matplotlib library.
 
 Date:
-	08.24.2014
+	01.18.2015
 
 Platform:
 	Unix
@@ -65,7 +65,6 @@ class SparseLUT(Base):
 		keys (DataFrame): Input data that has been reduced to unique values.
 		values (DataFrame): Numeric values mapped to the keys.
 	'''
-
 	def __init__(self, data=None, null='missing data', null_value=-1.0, name=None):
 		'''SparseLut initializer
 
@@ -74,8 +73,7 @@ class SparseLUT(Base):
 			null (string, optional): Placeholder for missing keys data. Default: 'missing data'.
 			null_value (int, optional): Placeholder value for missing values data. Default: -1.0.
 			name (string, optional): Name descriptor. Default: None.
-		'''
-		
+		'''		
 		super(SparseLUT, self).__init__(name=name)
 		self._cls = 'SparseLUT'
 
@@ -88,12 +86,20 @@ class SparseLUT(Base):
 
 	def _reduce_keys(self):
 		'''Semi-private method for reducing the keys table'''
-
 		keys = self._keys
 		keys.unique(inplace=True)
 		keys.data = keys.data.applymap(lambda x: self._null if pandas.isnull(x) else x)
 
 	def ingest(self, data):
+		'''
+		Ingest data, create keys and generate values
+
+		Args:
+			data (DataFrame): DataFrame to be ingested.
+
+		Returns:
+			None
+		'''
 		self._keys = SparseDataFrame(data, name='keys')
 		self._reduce_keys()
 		self.generate_values()
@@ -104,6 +110,9 @@ class SparseLUT(Base):
 		Args:
 			start (int, optional): Minimum floating point value. Default: 1.
 			step (int, optional): Amount to step between values. Default 1.
+
+		Returns:
+			None
 		'''
 		data = self._keys.data.copy()
 		mask = data.applymap(lambda x: bool_test(x, '==', [self._null]))
@@ -116,6 +125,17 @@ class SparseLUT(Base):
 		self._values = SparseDataFrame(data, name='values')
 
 	def read_json(self, string, keys_only=True, orient='records'):
+		'''
+		Read JSON data into keys and values of SparseDataFrame
+
+		Args:
+			string (str): JSON formatted string.
+			keys_only (bool, optional): Read keys and generate values from them. Default: True.   
+			orient (str, optional): Type of JSON orientation. Default: 'records'.
+
+		Returns:
+			None
+		'''
 		if keys_only:
 			data = SparseDataFrame(name='keys')
 			data.read_json(string, orient=orient)
@@ -128,6 +148,16 @@ class SparseLUT(Base):
 			self._values = SparseDataFrame(data['values'], name='values')
 
 	def to_json(self, keys_only=True, orient='records'):
+		'''
+		Write interal data to a JSON string
+
+		Args:
+			keys_only (bool, optional): Write only keys. Default: True.
+			orient (str, optional): JSON formatting type. Default 'records'.
+
+		Returns:
+			json
+		'''
 		if keys_only:
 			return self._keys.to_json(orient=orient)
 		else:
@@ -144,7 +174,6 @@ class SparseLUT(Base):
 		Returns:
 			DataFrame of keys.
 		'''
-
 		return self._keys
 
 	@property
@@ -154,7 +183,6 @@ class SparseLUT(Base):
 		Returns:
 			DataFrame of numeric values.
 		'''
-
 		return self._values
 	# --------------------------------------------------------------------------
 
@@ -169,8 +197,7 @@ class SparseLUT(Base):
 
 		Returns:
 			Numeric equivalent of key. 
-		'''
-		
+		'''		
 		output = None
 		if reverse:
 			output = self._values.spql_search(string)
@@ -208,7 +235,6 @@ class SparseLUT(Base):
 		Returns:
 			Numeric equivalent of key. 
 		'''
-
 		def _transform_item(item):
 			source = '(' + source_column + ') ' + operator + ' (' + item + ')'
 			found = self.spql_lookup(source, verbosity=verbosity)
@@ -225,6 +251,16 @@ class SparseLUT(Base):
 			return _transform_item(item)
 
 	def make_numerical(self, data, spql=False):
+		'''
+		Convert supplied data to its numerical equivalents determined by lookups.
+
+		Args:
+			data (DataFrame): DataFrame to be converted.
+			spql (bool, optional): Use SpQL to perform the lookup. Default: False.
+
+		Returns
+			DataFrame
+		'''
 		data = data.copy()
 		columns = data.columns.tolist()
 		for col in columns:
@@ -232,6 +268,19 @@ class SparseLUT(Base):
 		return data
 
 	def lookup_item(self, item, column, spql=False, operator='=', verbosity=None):
+		'''
+		Lookup value of given item within a specified column.
+
+		Args:
+			item (item): Item to be use queried.
+			column (str): Lookup column.
+			spql (bool, optional): Use SpQL to perform the lookup. Default: False.
+			operator (str, optional): Comparison operator to be used in SpQL query. Default: '='.
+			verbosity (str, optional): Level of verbosity fro SpQL query (error, warn or None). Default: None
+
+		Returns:
+			value
+		'''
 		output = numpy.nan
 		if spql:
 			search = '(' + str(column) + ') ' + operator + ' (' + str(item) + ')'

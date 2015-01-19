@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Alex Braun 04.23.2014
+# Alex Braun 01.18.2015
 
 # ------------------------------------------------------------------------------
 # The MIT License (MIT)
@@ -27,7 +27,7 @@
 
 '''
 .. module:: spql_parser
-	:date: 04.13.2014
+	:date: 01.18.2015
 	:platform: Unix
 	:synopsis: Sparse Query Langauge parser
 
@@ -42,8 +42,23 @@ from sparse.utilities.utils import Base
 # ------------------------------------------------------------------------------
 
 class SpQLParser(Base):
+	'''
+	Class for generating queries for which to filter DataFrames
+
+	Attributes:
+		cls (str): Class descriptor
+		name (str): Name descriptor
+		last_search (str): Last SpQL query generated. Default: None.
+		search_stats(str): Print statistics about the last query made.
+	'''
 
 	def __init__(self, name=None):
+		'''
+		Initializer for SparseParser
+
+		Args:
+			name (str): Name descriptor
+		'''
 		super(SpQLParser, self).__init__(name=name)
 		self._cls = 'SpQLParser'
 
@@ -96,6 +111,15 @@ class SpQLParser(Base):
 			print ''
 
 	def search(self, string):
+		'''
+		Generate query from string and place it in last_search
+
+		Args:
+			string(str): SpQL formatted string to be parsed.
+
+		Returns:
+			SpQL query.
+		'''
 		results = []
 		for fragment in self._line.parseString(string):
 			compound_query = []

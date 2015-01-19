@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Alex Braun 04.23.2014
+# Alex Braun 01.18.2015
 
 # ------------------------------------------------------------------------------
 # The MIT License (MIT)
@@ -27,7 +27,7 @@
 
 '''
 .. module:: spql_interpreter
-	:date: 04.13.2014
+	:date: 01.18.2015
 	:platform: Unix
 	:synopsis: Sparse Query Langauge interpreter
 
@@ -42,11 +42,25 @@ from sparse.utilities.utils import *
 # ------------------------------------------------------------------------------
 
 class SpQLInterpreter(SpQLParser):
+	'''
+	Subclass of SpQLParser used for performing SpQL queries on supplied DataFrames
 
+	Attributes:
+		cls (str): Class descriptor.
+		name (str): Name descriptor.
+		last_search (str): Last SpQL query generated. Default: None.
+		search_stats(str): Print statistics about the last query made.
+	'''
 	def __init__(self, name=None):
+		'''
+		SparseInterpreter initializer
+		Args:
+			name (str, optional): Name of object. Default: None
+		'''
 		super(SpQLInterpreter, self).__init__(name=name)
 		self._cls = 'SpQLInterpreter'
 
+	# deprecated
 	def _gen_mongo_query(self, fields, operator, values):
 		ops = {'==': '$in', '!=': '$ne', '>': '$gt', '>=': '$gte', '<': '$lt', 
 		'<=': '$lte', 're': '$regex', 'nre': '$regex', 're.IGNORECASE': '$regex', 'nre.IGNORECASE': '$regex'}
@@ -67,12 +81,25 @@ class SpQLInterpreter(SpQLParser):
 
 		return {'$match': {mod_op: subquiries}}
 
+	# deprecated
 	@property
 	def mongo_query(self):
 		return [self._gen_mongo_query(q['fields'], q['operator'], q['values']) for q in self._last_query]
 	# --------------------------------------------------------------------------
 
 	def _gen_dataframe_query(self, dataframe, fields=['all'], operator='==', values=[''], field_operator='=='):
+		'''
+		Semi-private method for processing invidual SpQL queries.
+
+		Args:
+			dataframe (DataFrame): DataFrame to query.
+			fields (list, optional): Fields to query. Default: ['all'].
+			operator (str, optional): SpQL operator to use in the query. Default '=='.
+			values (list, optional): Values to look for. Default [''].
+
+		Returns:
+			Results DataFrame
+		'''
 		if fields == ['all']:
 			mask = dataframe.applymap(lambda x: bool_test(x, operator, values))
 			mask[mask == False] = numpy.nan
@@ -91,6 +118,16 @@ class SpQLInterpreter(SpQLParser):
 		return dataframe
 
 	def dataframe_query(self, dataframe, field_operator='=='):
+		'''
+		Query supplied DataFrame using last search.
+
+		Args:
+			dataframe (DataFrame): DataFrame to query.
+			field_operator (str, optional): Operator used for determining matching fields. Default '=='.
+
+		Returns:
+			Results DataFrame
+		'''
 		dataframe['__sparse_id'] = dataframe.index
 		results = []
 		for query in self._last_search:

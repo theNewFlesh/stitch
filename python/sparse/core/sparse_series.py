@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Alex Braun 04.23.2014
+# Alex Braun 01.18.2015
 
 # ------------------------------------------------------------------------------
 # The MIT License (MIT)
@@ -33,7 +33,7 @@ such as esoteric databases, logs and custom made tables, into SparseSeries,
 with the actual data residing within a Pandas Series.  
 
 Date:
-	08.24.2014
+	01.18.2015
 
 Platform:
 	Unix
@@ -66,7 +66,6 @@ class SparseSeries(Base):
 		name (str): Name descriptor
 		data (Series): Internal Series where data is actually stored
 	'''
-
 	def __init__(self, data=None, index=None, dtype=None, copy=False, name=None):
 		'''SparseSeries initializer
 
@@ -128,7 +127,6 @@ class SparseSeries(Base):
 		Returns:
 			Series of iterable elements.
 		'''
-
 		data = self.data.apply(lambda x: make_iterable(x))
 
 		if inplace:
@@ -144,7 +142,6 @@ class SparseSeries(Base):
 		Returns:
 			Series of coerced elements.
 		'''
-
 		nulls = [None, '', [], {}, (), set(), OrderedDict()]
 		def _coerce_nulls(item):
 			if item in nulls:
@@ -170,7 +167,6 @@ class SparseSeries(Base):
 		Returns:
 			Series of regex matches.
 		'''
-
 		data = self.data.apply(lambda x: regex_match(pattern, x, group, ignore_case=ignore_case))
 
 		if inplace:
@@ -189,7 +185,6 @@ class SparseSeries(Base):
 		Returns:
 			Series of regex searches.
 		'''
-
 		data = self.data.apply(lambda x: regex_search(pattern, x, group, ignore_case=ignore_case))
 
 		if inplace:
@@ -210,7 +205,6 @@ class SparseSeries(Base):
 		Returns:
 			Series of regex substitutions.
 		'''
-
 		data = self.data.apply(lambda x: regex_sub(pattern, repl, x, group, ignore_case=ignore_case))
 
 		if inplace:
@@ -228,7 +222,6 @@ class SparseSeries(Base):
 		Returns:
 			Series of with matched elements as lists of groups.
 		'''
-
 		data = self.data.apply(lambda x: regex_split(pattern, x, ignore_case=ignore_case))
 
 		if inplace:
@@ -245,7 +238,6 @@ class SparseSeries(Base):
 		Returns:
 			Series sans null elements.
 		'''
-
 		mask = self[self == '']
 		data = self
 		data[mask] = numpy.nan
@@ -265,7 +257,6 @@ class SparseSeries(Base):
 		Returns:
 			Series with nan elements at the bottom.
 		'''
-
 		data = self.data.dropna()
 		buf = [numpy.nan] * (self.data.size - data.size)
 		data = data.append(Series(buf))
@@ -304,7 +295,6 @@ class SparseSeries(Base):
 				3    10
 				4    10
 		'''
-
 		patterns = sorted(list(set(self.data)))
 		inversion_map = dict(zip(patterns, [x for x in reversed(patterns)]))
 		data = self.data.apply(lambda x: inversion_map[x])
@@ -350,8 +340,7 @@ class SparseSeries(Base):
 			  C
 			 E
 			  F
-		'''
-		
+		'''		
 		old = sorted(self.data.unique())
 		new = range(0, len(old))
 		new = [new_unit * (x + min) for x in new]
@@ -372,8 +361,7 @@ class SparseSeries(Base):
 
 		Returns:
 			Series with each file line as an element.
-		'''
-		
+		'''		
 		sdata = None
 		with open(filepath, 'r') as file_:
 			sdata = SparseSeries(file_.readlines(), name=filepath)

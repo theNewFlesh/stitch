@@ -45,6 +45,7 @@ Author:
 
 from __future__ import with_statement
 import re
+from itertools import *
 from collections import OrderedDict
 import pandas
 from pandas import DataFrame, Series
@@ -878,7 +879,7 @@ class SparseDataFrame(Base):
 		return data    
 	# --------------------------------------------------------------------------
 	
-	def read_nested_dict(self, item, inplace=False):
+	def read_nested_dict(self, item, sp_index=False, inplace=False):
 		'''Reads nested dictionary into a DataFrame
 
 		Args:
@@ -890,8 +891,17 @@ class SparseDataFrame(Base):
 			DataFrame
 		'''
 		values = flatten_nested_dict(item).values()
-		index = nested_dict_to_index(item)
-		data = DataFrame(values, index=index)
+		data = None
+		if sp_index:
+			index = nested_dict_to_matrix(item)
+			columns = []
+			for i, item in enumerate(index[0]):
+				columns.append("sp_index_" + str(i).zfill(2))
+			data = DataFrame(index, columns=columns)
+		else:
+			index = nested_dict_to_index(item)
+			data = DataFrame(index=index)
+		data['values'] = values
 		mask = data.apply(lambda x: x != 'null')
 		mask = mask[mask].dropna()
 		data = data.ix[mask.index]
@@ -899,6 +909,14 @@ class SparseDataFrame(Base):
 		if inplace:
 			self.data = data
 		return data
+
+	def to_nested_dict(self):
+		if 'sp_index_00' in self.data.columns:
+			temp = self.data.values.tolist()
+			matrix = []
+			for row in temp:
+				matrix.append([x for x in ifilter(lambda x: x != '-->', row)])
+			return matrix_to_nested_dict(matrix)
 
 	def read_json(self, string, orient='records'):
 		'''Reads json into SparseDataFrame

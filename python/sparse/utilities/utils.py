@@ -288,18 +288,38 @@ def flatten_nested_dict(item, separator='_', null='null'):
 		output[key[header:]] = value
 	return output
 
-def nested_dict_to_index(item):
-	index = flatten_nested_dict(item, separator='__null__')
-	index = [x.split('__null__') for x in index.keys()]
+def nested_dict_to_matrix(item):
+	matrix = flatten_nested_dict(item, separator='__null__')
+	matrix = [x.split('__null__') for x in matrix.keys()]
 	max_ = 0
-	for item in index:
+	for item in matrix:
 		if len(item) > max_:
 			max_ = len(item)
-	for item in index:
+	for item in matrix:
 		while len(item) < max_:
 			item.append('-->')
+	return matrix
+
+def nested_dict_to_index(item):
+	index = nested_dict_to_matrix(item)
 	index = DataFrame(index).transpose().values.tolist()
 	return index
+
+def matrix_to_nested_dict(matrix):
+	output = {}
+	for row in matrix:
+		keys = row[0:-1]
+		value = row[-1]
+
+		cursor = output
+		for key in keys[0:-1]:
+			if key not in cursor:
+				cursor[key] = {}
+				cursor = cursor[key]
+			else:
+				cursor = cursor[key]
+		cursor[keys[-1]] = value
+	return output
 
 def interpret_nested_dict(item, predicate):
 	def _interpret_nested_dict(item, cursor):
@@ -362,13 +382,13 @@ def irregular_concat(items, axis=0, ignore_index=True):
 	return data
 
 def index_to_matrix(index):
-    if index.__class__.__name__ == 'MultiIndex':
-        index = [list(x) for x in index]
-        index = DataFrame(index)
-        index = [x[1].tolist() for x in index.iteritems()]
-    else:
-        index = [index.tolist()]
-    return index
+	if index.__class__.__name__ == 'MultiIndex':
+		index = [list(x) for x in index]
+		index = DataFrame(index)
+		index = [x[1].tolist() for x in index.iteritems()]
+	else:
+		index = [index.tolist()]
+	return index
 
 def insert_level(index, item, level=0):
 	index = index_to_matrix(index)
@@ -498,7 +518,8 @@ def main():
 __all__ = ['Base', 'to_type', 'is_iterable', 'make_iterable', 'iprint',
 			'keep_type', 'set_decimal_expansion', 'try_', 'round_to', 'eval_',
 			'bool_test', 'regex_match', 'regex_search', 'regex_sub', 'regex_split',
-			'dict_to_namedtuple', 'flatten_nested_dict', 'nested_dict_to_index',
+			'dict_to_namedtuple', 'flatten_nested_dict', 
+			'nested_dict_to_index', 'nested_dict_to_matrix', 'matrix_to_nested_dict',
 			'interpret_nested_dict', 'stack_dict', 'list_dict_to_dict',
 			'merge_list_dicts', 'irregular_concat', 'index_to_matrix',
 			'insert_level', 'combine', 'double_lut_transform', 'list_to_lut', 'plot']

@@ -905,6 +905,8 @@ class SparseDataFrame(Base):
 		mask = data.apply(lambda x: x != 'null')
 		mask = mask[mask].dropna()
 		data = data.ix[mask.index]
+		if sp_index:
+			data.reset_index(drop=True, inplace=True)
 
 		if inplace:
 			self.data = data

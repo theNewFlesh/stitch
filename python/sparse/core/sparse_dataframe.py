@@ -967,6 +967,70 @@ class SparseDataFrame(Base):
 				name  age
 			0    abe   15
 			1  carla   22
+
+		Search:			
+			           query: (<field>, <field> ...) <operator> (<value>, <value> ...)
+			multiple queries: <query> | <query> | <query> ...
+			         example: (name) contains (jupiter)
+			         example: (name) notcont (scratch, test)
+			         example: (priority) < (2501)
+			         example: (name) contains (jupiter) | (name) notcont (scratch, test) | (priority) < (2501)
+
+		Field:			
+			A field is a known key of a database item.
+			
+			For instance, if a database exists as a table, then the column headers
+			would count as fields.  A database of people might have the keys:
+			name, height, weight and age.
+			
+			All fields (even single ones), must be surrounded by parenthesis
+			use double quotes ("") to capture spaces and other special characters
+
+		Value:			
+			A value is the, often unknown, datum associated with the key of a
+			database item.
+			
+			For instance, if a database exists as a table, then the data
+			contained in the body would count as values.  A database of people
+			might have an item with the keys: name, height, weight, age, with
+			values of say Steve, 180", 210lbs, 25.
+			
+			All values (even single ones), must be surrounded by parenthesis
+			use double quotes ("") to capture spaces and other special characters
+
+		Operator:			
+			An operator is a symbol which denotes an operation to be performed
+			on a given database with the left and right operands (field and values)
+			as its arguments.
+			
+			For instance, in arithematic, the addition operator (+) combines
+			its two operands into a single value (2 + 2 = 4).  In SpQL, an
+			operator peforms a test on the values of the fields denoted as
+			the left operands, using the values denoted in the right operands
+			as criteria.  So, "(name) contains (jupiter)" searches all the
+			items in a database whose names contain the string "jupiter".
+			
+			Operators include:
+			                              is,   =  :  exact match
+			               is not,     isnot,  !=  :  does not match
+			         greater than,        gt,   >  :  greater than
+			greater than equal to,       gte,  >=  :  greater than or equal to
+			            less than,        lt,   <  :  less than
+			   less than equal to,       lte,  <=  :  less than or equal to
+			             contains,      cont,   ~  :  contains
+			     does not contain,   notcont,  !~  :  does not contain
+			           cscontains,    cscont,  ~~  :  contains (case sensitive)
+			   does not cscontain, csnotcont, !~~  :  does not contain (case sensitive)
+
+		And:			
+			The AND operator (&) is a means of chaining queries together.  It pipes the
+			results of the left query into the right query as its new, smaller
+			database.
+
+		Or:			
+			The OR operator (|) is a means of concatenating multiple queries into a
+			single result.  Both operands are executed as independent queries and
+			their results are then merged together with duplicate rows removed.
 		'''
 		self._spql.search(string)
 		data = self._spql.dataframe_query(self.data, field_operator=field_operator)

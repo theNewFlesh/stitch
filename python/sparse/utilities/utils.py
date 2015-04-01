@@ -288,7 +288,7 @@ def flatten_nested_dict(item, separator='_', null='null'):
 		output[key[header:]] = value
 	return output
 
-def nested_dict_to_matrix(item):
+def nested_dict_to_matrix(item, justify='left'):
 	matrix = flatten_nested_dict(item, separator='__null__')
 	matrix = [x.split('__null__') for x in matrix.keys()]
 	max_ = 0
@@ -297,11 +297,15 @@ def nested_dict_to_matrix(item):
 			max_ = len(item)
 	for item in matrix:
 		while len(item) < max_:
-			item.append('-->')
+			if justify == 'right':
+				item.insert(0, '-->')
+			else:
+				item.append('-->')
+
 	return matrix
 
-def nested_dict_to_index(item):
-	index = nested_dict_to_matrix(item)
+def nested_dict_to_index(item, justify='left'):
+	index = nested_dict_to_matrix(item, justify=justify)
 	index = DataFrame(index).transpose().values.tolist()
 	return index
 

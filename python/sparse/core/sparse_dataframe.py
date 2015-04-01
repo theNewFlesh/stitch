@@ -879,7 +879,7 @@ class SparseDataFrame(Base):
 		return data    
 	# --------------------------------------------------------------------------
 	
-	def read_nested_dict(self, item, sp_index=False, inplace=False):
+	def read_nested_dict(self, item, sp_index=False, justify='left', inplace=False):
 		'''Reads nested dictionary into a DataFrame
 
 		Args:
@@ -893,13 +893,13 @@ class SparseDataFrame(Base):
 		values = flatten_nested_dict(item).values()
 		data = None
 		if sp_index:
-			index = nested_dict_to_matrix(item)
+			index = nested_dict_to_matrix(item, justify=justify)
 			columns = []
 			for i, item in enumerate(index[0]):
 				columns.append("sp_index_" + str(i).zfill(2))
 			data = DataFrame(index, columns=columns)
 		else:
-			index = nested_dict_to_index(item)
+			index = nested_dict_to_index(item, justify=justify)
 			data = DataFrame(index=index)
 		data['values'] = values
 		mask = data.apply(lambda x: x != 'null')

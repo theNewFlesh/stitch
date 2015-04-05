@@ -74,6 +74,8 @@ class Base(object):
 		return self._name
 
 	def _print_public(self):
+		'''Pretty print public methods and attributes
+		'''
 		nonPublicRE = re.compile('^_')
 		for item in dir(self):
 			found = nonPublicRE.match(item)
@@ -81,6 +83,8 @@ class Base(object):
 				print item
 
 	def _print_semiprivate(self):
+		'''Pretty print semi-private methods and attributes
+		'''
 		semiPrivateRE = re.compile('^_[^_]+')
 		for item in dir(self):
 			found = semiPrivateRE.match(item)
@@ -88,6 +92,8 @@ class Base(object):
 				print item
 
 	def _print_private(self):
+		'''Pretty print private methods and attributes
+		'''
 		privateRE = re.compile('^__')
 		for item in dir(self):
 			found = privateRE.match(item)
@@ -96,12 +102,16 @@ class Base(object):
 # ------------------------------------------------------------------------------
 
 def to_type(item, dtype):
+	'''Convert item to given type
+	'''
 	try:
 		return dtype(item)
 	except ValueError:
 		return item
 
 def is_iterable(item):
+	'''Determine if item is iterable
+	'''
 	try:
 		result = iter(item)
 		return True
@@ -109,31 +119,40 @@ def is_iterable(item):
 		return False
 
 def make_iterable(item):
+	'''Return item in a list if it is not already iterable
+	'''
 	if is_iterable(item):
 		return item
 	else:
 		return [item]
 
 def iprint(iterable):
+	'''Print every item in iterable
+	'''
 	for item in iterable:
 		print item
 
-def keep_type(item, func):
-	return item.dtypes.type(func(item))
-
 def set_decimal_expansion(item, expansion):
+	'''Truncates a float item at specified number of digits after the decimal
+	'''
 	return int(item * 10 ** expansion) / float(10 ** expansion)
 
 def try_(item, func):
+	'''Wraps a supplied function in a try block
+	'''
 	try:
 		return func(item)
 	except:
 		return item
 
 def round_to(item, order):
+	'''Rounds a given number to a given order of magnitudes after the decimal
+	'''
 	return round(Decimal(item), order)
 
 def eval_(item):
+	'''Evaluates item as expression
+	'''
 	try:
 		return eval(item)
 	except:
@@ -190,6 +209,8 @@ OPERATORS = {'==': _eq, '!=': _ne, '<': _lt, '<=': _lte, '>': _gt, '>=': _gte,
 			're': _re, 're.IGNORECASE': _reig, 'nre': _nre, 'nre.IGNORECASE': _nreig}
 
 def bool_test(item, operator, values):
+	'''Perform a boolean operation between an item and a given set of values
+	'''
 	op = OPERATORS[operator]
 	values = make_iterable(values)
 	for value in values:
@@ -257,11 +278,40 @@ def regex_split(pattern, string, ignore_case=False):
 # ------------------------------------------------------------------------------
 
 def invert(iterable):
+	'''Inverts a given iterable
+
+	Example:
+		>>> invert([1,2,3,1,2,3])
+		[3,2,1,3,2,1]
+
+		>>> invert(list('abc'))
+		['c', 'b', 'a']
+
+		>>> invert(list('abxy'))
+		['y', 'x', 'b', 'a']
+	'''
 	patterns = sorted(list(set(iterable)))
 	inversion_map = dict(zip(patterns, [x for x in reversed(patterns)]))
 	return [inversion_map[x] for x in iterable]
 
 def reduce_units(iterable, new_unit='-', min=0):
+	'''Reduce unique items to multiples of a new unit
+
+	Example:
+		This function is usefull for simplifying indentation
+		>>> for indent, line in zip(indents, text):
+		>>>		print indent, line 
+		First
+		  Second
+				  Third
+		  Second
+
+		>>> reduce_units(text)
+		First
+		 Second
+		  Third
+		 Second
+	'''
 	old = sorted(set(iterable))
 	new = range(0, len(old))
 	new = [new_unit * (x + min) for x in new]
@@ -269,10 +319,32 @@ def reduce_units(iterable, new_unit='-', min=0):
 	return [lut[x] for x in iterable]
 
 def dict_to_namedtuple(name, dict):
+	'''Convert dictionary to named tuple
+	'''
 	tup = namedtuple(name, dict.keys())
 	return tup(*dict.values())
 
 def flatten_nested_dict(item, separator='_', null='null'):
+	'''Flatten a given dictionary
+
+	Example:
+		>>> flat = flatten_nested_dict(
+						{
+						 'a': {
+							   'b1': {
+									  'c': 1},
+							   'b2': 0
+							}
+						 })
+
+		>>> pprint(flat)
+		{
+			a : null,
+			a_b1 : null,
+			a_b2 : 0,
+			a_b1_c : 1
+		}	
+	'''
 	temp = OrderedDict()
 	def _flatten_nested_dict(item, name):
 		for key, val in item.iteritems():
@@ -289,6 +361,23 @@ def flatten_nested_dict(item, separator='_', null='null'):
 	return output
 
 def nested_dict_to_matrix(item, justify='left'):
+	'''Convert nested dictionary into matrix
+
+	Example:
+		>>> item
+		{'a': {
+			   'b1': {
+					  'c': 1},
+			   'b2': 0
+			}
+		}
+
+		>>> nested_dict_to_matrix(item)
+		['a', '-->', '-->']
+		['a', 'b1', '-->']
+		['a', 'b1', 'c']
+		['a', 'b2', '-->']
+	'''
 	matrix = flatten_nested_dict(item, separator='__null__')
 	matrix = [x.split('__null__') for x in matrix.keys()]
 	max_ = 0
@@ -305,11 +394,28 @@ def nested_dict_to_matrix(item, justify='left'):
 	return matrix
 
 def nested_dict_to_index(item, justify='left'):
+	'''Convert a nested dictionary to a MultiIndex object
+	'''
 	index = nested_dict_to_matrix(item, justify=justify)
 	index = DataFrame(index).transpose().values.tolist()
 	return index
 
 def matrix_to_nested_dict(matrix):
+	'''Converts a matrix to a nested dictionary
+
+	Example:
+		>>> item
+		[ ['a', 'b1', 'c', 1],
+		  ['a', 'b2', 0] ]
+
+		>>> nested_dict_to_matrix(item)
+		{'a': {
+			   'b1': {
+					  'c': 1},
+			   'b2': 0
+			}
+		}	
+	'''
 	output = {}
 	for row in matrix:
 		keys = row[0:-1]
@@ -326,6 +432,28 @@ def matrix_to_nested_dict(matrix):
 	return output
 
 def interpret_nested_dict(item, predicate):
+	'''Interpret leaf nodes (values) of a dictionary according to function
+
+	Example:
+		>>> x = {
+				'a': {
+					'b1': {
+						   'c': 'convert_me'
+					},
+					'b2': 'leave_me_alone'
+				}
+			}
+
+		>>> interpret_nested_dict(x, lambda x: 'NEW_VALUE' if x == 'convert_me' else x)
+			x = {
+			'a': {
+				'b1': {
+					   'c': 'NEW_VALUE'
+				},
+				'b2': 'leave_me_alone'
+			}
+		}
+	'''
 	def _interpret_nested_dict(item, cursor):
 		for key, val in item.iteritems():
 			if type(val) is dict and val != {}:
@@ -335,38 +463,58 @@ def interpret_nested_dict(item, predicate):
 		return cursor
 	return _interpret_nested_dict(item, {})
 
-def stack_dict(item, key, remove_key=False):
-	output = {}
-	new_key = str(item[key])
-	if remove_key:
-		del item[key]
-	output[new_key] = item
-	return output
+def to_inverted_index(item, key):
+	'''Converts item into inverted index
 
-def list_dict_to_dict(items, key, remove_key=False):
-	output = {}
-	for item in items:
-		value = stack_dict(item, key, remove_key=remove_key)
-		out_key = value.keys()[0]
-		out_value = value[out_key]
-		output[out_key] = out_value
-	return output
+	Example:
+		>>> employee = {'employee': {'name': 'alex', 'id': 123}}
+		>>> to_inverted_index(employee, ['employee', 'name'])
+		{'alex': {'employee': {'id': 123, 'name': 'alex'}}}
 
-def merge_list_dicts(source, target, source_key, target_key, remove_key=False):
-	source = list_dict_to_dict(source, source_key, remove_key=remove_key)
-	target = list_dict_to_dict(target, target_key, remove_key=remove_key)
-	output = []
-	for key, value in source.iteritems():
-		row = {}
-		for k, v in value.iteritems():
-			row[source_key + '_' + str(k)] = v
-		for k, v in target[key].iteritems():
-			row[target_key + '_' + str(k)] = v
-		output.append(row)
-	return output	
+		>>> employees
+		[ {'employee': {'name': 'alex', 'id': 123}},
+		  {'employee': {'name': 'janus', 'id': 456}},
+		  {'employee': {'name': 'janus', 'id': 456}}, # duplicate record
+		  {'employee': {'name': 'atticus', 'id': 789}} ]
+
+		>>> to_inverted_index(employees, ['employee', 'id'])
+		{'123': {'employee': {'id': 123, 'name': 'alex'}},
+		 '456': {'employee': {'id': 456, 'name': 'janus'}},
+		 '789': {'employee': {'id': 789, 'name': 'atticus'}}}
+	'''
+	def _to_inverted_index(item, key):
+		output = {}
+		val = item
+		if key.__class__.__name__ != 'list':
+			val = item[key]
+		else:
+			for k in key:
+				val = val[k]
+		output[str(val)] = item
+		return output
+
+	if item.__class__.__name__ == 'list':
+		output = {}
+		for entry in item:
+			output.update( _to_inverted_index(entry, key) )
+		return output
+	else:
+		return _to_inverted_index(item, key)
 # ------------------------------------------------------------------------------
 
 def irregular_concat(items, axis=0, ignore_index=True):
+	'''Concatenate DataFrames of different dimensions
+
+	Example:
+		>>> x = DataFrame(numpy.arange(0, 9).reshape(3, 3))
+		>>> y = DataFrame(numpy.arange(100, 116).reshape(4, 4))
+		>>> irregular_concat([x, y], axis=1)
+			0   1   2    0    1    2    3
+		0   0   1   2  100  101  102  103
+		1   3   4   5  104  105  106  107
+		2   6   7   8  108  109  110  111
+		3 NaN NaN NaN  112  113  114  115
+	''' 
 	max_len = 0
 	for item in items:
 		if len(item) > max_len:
@@ -386,6 +534,8 @@ def irregular_concat(items, axis=0, ignore_index=True):
 	return data
 
 def index_to_matrix(index):
+	'''Convert a index to a matrix
+	'''
 	if index.__class__.__name__ == 'MultiIndex':
 		index = [list(x) for x in index]
 		index = DataFrame(index)
@@ -408,6 +558,36 @@ def combine(items):
 
 		Returns:
 			DataFrame
+
+		Example:
+			>>> joe
+									  values
+			employee username -->      jabra
+					 age      -->         67
+					 name     last   abrante
+							  first      joe
+			id       -->      -->          1
+
+			>>> jane
+									  values
+			employee username -->    jjoplin
+					 age      -->         53
+					 name     last    joplin
+							  first     jane
+			id       -->      -->          3
+
+			>>> combine([joe, jane])
+									  values
+			employee username -->      jabra
+					 age      -->         67
+					 name     last   abrante
+							  first      joe
+			id       -->      -->          1
+			employee username -->    jjoplin
+					 age      -->         53
+					 name     last    joplin
+							  first     jane
+			id       -->      -->          3
 	'''
 
 	items = [x.copy() for x in items]
@@ -519,14 +699,16 @@ def main():
 	import __main__
 	help(__main__)
 
-__all__ = ['Base', 'to_type', 'is_iterable', 'make_iterable', 'iprint',
-			'keep_type', 'set_decimal_expansion', 'try_', 'round_to', 'eval_',
-			'bool_test', 'regex_match', 'regex_search', 'regex_sub', 'regex_split',
-			'dict_to_namedtuple', 'flatten_nested_dict', 
-			'nested_dict_to_index', 'nested_dict_to_matrix', 'matrix_to_nested_dict',
-			'interpret_nested_dict', 'stack_dict', 'list_dict_to_dict',
-			'merge_list_dicts', 'irregular_concat', 'index_to_matrix',
-			'insert_level', 'combine', 'double_lut_transform', 'list_to_lut', 'plot']
+__all__ = [
+	'Base',
+	'to_type', 'is_iterable', 'make_iterable', 'iprint', 'set_decimal_expansion', 
+	'try_', 'round_to', 'eval_', 'bool_test', 'regex_match', 'regex_search', 
+	'regex_sub', 'regex_split', 'invert', 'reduce_units', 'dict_to_namedtuple', 
+	'flatten_nested_dict', 'nested_dict_to_matrix', 'nested_dict_to_index', 
+	'matrix_to_nested_dict', 'interpret_nested_dict', 'to_inverted_index', 
+	'irregular_concat',	'index_to_matrix', 'insert_level', 'combine', 
+	'double_lut_transform',	'list_to_lut', 'plot'
+]
 
 if __name__ == '__main__':
 	main()

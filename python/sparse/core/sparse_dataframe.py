@@ -876,7 +876,50 @@ class SparseDataFrame(Base):
 		
 		if inplace:
 			self.data = data
-		return data    
+		return data
+
+	def traverse(self, key_func, val_func, traverse='depth', replace=False, inplace=False):
+		data = self.data.copy()
+		
+		spindex = data.columns.tolist()
+		spindex = [x for x in spindex if re.search('sp_index', x)]
+		
+		index = data[spindex]
+		_index = index.as_matrix().tolist()
+		if traverse == 'breadth':
+			index = data[spindex].transpose()
+		index = index.as_matrix().tolist()
+
+		for r, row in enumerate(index):
+			for k, key in enumerate(row):
+				if key_func(key):
+
+					ind = r
+					col = k
+					if traverse == 'breadth':
+						ind = k
+						col = r
+					
+					try:
+						data.loc[ind, 'values'] = val_func(data.loc[ind, 'values'])
+					except:
+						continue
+							
+					if replace:
+						column = spindex[col]
+						mask = data[column].apply(lambda x: x != key)
+						mask.ix[ind] = True
+						data = data[mask]
+						
+						branch = _index[ind][0:col + 1]
+						while len(branch) < len(spindex):
+							branch.append('-->')
+						data.loc[ind, spindex] = branch 
+						break
+						
+		if inplace:
+			self.data = data
+		return data   
 	# --------------------------------------------------------------------------
 	
 	def read_nested_dict(self, item, sp_index=False, justify='left', inplace=False):
@@ -969,12 +1012,12 @@ class SparseDataFrame(Base):
 			1  carla   22
 
 		Search:			
-			           query: (<field>, <field> ...) <operator> (<value>, <value> ...)
+					   query: (<field>, <field> ...) <operator> (<value>, <value> ...)
 			multiple queries: <query> | <query> | <query> ...
-			         example: (name) contains (jupiter)
-			         example: (name) notcont (scratch, test)
-			         example: (priority) < (2501)
-			         example: (name) contains (jupiter) | (name) notcont (scratch, test) | (priority) < (2501)
+					 example: (name) contains (jupiter)
+					 example: (name) notcont (scratch, test)
+					 example: (priority) < (2501)
+					 example: (name) contains (jupiter) | (name) notcont (scratch, test) | (priority) < (2501)
 
 		Field:			
 			A field is a known key of a database item.
@@ -1011,15 +1054,15 @@ class SparseDataFrame(Base):
 			items in a database whose names contain the string "jupiter".
 			
 			Operators include:
-			                              is,   =  :  exact match
-			               is not,     isnot,  !=  :  does not match
-			         greater than,        gt,   >  :  greater than
+										  is,   =  :  exact match
+						   is not,     isnot,  !=  :  does not match
+					 greater than,        gt,   >  :  greater than
 			greater than equal to,       gte,  >=  :  greater than or equal to
-			            less than,        lt,   <  :  less than
+						less than,        lt,   <  :  less than
 			   less than equal to,       lte,  <=  :  less than or equal to
-			             contains,      cont,   ~  :  contains
-			     does not contain,   notcont,  !~  :  does not contain
-			           cscontains,    cscont,  ~~  :  contains (case sensitive)
+						 contains,      cont,   ~  :  contains
+				 does not contain,   notcont,  !~  :  does not contain
+					   cscontains,    cscont,  ~~  :  contains (case sensitive)
 			   does not cscontain, csnotcont, !~~  :  does not contain (case sensitive)
 
 		And:			

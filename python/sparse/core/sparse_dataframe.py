@@ -521,8 +521,7 @@ class SparseDataFrame(Base):
 		return data
 
 	def drop_columns(self, columns, inplace=False):
-		'''
-		Drop a given set of columns from the DataFrame
+		'''Drop a given set of columns from the DataFrame
 
 		Args:
 			columns (list): Set of columns to drop.
@@ -530,6 +529,19 @@ class SparseDataFrame(Base):
 		
 		Returns: 
 			Reduced DataFrame
+
+		Example:
+			>>> sdf.data
+			   a  b   c   d
+			0  0  1   2   3
+			1  4  5   6   7
+			2  8  9  10  11
+
+			>>> sdf.drop_columns(['a', 'c'])
+			   b   d
+			0  1   3
+			1  5   7
+			2  9  11
 		'''
 		data = self.data
 		data = data.T.drop(columns).T
@@ -699,6 +711,20 @@ class SparseDataFrame(Base):
 
 		Returns: 
 			Unique DataFrame
+
+		Example:
+			>>> sdf.data
+			    make  model color  year
+			0    gmc    suv  blue  2007
+			1  honda    suv  blue  2007
+			2   fiat    car  blue  2007
+			3    gmc  truck  blue  1999
+
+			>>> sdf.unique()
+			    make  model color  year
+			0    gmc    suv  blue  2007
+			1  honda    car   NaN  1999
+			2   fiat  truck   NaN   NaN
 		'''
 		data = self.data	
 		mask = data.apply(lambda x: x.duplicated())
@@ -710,7 +736,8 @@ class SparseDataFrame(Base):
 			self.data = data
 		return data
 
-	def cross_map(self, source_column, target_column, source_predicate, target_predicate=None, inplace=False):
+	def cross_map(self, source_column, target_column, source_predicate, 
+				  target_predicate=None, inplace=False):
 		'''Applies a predicate to a target column based on a mask derived from 
 		the results of a source predicate applied to a source column
 
@@ -723,6 +750,21 @@ class SparseDataFrame(Base):
 
 		Returns: 
 			Cross-mapped DataFrame
+
+		Example:
+			>>> sdf.data
+			    make  model color  year
+			0    gmc    suv  blue  2007
+			1  honda    suv  blue  2007
+			2   fiat    car  blue  2007
+			3    gmc  truck  blue  1999
+
+			>>>	sdf.cross_map('year', 'color', lambda x: x == 2007, lambda x: 'red')
+			    make  model color  year
+			0    gmc    suv   red  2007
+			1  honda    suv   red  2007
+			2   fiat    car   red  2007
+			3    gmc  truck  blue  1999
 		'''
 		data = self.data
 		mask = data[source_column].apply(source_predicate)
@@ -735,8 +777,8 @@ class SparseDataFrame(Base):
 			self.data = data
 		return data
 
-	def group_cross_map(self, group_column, value_column, source_column, target_column, predicate,
-						concat=True, inplace=False):
+	def group_cross_map(self, group_column, value_column, source_column, 
+						target_column, predicate, concat=True, inplace=False):
 		'''Applies a predicate to a target column based on a mask derived from 
 		the results of a source predicate applied to a source column
 
@@ -751,6 +793,42 @@ class SparseDataFrame(Base):
 
 		Returns: 
 			DataFrame with new value column
+
+		Example:
+			>>> sdf.data
+			  last_name first_name
+			0   schmidt        tom
+			1   schmidt       dick
+			2   schmidt      harry
+			3   flately      shane
+			4   flately       anne
+			5     klein      ernst
+			6     klein        max
+			7     klein     janice
+			
+			>>>  sdf.group_cross_map('last_name', 'relatives', 'last_name',
+                    				 'first_name', lambda x: True)
+			  last_name first_name           relatives
+			0   schmidt        tom    tom, dick, harry
+			1   schmidt       dick    tom, dick, harry
+			2   schmidt      harry    tom, dick, harry
+			3   flately      shane         shane, anne
+			4   flately       anne         shane, anne
+			5     klein      ernst  ernst, max, janice
+			6     klein        max  ernst, max, janice
+			7     klein     janice  ernst, max, janice
+
+			>>> sdf.group_cross_map('last_name', 'relatives', 'last_name',
+                    				'first_name', lambda x: x != 'flately')
+			  last_name first_name           relatives
+			0   schmidt        tom    tom, dick, harry
+			1   schmidt       dick    tom, dick, harry
+			2   schmidt      harry    tom, dick, harry
+			3   flately      shane                    
+			4   flately       anne                    
+			5     klein      ernst  ernst, max, janice
+			6     klein        max  ernst, max, janice
+			7     klein     janice  ernst, max, janice
 		'''
 		data  = self.data
 		data[value_column] = None
@@ -852,8 +930,26 @@ class SparseDataFrame(Base):
 			self.data = data
 		return data
 
+	def to_inverted_index(self, columns, key, prototype=True):
+		'''Converts a list of columns containing dict or dict matrices to an inverted index
+
+		Example:
+			>>> sdf.data
+
+		'''
+		index = []
+		for col in columns:
+			data = self.data[col]
+			index = data[data.apply(lambda x: is_dictlike(x))].tolist()
+			lists = data[data.apply(lambda x: is_listlike(x))].tolist()
+			for lst in lists:
+				for item in lst:
+					index.append(item)
+		return to_inverted_index(index, key, prototype)
+
 	def merge_list_dict_columns(self, source, target, source_key, target_key,
-							new_column='default', remove_key=False, drop=False, inplace=False):
+							new_column='default', remove_key=False, drop=False, 
+							inplace=False):
 		'''Merge columns containing lists of dicts
 
 		Args:

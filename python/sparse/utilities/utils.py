@@ -37,7 +37,7 @@
 
 import warnings
 import re
-from copy import copy
+from copy import copy, deepcopy
 from decimal import Decimal
 import numpy
 import pandas
@@ -109,6 +109,14 @@ def to_type(item, dtype):
 	except ValueError:
 		return item
 
+def to_iterable(item):
+	'''Return item in a list if it is not already iterable
+	'''
+	if is_iterable(item):
+		return item
+	else:
+		return [item]
+
 def is_iterable(item):
 	'''Determine if item is iterable
 	'''
@@ -118,24 +126,35 @@ def is_iterable(item):
 	except TypeError:
 		return False
 
-def make_iterable(item):
-	'''Return item in a list if it is not already iterable
+def is_dictlike(item):
+	'''Determine if an item id dictlike
 	'''
-	if is_iterable(item):
-		return item
-	else:
-		return [item]
+	return item.__class__.__name__ in ['dict', 'OrderedDict']
 
-def iprint(iterable):
-	'''Print every item in iterable
+def is_listlike(item):
+	'''Determine if an item id listlike
 	'''
-	for item in iterable:
-		print item
+	return item.__class__.__name__ in ['list', 'tuple', 'set']
+
+def is_dict_matrix(item):
+	'''Determine if an item is an iterable of dicts
+	'''
+	if is_listlike(item):
+		if len(item) > 0:
+			if is_dictlike(item[0]):
+				return True
+	return False
+# ------------------------------------------------------------------------------
 
 def set_decimal_expansion(item, expansion):
 	'''Truncates a float item at specified number of digits after the decimal
 	'''
 	return int(item * 10 ** expansion) / float(10 ** expansion)
+
+def round_to(item, order):
+	'''Rounds a given number to a given order of magnitudes after the decimal
+	'''
+	return round(Decimal(item), order)
 
 def try_(item, func):
 	'''Wraps a supplied function in a try block
@@ -144,11 +163,6 @@ def try_(item, func):
 		return func(item)
 	except:
 		return item
-
-def round_to(item, order):
-	'''Rounds a given number to a given order of magnitudes after the decimal
-	'''
-	return round(Decimal(item), order)
 
 def eval_(item):
 	'''Evaluates item as expression
@@ -212,7 +226,7 @@ def bool_test(item, operator, values):
 	'''Perform a boolean operation between an item and a given set of values
 	'''
 	op = OPERATORS[operator]
-	values = make_iterable(values)
+	values = to_iterable(values)
 	for value in values:
 		if op(item, value):
 			return True
@@ -463,7 +477,78 @@ def interpret_nested_dict(item, predicate):
 		return cursor
 	return _interpret_nested_dict(item, {})
 
-def to_inverted_index(item, key):
+def recurse(data, nondict_func=lambda store, key, val: val,
+				  dict_func=lambda store, key, val: val,
+				  key_func=lambda key: key,
+				  store={}):
+	def _recurse(data, store):
+		if not is_dictlike(data):
+			return data
+		for key, val in data.iteritems():
+			if is_dictlike(val):
+				store[key_func(key)] = _recurse(dict_func(store, key, val), {})
+			else:
+				store[key_func(key)] = nondict_func(store, key, val)
+		return store
+	return _recurse(data, store)
+
+def merge(data, store, merge_func=lambda store, key, val: [val, store[key]] ):
+	def _merge(data, store):
+		if not is_dictlike(data):
+			return store
+		for key, val in data.iteritems():
+			if store.has_key(key):
+				if not isinstance(val, dict) and not isinstance(store[key], dict):
+					store[key] = merge_func(store, key, val)
+				else:
+					store[key] = _merge(val, store[key])
+			else:
+				store[key] = val
+		return store
+	return _merge(deepcopy(data), deepcopy(store))
+
+def flatten_list(item):
+	store = []
+	def _flatten(items):
+		if not isinstance(items, list):
+			store.append(items)
+		for item in items:
+			if isinstance(item, list):
+				item = _flatten(item)
+			else:
+				store.append(item)
+		return store
+	return _flatten(item)
+
+def to_prototype(items):
+	'''Converts items to a prototypical dictionary
+
+	Example:
+		>>> people
+		[{'first': 'tom',    'last': 'flately'},
+		 {'first': 'dick',   'last': 'schmidt'},
+		 {'first': 'harry',  'last': 'schmidt'}]
+		
+		# >>> to_prototype(people)
+		# { last : ['flately', 'schmidt', 'schmidt']
+		#   first : ['tom', 'dick', 'harry'] }
+
+		>>> to_prototype(people)
+		{ last : [],
+		  first : [] }
+	'''
+	
+	prototype = {}
+	for item in items:
+		prototype = merge(prototype, item)
+	prototype = merge(prototype, prototype, lambda store, key, val: [])
+	for item in items:
+		prototype = merge(prototype, item)
+	prototype = recurse(prototype, lambda store, key, val: flatten_list(val))
+	return prototype
+
+
+def to_inverted_index(item, key, prototype=True):
 	'''Converts item into inverted index
 
 	Example:
@@ -493,11 +578,15 @@ def to_inverted_index(item, key):
 		output[str(val)] = item
 		return output
 
-	if item.__class__.__name__ == 'list':
-		output = {}
-		for entry in item:
-			output.update( _to_inverted_index(entry, key) )
-		return output
+	if is_listlike(item):
+		if prototype:
+			output = [_to_inverted_index(x, key) for x in item]
+			return to_prototype(output)
+		else:
+			output = {}
+			for entry in item:
+				output.update( _to_inverted_index(entry, key) )
+			return output
 	else:
 		return _to_inverted_index(item, key)
 # ------------------------------------------------------------------------------
@@ -535,6 +624,17 @@ def irregular_concat(items, axis=0, ignore_index=True):
 
 def index_to_matrix(index):
 	'''Convert a index to a matrix
+
+	Example:
+		>>> data.index
+		MultiIndex(levels=[[u'A', u'B', u'C'], 
+						   [u'a', u'b', u'c']],
+				   labels=[[0, 1, 2], 
+						   [0, 1, 2]])
+		
+		>>> index_to_matrix(data.index)
+		[['A', 'B', 'C']
+		 ['a', 'b', 'c']]
 	'''
 	if index.__class__.__name__ == 'MultiIndex':
 		index = [list(x) for x in index]
@@ -545,6 +645,23 @@ def index_to_matrix(index):
 	return index
 
 def insert_level(index, item, level=0):
+	'''Insert level into index
+
+	Example:
+		>>> data
+				   0  1  2
+		level_1 0  0  1  2
+				1  3  4  5
+				2  6  7  8
+
+		>>> index = insert_level(data.index, 'new_level_1', 1)
+		>>> data.index = index
+		>>> data
+							   0  1  2
+		level_1 new_level_1 0  0  1  2
+							1  3  4  5
+							2  6  7  8
+	'''
 	index = index_to_matrix(index)
 	item = [item] * len(index[0])
 	index.insert(level, item)
@@ -700,14 +817,14 @@ def main():
 	help(__main__)
 
 __all__ = [
-	'Base',
-	'to_type', 'is_iterable', 'make_iterable', 'iprint', 'set_decimal_expansion', 
-	'try_', 'round_to', 'eval_', 'bool_test', 'regex_match', 'regex_search', 
-	'regex_sub', 'regex_split', 'invert', 'reduce_units', 'dict_to_namedtuple', 
-	'flatten_nested_dict', 'nested_dict_to_matrix', 'nested_dict_to_index', 
-	'matrix_to_nested_dict', 'interpret_nested_dict', 'to_inverted_index', 
-	'irregular_concat',	'index_to_matrix', 'insert_level', 'combine', 
-	'double_lut_transform',	'list_to_lut', 'plot'
+	'Base',	"to_type", "to_iterable", "is_iterable", "is_dictlike", "is_listlike", 
+	"is_dict_matrix", 'set_decimal_expansion', 'try_', 'round_to', 'eval_', 
+	'bool_test', 'regex_match', 'regex_search', 'regex_sub', 'regex_split', 
+	'invert', 'reduce_units', 'dict_to_namedtuple', 'flatten_nested_dict', 
+	'nested_dict_to_matrix', 'nested_dict_to_index', 'matrix_to_nested_dict',
+	'interpret_nested_dict', 'to_inverted_index', 'recurse', 'merge',
+	'flatten_list', 'to_prototype', 'irregular_concat', 'index_to_matrix', 
+	'insert_level', 'combine', 'double_lut_transform', 'list_to_lut', 'plot'
 ]
 
 if __name__ == '__main__':

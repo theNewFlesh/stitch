@@ -253,7 +253,7 @@ class SparseDataFrame(Base):
 				   (None),    (''),    ([]),    ({}),    (()),    (set()),    (OrderedDict()),
 						   set(''), set([]), set({}), set(()), set(set()), set(OrderedDict())   
 		]
-
+		
 		def _coerce_nulls(item):
 			if item in nulls:
 				return numpy.nan

@@ -100,23 +100,18 @@ class SpQLInterpreter(SpQLParser):
 		Returns:
 			Results DataFrame
 		'''
-		if fields == ['all']:
-			mask = dataframe.applymap(lambda x: bool_test(x, operator, values))
-			mask[mask == False] = numpy.nan
-			mask.dropna(how='any', inplace=True)
-			return dataframe.ix[mask.index]
-
 		columns = dataframe.columns.to_series()
-		mask = columns.apply(lambda x: bool_test(x, field_operator, fields))
-		columns = columns[mask].tolist()
+		if fields != ['all']:
+			mask = columns.apply(lambda x: bool_test(x, field_operator, fields))
+			columns = columns[mask]
+		columns = columns.tolist()
 
 		mask = dataframe[columns].applymap(lambda x: bool_test(x, operator, values))
+		# This method avoids including prexisting nan values in the mask
 		mask[mask == False] = numpy.nan
-		mask.dropna(how='any', inplace=True)
-		dataframe = dataframe.ix[mask.index]
-		dataframe = dataframe.dropna(how='all', axis=1)
-		return dataframe
-
+		mask.dropna(how='all', subset=columns, inplace=True)
+		return mask.index
+		
 	def dataframe_query(self, dataframe, field_operator='=='):
 		'''
 		Query supplied DataFrame using last search.
@@ -128,23 +123,16 @@ class SpQLInterpreter(SpQLParser):
 		Returns:
 			Results DataFrame
 		'''
-		dataframe['__sparse_id'] = dataframe.index
-		results = []
-		for query in self._last_search:
-			result = dataframe
-			for q in query:
-				result = self._gen_dataframe_query(result, q['fields'], q['operator'], q['values'], field_operator=field_operator)
-			results.append(result)
-			
-		if len(results) > 1:
-			results = pandas.concat(results)
-			mask = results['__sparse_id'].duplicated()
-			results = results[~mask]
-			results.reset_index(drop=True, inplace=True)
-		else:
-			results = results[0]
+		if dataframe.index.has_duplicates:
+			raise IndexError('DataFrame has non-unique values in its index')
 
-		return results
+		mask = pandas.Index([])
+		for queries in self._last_search:
+			and_mask = dataframe.index
+			for q in queries:
+				and_mask = self._gen_dataframe_query(dataframe.ix[and_mask], q['fields'], q['operator'], q['values'], field_operator=field_operator)
+			mask = mask.union(and_mask)
+		return dataframe.ix[mask]
 # ------------------------------------------------------------------------------
 
 def main():

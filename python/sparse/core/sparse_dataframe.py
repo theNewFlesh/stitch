@@ -114,9 +114,25 @@ class SparseDataFrame(Base):
 			self.data = DataFrame(data=data, index=index, columns=columns, dtype=dtype, copy=copy)
 		super(SparseDataFrame, self).__init__(name=name)
 		self._cls = 'SparseDataFrame'
+
+	def _func(self, columns, func):
+		data = self.data
+		if not columns:
+			columns = data.columns
+		data[columns] = data[columns].applymap(func)
+		return data
+
+	def _inplace(self, data, inplace):
+		if inplace:
+			self.data = data
+		return data
 	# --------------------------------------------------------------------------
 
-	def to_type(self, dtype, inplace=False):
+	def applymap(self, func, columns=[], inplace=False):
+		data = self._func(columns, func)
+		return self._inplace(data, inplace)
+
+	def to_type(self, dtype, columns=[], inplace=False):
 		'''Converts data to specified type, leaving uncoercible types alone
 
 		Args:
@@ -149,13 +165,10 @@ class SparseDataFrame(Base):
 			2  <type 'str'>  <type 'str'>  <type 'str'>
 			3  <type 'str'>  <type 'str'>  <type 'str'>
 		'''
-		data = self.data.applymap(lambda x: to_type(x, dtype))
+		func = lambda x: to_type(x, dtype)
+		return self.applymap(func, columns, inplace)
 
-		if inplace:
-			self.data = data
-		return data
-
-	def is_iterable(self, inplace=False):
+	def is_iterable(self, columns=[], inplace=False):
 		'''Returns a boolean mask indicating which elements are iterable
 
 		Args:
@@ -187,13 +200,10 @@ class SparseDataFrame(Base):
 			2   sue  NaN      pilot
 			3  jane  NaN    teacher
 		'''
-		data = self.data.applymap(lambda x: is_iterable(x))
+		func = lambda x: is_iterable(x)
+		return self.applymap(func, columns, inplace)
 
-		if inplace:
-			self.data = data
-		return data
-
-	def make_iterable(self, inplace=False):
+	def to_iterable(self, columns=[], inplace=False):
 		'''Makes all the elements iterable
 
 		Args:
@@ -210,20 +220,17 @@ class SparseDataFrame(Base):
 			2   sue   65      pilot
 			3  jane   43    teacher
 
-			>>> print sdf.make_iterable()
+			>>> print sdf.to_iterable()
 			   name   age profession
 			0   joe  [12]   mechanic
 			1  bill  [22]    soldier
 			2   sue  [65]      pilot
 			3  jane  [43]    teacher
 		'''
-		data = self.data.applymap(lambda x: make_iterable(x))
+		func = lambda x: to_iterable(x)
+		return self.applymap(func, columns, inplace)
 
-		if inplace:
-			self.data = data
-		return data
-
-	def coerce_nulls(self, inplace=False):
+	def coerce_nulls(self, columns=[], inplace=False):
 		# TODO: make this method faster
 		'''Coerce all null elements into numpy.nan
 
@@ -259,13 +266,11 @@ class SparseDataFrame(Base):
 				return numpy.nan
 			else:
 				return item
-		data = self.data.applymap(lambda x: _coerce_nulls(x))
 
-		if inplace:
-			self.data = data
-		return data
+		func = lambda x: _coerce_nulls(x)
+		return self.applymap(func, columns, inplace)
 
-	def nan_to_bottom(self, inplace=True):
+	def nan_to_bottom(self, columns=[], inplace=True):
 		'''Pushes all nan elements to the bottom rows of the DataFrame
 
 		Args:
@@ -289,14 +294,11 @@ class SparseDataFrame(Base):
 			2   sue   43        NaN
 			3   NaN  NaN        NaN
 		'''
-		data = self.data.apply(lambda x: SparseSeries(x).nan_to_bottom())
-
-		if inplace:
-			self.data = data
-		return data
+		func = lambda x: SparseSeries(x).nan_to_bottom()
+		return self.applymap(func, columns, inplace)
 	# --------------------------------------------------------------------------
 							
-	def regex_match(self, pattern, group=0, ignore_case=False, inplace=False):
+	def regex_match(self, pattern, group=0, ignore_case=False, columns=[], inplace=False):
 		# May be deprecated in favor of spql_search
 		'''Apply regular expression matches to all DataFrame elements
 
@@ -323,14 +325,11 @@ class SparseDataFrame(Base):
 			1  bill   22    soldier
 			2   sue   65      pilot
 			3  jane   43    teacher
-		'''		
-		data = self.data.applymap(lambda x: regex_match(pattern, x, group=group, ignore_case=ignore_case))
+		'''
+		func = lambda x: regex_match(pattern, x, group=group, ignore_case=ignore_case)
+		return self.applymap(func, columns, inplace)
 
-		if inplace:
-			self.data = data
-		return data
-
-	def regex_search(self, pattern, group=0, ignore_case=False, inplace=False):
+	def regex_search(self, pattern, group=0, ignore_case=False, columns=[], inplace=False):
 		# May be deprecated in favor of spql_search
 		'''Apply regular expression searches to all DataFrame elements
 
@@ -358,13 +357,10 @@ class SparseDataFrame(Base):
 			2   sue   65      pilot
 			3  jane   43    teacher
 		'''
-		data = self.data.applymap(lambda x: regex_search(pattern, x, group=group, ignore_case=ignore_case))
+		func = lambda x: regex_search(pattern, x, group=group, ignore_case=ignore_case)
+		return self.applymap(func, columns, inplace)
 
-		if inplace:
-			self.data = data
-		return data
-
-	def regex_sub(self, pattern, repl, count=0, ignore_case=False, inplace=False):
+	def regex_sub(self, pattern, repl, count=0, ignore_case=False, columns=[], inplace=False):
 		'''Apply regular expression substitutions to all DataFrame elements
 
 		Args:
@@ -393,13 +389,10 @@ class SparseDataFrame(Base):
 			2   sue   65                pilot
 			3  jane   43              teacher
 		'''
-		data = self.data.applymap(lambda x: regex_sub(pattern, repl, x, count=count, ignore_case=ignore_case))
+		func = lambda x: regex_sub(pattern, repl, x, count=count, ignore_case=ignore_case)
+		return self.applymap(func, columns, inplace)
 
-		if inplace:
-			self.data = data
-		return data
-
-	def regex_split(self, pattern, ignore_case=False, inplace=False):
+	def regex_split(self, pattern, ignore_case=False, columns=[], inplace=False):
 		'''Splits elements into list of found regular expression groups
 
 		Args:
@@ -426,11 +419,8 @@ class SparseDataFrame(Base):
 			2   sue   65     [helicopter, pilot]
 			3  jane   43                 teacher
 		'''
-		data = self.data.applymap(lambda x: regex_split(pattern, x, ignore_case=ignore_case))
-
-		if inplace:
-			self.data = data
-		return data
+		func = lambda x: regex_split(pattern, x, ignore_case=ignore_case)
+		return self.applymap(func, columns, inplace)
 	# --------------------------------------------------------------------------
 
 	def flatten(self, columns=None, prefix=True, drop=True, dtype=dict, attach='inplace', inplace=False):
@@ -516,39 +506,7 @@ class SparseDataFrame(Base):
 			cols = _reorder_columns(old_cols, col_index)
 			data = data[cols]
 
-		if inplace:
-			self.data = data
-		return data
-
-	def drop_columns(self, columns, inplace=False):
-		'''Drop a given set of columns from the DataFrame
-
-		Args:
-			columns (list): Set of columns to drop.
-			inplace (bool, optional): Apply changes in place. Default: False
-		
-		Returns: 
-			Reduced DataFrame
-
-		Example:
-			>>> sdf.data
-			   a  b   c   d
-			0  0  1   2   3
-			1  4  5   6   7
-			2  8  9  10  11
-
-			>>> sdf.drop_columns(['a', 'c'])
-			   b   d
-			0  1   3
-			1  5   7
-			2  9  11
-		'''
-		data = self.data
-		data = data.T.drop(columns).T
-
-		if inplace:
-			self.data = data
-		return data
+		return self._inplace(data, inplace)
 
 	def drop_by_mask(self, mask, how='all', axis=0, inplace=False):
 		'''Drops entire rows or columns from data according to given mask
@@ -587,9 +545,7 @@ class SparseDataFrame(Base):
 			data = self.data[mask.columns]
 		data.reset_index(drop=True, inplace=True)
 
-		if inplace:
-			self.data = data
-		return data
+		return self._inplace(data, inplace)
 
 	def stack_by_column(self, column, inplace=False):
 		'''Stacks data according to chunks demarcated by unique elements within 
@@ -649,9 +605,7 @@ class SparseDataFrame(Base):
 
 		data = pandas.concat(frames, axis=1)
 
-		if inplace:
-			self.data = data
-		return data
+		return self._inplace(data, inplace)
 
 	def unstripe(self, inplace=False):
 		'''Reduced striped DataFrame into DataFrame with unique columns
@@ -699,9 +653,7 @@ class SparseDataFrame(Base):
 		data = irregular_concat(items, axis=1, ignore_index=False)
 		data.columns = new_cols
 		
-		if inplace:
-			self.data = data
-		return data
+		return self._inplace(data, inplace)
 
 	def unique(self, inplace=True):
 		'''Returns a DataFrame of unique values, excluding numpy.nans
@@ -714,14 +666,14 @@ class SparseDataFrame(Base):
 
 		Example:
 			>>> sdf.data
-			    make  model color  year
+				make  model color  year
 			0    gmc    suv  blue  2007
 			1  honda    suv  blue  2007
 			2   fiat    car  blue  2007
 			3    gmc  truck  blue  1999
 
 			>>> sdf.unique()
-			    make  model color  year
+				make  model color  year
 			0    gmc    suv  blue  2007
 			1  honda    car   NaN  1999
 			2   fiat  truck   NaN   NaN
@@ -732,9 +684,7 @@ class SparseDataFrame(Base):
 		data = data.apply(lambda x: SparseSeries(x).nan_to_bottom())
 		data = data.dropna(how='all')
 
-		if inplace:
-			self.data = data
-		return data
+		return self._inplace(data, inplace)
 
 	def cross_map(self, source_column, target_column, source_predicate, 
 				  target_predicate=None, inplace=False):
@@ -753,14 +703,14 @@ class SparseDataFrame(Base):
 
 		Example:
 			>>> sdf.data
-			    make  model color  year
+				make  model color  year
 			0    gmc    suv  blue  2007
 			1  honda    suv  blue  2007
 			2   fiat    car  blue  2007
 			3    gmc  truck  blue  1999
 
 			>>>	sdf.cross_map('year', 'color', lambda x: x == 2007, lambda x: 'red')
-			    make  model color  year
+				make  model color  year
 			0    gmc    suv   red  2007
 			1  honda    suv   red  2007
 			2   fiat    car   red  2007
@@ -773,9 +723,7 @@ class SparseDataFrame(Base):
 		else:
 			data[target_column][mask] = data[source_column][mask]
 
-		if inplace:
-			self.data = data
-		return data
+		return self._inplace(data, inplace)
 
 	def group_cross_map(self, group_column, value_column, source_column, 
 						target_column, predicate, concat=True, inplace=False):
@@ -807,7 +755,7 @@ class SparseDataFrame(Base):
 			7     klein     janice
 			
 			>>>  sdf.group_cross_map('last_name', 'relatives', 'last_name',
-                    				 'first_name', lambda x: True)
+									 'first_name', lambda x: True)
 			  last_name first_name           relatives
 			0   schmidt        tom    tom, dick, harry
 			1   schmidt       dick    tom, dick, harry
@@ -819,7 +767,7 @@ class SparseDataFrame(Base):
 			7     klein     janice  ernst, max, janice
 
 			>>> sdf.group_cross_map('last_name', 'relatives', 'last_name',
-                    				'first_name', lambda x: x != 'flately')
+									'first_name', lambda x: x != 'flately')
 			  last_name first_name           relatives
 			0   schmidt        tom    tom, dick, harry
 			1   schmidt       dick    tom, dick, harry
@@ -842,9 +790,7 @@ class SparseDataFrame(Base):
 				values = ', '.join(values)
 			data.loc[mask.index, value_column] = values
 
-		if inplace:
-			self.data = data
-		return data
+		return self._inplace(data, inplace)
 
 	def merge_columns(self, columns, func='default', new_column='default', 
 					iterables=False, drop=False, inplace=False):
@@ -926,9 +872,7 @@ class SparseDataFrame(Base):
 			for col in columns:
 				del data[col]
 
-		if inplace:
-			self.data = data
-		return data
+		return self._inplace(data, inplace)
 
 	def to_inverted_index(self, columns, key, prototype=True):
 		'''Converts a list of columns containing dict or dict matrices to an inverted index
@@ -970,9 +914,7 @@ class SparseDataFrame(Base):
 
 		data = self.merge_columns([source, target], func=func, new_column=new_column, drop=drop)
 		
-		if inplace:
-			self.data = data
-		return data
+		return self._inplace(data, inplace)
 
 	def traverse(self, key_func, val_func, traverse='depth', replace=False, inplace=False):
 		data = self.data.copy()
@@ -1013,9 +955,28 @@ class SparseDataFrame(Base):
 						data.loc[ind, spindex] = branch 
 						break
 						
-		if inplace:
-			self.data = data
-		return data   
+		return self._inplace(data, inplace)
+
+	def get_revolutions(self, start=None, stop=None, inplace=False):
+		cols = self.data.columns.tolist()
+		data = self.data[cols[0]].dropna().tolist()
+		for col in cols[1:]:
+			data = get_revolutions(data, self.data[col].dropna().tolist())
+		data = DataFrame(data, columns=cols)
+		
+		if start:
+			start = data.T.apply(lambda x: ''.join(x.tolist()) == start).T
+			start = data[start].index.values[0]
+			data = data.ix[start:]
+			
+		if stop:
+			stop = data.T.apply(lambda x: ''.join(x.tolist()) == stop).T
+			stop = data[stop].index.values[0]
+			data = data.ix[:stop]
+			
+		data.reset_index(drop=True, inplace=True)
+		
+		return self._inplace(data, inplace)   
 	# --------------------------------------------------------------------------
 	
 	def read_nested_dict(self, item, sp_index=False, justify='left', inplace=False):
@@ -1047,9 +1008,7 @@ class SparseDataFrame(Base):
 		if sp_index:
 			data.reset_index(drop=True, inplace=True)
 
-		if inplace:
-			self.data = data
-		return data
+		return self._inplace(data, inplace)
 
 	def to_nested_dict(self):
 		if 'sp_index_00' in self.data.columns:
@@ -1059,7 +1018,7 @@ class SparseDataFrame(Base):
 				matrix.append([x for x in ifilter(lambda x: x != '-->', row)])
 			return matrix_to_nested_dict(matrix)
 
-	def read_json(self, string, orient='records'):
+	def read_json(self, string, orient='records', inplace=True):
 		'''Reads json into SparseDataFrame
 
 		Args:
@@ -1069,7 +1028,8 @@ class SparseDataFrame(Base):
 		Returns: 
 			None
 		'''
-		self.data = pandas.read_json(string, orient=orient)
+		data = pandas.read_json(string, orient=orient)
+		return self._inplace(data, inplace)
 
 	def to_json(self, orient='records'):
 		'''Reads SparseDataFrame into json string
@@ -1174,9 +1134,7 @@ class SparseDataFrame(Base):
 		self._spql.search(string)
 		data = self._spql.dataframe_query(self.data, field_operator=field_operator)
 
-		if inplace:
-			self.data = data
-		return data
+		return self._inplace(data, inplace)
 
 	# def parse(self, columns, parse_index, verbose=False, inplace=True):
 	# 	'''Parse column elements according to parse index

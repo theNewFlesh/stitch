@@ -726,6 +726,17 @@ def combine(items):
 	for item in items[1:]:
 		output = output.append(item)
 	return output
+
+def get_revolutions(left, right):
+    output = []
+    for l in left:
+        for r in right:
+            temp = [l]
+            if isinstance(l, list):
+                temp = copy(l)
+            temp.append(r)
+            output.append(temp)
+    return output
 # ------------------------------------------------------------------------------
 
 def double_lut_transform(items, input_lut, output_lut):
@@ -824,7 +835,8 @@ __all__ = [
 	'nested_dict_to_matrix', 'nested_dict_to_index', 'matrix_to_nested_dict',
 	'interpret_nested_dict', 'to_inverted_index', 'recurse', 'merge',
 	'flatten_list', 'to_prototype', 'irregular_concat', 'index_to_matrix', 
-	'insert_level', 'combine', 'double_lut_transform', 'list_to_lut', 'plot'
+	'insert_level', 'combine', 'get_revolutions', 'double_lut_transform', 
+	'list_to_lut', 'plot'
 ]
 
 if __name__ == '__main__':

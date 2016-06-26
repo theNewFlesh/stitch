@@ -2,15 +2,11 @@ import sys
 from cmd import Cmd
 from sparse.core.errors import *
 from sparse.frameworks.probe.probe_api import ProbeAPI
-
-from sparse.frameworks.tune.tuner import Tuner
-TUNER = Tuner()
-
-import pandas
-pandas.options.display.width = TUNER['probe_cli']['line_width']
-pandas.options.display.max_rows = TUNER['probe_cli']['max_rows']
-pandas.options.display.max_colwidth = TUNER['probe_cli']['max_colwidth']
-pandas.options.display.expand_frame_repr = False
+import pandas as pd
+pd.options.display.width = 500
+pd.options.display.max_rows = 1000
+pd.options.display.max_colwidth = 30
+pd.options.display.expand_frame_repr = False
 # ------------------------------------------------------------------------------
 
 '''
@@ -40,12 +36,12 @@ class ProbeCLI(Cmd):
 	def default(self, arg):
 		if self._debug_mode:
 			self._api.spql_search(arg, display_fields=self._display_fields)
-			self._results = pandas.read_json(self._api._results, orient='records')
+			self._results = pd.read_json(self._api._results, orient='records')
 			print self._results
 		else:
 			try:
 				self._api.spql_search(arg, display_fields=self._display_fields)
-				self._results = pandas.read_json(self._api._results, orient='records')
+				self._results = pd.read_json(self._api._results, orient='records')
 				print self._results
 			except NotFound:
 				print 'No results found'

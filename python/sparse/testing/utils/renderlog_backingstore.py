@@ -1,8 +1,8 @@
 import os
 import warnings
 import re
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 from pandas import DataFrame
 
 from sparse.core.sparse_dataframe import SparseDataFrame
@@ -10,8 +10,6 @@ from sparse.frameworks.probe.backingstore import BackingStore
 from sparse.utilities.renderlog_utils import *
 from sparse.core.utils import *
 from sparse.core.errors import *
-# from sparse.frameworks.tune.tuner import Tuner
-# TUNER = Tuner()
 # ------------------------------------------------------------------------------
 
 '''
@@ -79,7 +77,7 @@ class RenderLogBackingStore(BackingStore):
 
 		data['warning'] = data['raw_data'].apply(lambda x: get_warnings(x, logtype='mental ray'))
 
-		data['progress'] = numpy.nan
+		data['progress'] = np.nan
 		prog = data['raw_data'].apply(lambda x: get_progress(x, logtype='alfred'))
 		if len(prog) > 0:
 			mask = prog.tail(1)
@@ -97,7 +95,7 @@ class RenderLogBackingStore(BackingStore):
 			# get traceback text chunks (ie traceback to error, traceback to error)
 			tbs = tbs.index.tolist()
 			errs = err.dropna().index.tolist()
-			data['chunk_id'] = numpy.nan
+			data['chunk_id'] = np.nan
 			chunks = []
 			chunk_ids = []
 			if tbs and errs:
@@ -132,9 +130,9 @@ class RenderLogBackingStore(BackingStore):
 			data['traceback_file'] = data['raw_data'].apply(lambda x: get_traceback_file(x))
 
 		# merge traceback data and warning data
-		data = pandas.concat([data, data2])
+		data = pd.concat([data, data2])
 
-		data = data.applymap(lambda x: numpy.nan if x == '' else x)
+		data = data.applymap(lambda x: np.nan if x == '' else x)
 
 		if not self._expand:
 			data = data[['line', 'warning', 'error', 'progress', 'filepath', 'filename']]
@@ -149,7 +147,7 @@ class RenderLogBackingStore(BackingStore):
 		for datum in self.source_data:
 			data.append(self._log_data(datum))
 		if len(data) > 1:
-			data = pandas.concat(data)
+			data = pd.concat(data)
 		else:
 			data = data[0]
 
@@ -158,7 +156,6 @@ class RenderLogBackingStore(BackingStore):
 
 		data['probe_id'] = data.index
 
-		# data.columns = TUNER.tune(data.columns, 'renderlog_backingstore')
 		sdata = SparseDataFrame(data)
 		self._data = sdata
 # ------------------------------------------------------------------------------

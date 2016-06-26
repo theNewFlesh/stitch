@@ -4,10 +4,9 @@ import json
 import time
 from copy import copy
 from datetime import datetime
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 from pandas import DataFrame, Series
-
 from sparse.core.sparse_dataframe import SparseDataFrame
 from sparse.core.sparse_series import SparseSeries
 from sparse.frameworks.probe.backingstore import BackingStore
@@ -15,9 +14,6 @@ from sparse.frameworks.probe.renderlog_backingstore import RenderLogBackingStore
 from sparse.utilities.qube_utils import *
 from sparse.utilities.utils import *
 from sparse.utilities.errors import *
-# from sparse.frameworks.tune.tuner import Tuner
-# TUNER = Tuner()
-# qb = TUNER['qb']
 # ------------------------------------------------------------------------------
 
 '''
@@ -118,7 +114,7 @@ class QubeBackingStore(BackingStore):
 					output.append(pgrp)
 				return output
 
-			return numpy.nan
+			return np.nan
 
 		data['dependency'] = data['dependency'].apply(lambda x: _get_dependency(x))
 		return data
@@ -137,10 +133,10 @@ class QubeBackingStore(BackingStore):
 		if text:
 			return text
 		else:
-			return numpy.nan
+			return np.nan
 
 	def _get_stdout_stats(self, item):
-		output = {'progress': numpy.nan, 'warning': numpy.nan, 'error': numpy.nan}
+		output = {'progress': np.nan, 'warning': np.nan, 'error': np.nan}
 		if item.__class__.__name__ == 'str':
 			output = {}
 			rbs = RenderLogBackingStore(text=item)
@@ -153,7 +149,7 @@ class QubeBackingStore(BackingStore):
 	# --------------------------------------------------------------------------
 
 	def _job_update(self):
-		data = pandas.read_json(self._job_data, orient='records')
+		data = pd.read_json(self._job_data, orient='records')
 		data = data.applymap(lambda x: {} if x is None else x)
 
 		sdata = SparseDataFrame(data)
@@ -175,7 +171,7 @@ class QubeBackingStore(BackingStore):
 		data['jobtype'] = data['name'].apply(lambda x: get_jobtype(x))
 
 		# mask = data['status'].apply(lambda x: x in ['failed', 'running'])
-		data['stdout_subids'] = numpy.nan
+		data['stdout_subids'] = np.nan
 		# data['stdout_subids'][mask] = data['id'].apply(lambda x: str(x))
 
 		data['stdout_subids'] = data['id'].apply(lambda x: str(x))
@@ -192,7 +188,6 @@ class QubeBackingStore(BackingStore):
 		data.reset_index(drop=True, inplace=True)
 
 		sdata = SparseDataFrame(data)
-		sdata._data.columns = TUNER.tune(sdata._data.columns, 'qube_backingstore')
 		self._data = sdata
 
 	@property
@@ -219,7 +214,7 @@ class QubeBackingStore(BackingStore):
 			data = flatten_qube_field(data, fields)
 
 		data = DataFrame(data)
-		data = data.applymap(lambda x: numpy.nan if x is {} else x)
+		data = data.applymap(lambda x: np.nan if x is {} else x)
 		data['slots'] = data['resources'].apply(lambda x: get_slots(x))
 		data['subjobs'] = data['subjobs'].apply(lambda x: x[0])
 
@@ -241,7 +236,6 @@ class QubeBackingStore(BackingStore):
 
 		data.reset_index(drop=True, inplace=True)
 		data['probe_id'] = data.index
-		data.columns = TUNER.tune(data.columns, 'qube_backingstore')
 		sdata._data = data
 
 		self._data = sdata

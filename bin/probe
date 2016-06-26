@@ -1,37 +1,10 @@
-#! /usr/bin/env python
-# Alex Braun 04.13.2014
-
-# ------------------------------------------------------------------------------
-# The MIT License (MIT)
-
-# Copyright (c) 2014 Alex Braun
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-# ------------------------------------------------------------------------------
-
 '''
 .. module:: probe
 	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Probe command line search tool
 
-.. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
+.. moduleauthor:: Alex Braun <alexander.g.braun@gmail.com>
 '''
 # ------------------------------------------------------------------------------
 
@@ -40,15 +13,13 @@ from sparse.views.probe_cli import ProbeCLI
 from sparse.frameworks.probe.qube_backingstore import QubeBackingStore
 from sparse.frameworks.probe.renderlog_backingstore import RenderLogBackingStore
 
-from sparse.frameworks.tune.tuner import Tuner
-TUNER = Tuner()
 BACKINGSTORES = {'qube': QubeBackingStore, 'renderlog': RenderLogBackingStore}
-PROMPT = TUNER['probe']['prompt']
+PROMPT = ["SpQL[", "]> "]
 # ------------------------------------------------------------------------------
 
 def run():
 	parser = argparse.ArgumentParser(description='Query given backingstore')
-	
+
 	parser.add_argument('backingstore', metavar='str', type=str, nargs=1,
 						action='store', help='The backingstore to query')
 
@@ -60,19 +31,19 @@ def run():
 
 	parser.add_argument('-k', '--kwargs', metavar='str', type=str, nargs='?',
 						action='store', default={}, help='Backingstore key word arguments')
-	
+
 	parser.add_argument('-s', '--search', metavar='str', type=str, nargs='?',
 						action='store', default=False, help='A SpQL search string')
-	
+
 	parser.add_argument('-f', '--displayfields', metavar='str', type=str, nargs='*',
 						action='store', default=False, help='Only display these fields')
 
 	parser.add_argument('-p', '--prompt', metavar='str', type=str, nargs=1,
 						action='store', default=False, help='Add custom text to SpQL prompt')
-	
+
 	parser.add_argument('-d', '--debug', default=False, action='store_true',
 						help='Enable debug mode')
-	
+
 	args = parser.parse_args()
 	updates = args.updates
 	bks = args.backingstore[0]
@@ -86,11 +57,11 @@ def run():
 		prompt = PROMPT[0] + prompt[0] + PROMPT[1]
 	else:
 		prompt = PROMPT[0] + bks + PROMPT[1]
-	
+
 	cli = ProbeCLI(BACKINGSTORES[bks](*_args, **kwargs), updates=updates,
-					display_fields=args.displayfields, debug_mode=args.debug, 
+					display_fields=args.displayfields, debug_mode=args.debug,
 					prompt=prompt)
-	
+
 	if args.search:
 		cli._api.spql_search(args.search, display_fields=args.displayfields)
 		print cli.results

@@ -446,33 +446,6 @@ def merge(data, store, merge_func=lambda store, key, val: [val, store[key]] ):
 		return store
 	return _merge(deepcopy(data), deepcopy(store))
 
-def merge_list_dicts(source, target, source_key, target_key, remove_key=False):
-	def _list_dict_to_dict(items, key, remove_key=False):
-		output = {}
-		for item in items:
-			value = {}
-			new_key = str(item[key])
-			if remove_key:
-				del item[key]
-			value[new_key] = item
-
-			out_key = value.keys()[0]
-			out_value = value[out_key]
-			output[out_key] = out_value
-		return output
-
-	source = _list_dict_to_dict(source, source_key, remove_key=remove_key)
-	target = _list_dict_to_dict(target, target_key, remove_key=remove_key)
-	output = []
-	for key, value in source.iteritems():
-		row = {}
-		for k, v in value.iteritems():
-			row[source_key + '_' + str(k)] = v
-		for k, v in target[key].iteritems():
-			row[target_key + '_' + str(k)] = v
-		output.append(row)
-	return output
-
 def flatten_list(item):
 	store = []
 	def _flatten(items):
@@ -716,7 +689,6 @@ __all__ = [
 	'interpret_nested_dict',
 	'recurse',
 	'merge',
-	'merge_list_dicts',
 	'flatten_list',
 	'as_prototype',
 	'as_inverted_dict',

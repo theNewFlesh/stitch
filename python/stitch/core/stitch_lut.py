@@ -9,7 +9,7 @@ from pandas import DataFrame, Series, Panel
 import numpy
 from stitch.core.utils import *
 from stitch.core.errors import *
-from stitch.core.stitchframe import StitchFrame
+from stitch.core.stitch_frame import StitchFrame
 # ------------------------------------------------------------------------------
 
 '''The stitch_lut module contains the StitchLUT class.

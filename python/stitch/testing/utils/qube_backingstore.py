@@ -8,11 +8,11 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 from stitch.core.stitch_frame import StitchFrame
+from stitch.core.utils import *
 from stitch.frameworks.probe.backingstore import BackingStore
-from stitch.frameworks.probe.renderlog_backingstore import RenderLogBackingStore
+from stitch.testing.utils.renderlog_backingstore import RenderLogBackingStore
 from stitch.testing.utils.qube_utils import *
-from stitch.testing.utils.utils import *
-from stitch.testing.utils.errors import *
+from stitch.core.errors import *
 # ------------------------------------------------------------------------------
 
 '''

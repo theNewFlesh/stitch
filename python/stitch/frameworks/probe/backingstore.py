@@ -1,6 +1,6 @@
 import json
 from pandas import Series
-from stitch.core.stitch_dataframe import StitchFrame
+from stitch.core.stitch_frame import StitchFrame
 from stitch.core.utils import *
 from stitch.core.errors import *
 # ------------------------------------------------------------------------------

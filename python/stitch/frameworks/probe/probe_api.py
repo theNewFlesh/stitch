@@ -4,7 +4,7 @@ import json
 from stitch.core.errors import *
 from stitch.core.utils import *
 from stitch.core.stitch_interpreter import StitchInterpreter
-from stitch.core.stitch_dataframe import StitchFrame
+from stitch.core.stitch_frame import StitchFrame
 # ------------------------------------------------------------------------------
 
 '''

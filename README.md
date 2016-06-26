@@ -1,4 +1,4 @@
-sparse
+stitch
 ======
 
-Sparse data utility
+stitch data utility

@@ -637,9 +637,8 @@ def reduce_units(series, new_unit='-', min=0):
 		>>> data = [x.split(':')[1] for x in file]
 		>>> print indents
 		['	', '		', '			', '		', '			']
-		>>> ss = SparseSeries(indents)
-		>>> ss.reduce_units(' ', inplace=True)
-		>>> print ss
+		>>> r = reduce_units(indents, ' ', inplace=True)
+		>>> print r
 		['', ' ', '  ', ' ', '  ']
 		>>> print [line for line in zip(indents, data)]
 		A

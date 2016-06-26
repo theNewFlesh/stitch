@@ -7,18 +7,16 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from sparse.core.sparse_dataframe import SparseDataFrame
-from sparse.core.sparse_series import SparseSeries
-from sparse.frameworks.probe.backingstore import BackingStore
-from sparse.frameworks.probe.renderlog_backingstore import RenderLogBackingStore
-from sparse.utilities.qube_utils import *
-from sparse.utilities.utils import *
-from sparse.utilities.errors import *
+from stitch.core.stitch_frame import StitchFrame
+from stitch.frameworks.probe.backingstore import BackingStore
+from stitch.frameworks.probe.renderlog_backingstore import RenderLogBackingStore
+from stitch.testing.utils.qube_utils import *
+from stitch.testing.utils.utils import *
+from stitch.testing.utils.errors import *
 # ------------------------------------------------------------------------------
 
 '''
 .. module:: qube_backingstore
-	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Qube BackingStore for interfacing with Probe API
 
@@ -63,7 +61,7 @@ class QubeBackingStore(BackingStore):
 	# --------------------------------------------------------------------------
 
 	def _get_agenda_stats(self, data):
-		sdata = SparseDataFrame(data)
+		sdata = StitchFrame(data)
 		sdata.merge_columns(['agenda', 'id'],
 			func=lambda x: get_agenda_stats(x[x.index[0]], x[x.index[1]], self._embed_graphs),
 			new_column='agenda')
@@ -75,7 +73,7 @@ class QubeBackingStore(BackingStore):
 		mask = data['agenda_subids'].dropna()
 		data.loc[mask.index, 'stdout_subids'] = data['id'].apply(lambda x: str(x))
 
-		sdata = SparseDataFrame(data)
+		sdata = StitchFrame(data)
 		sdata.merge_columns(['stdout_subids', 'agenda_subids'],
 			func=lambda x: create_complete_subids( x[x.index[0]], x[x.index[1]] ),
 			new_column='stdout_subids', iterables=True, inplace=True)
@@ -88,7 +86,7 @@ class QubeBackingStore(BackingStore):
 		return data
 
 	def _get_callbacks(self, data):
-		sdata = SparseDataFrame(data)
+		sdata = StitchFrame(data)
 		data = sdata.merge_columns(['pgrp', 'callbacks'],
 			func=lambda x: [ x[x.index[0]], x[x.index[1]] ], new_column='dependency')
 
@@ -152,7 +150,7 @@ class QubeBackingStore(BackingStore):
 		data = pd.read_json(self._job_data, orient='records')
 		data = data.applymap(lambda x: {} if x is None else x)
 
-		sdata = SparseDataFrame(data)
+		sdata = StitchFrame(data)
 		sdata.flatten(columns=['todotally'], inplace=True)
 		data = sdata._data
 		data = data.applymap(lambda x: str_to_nan(x))
@@ -187,7 +185,7 @@ class QubeBackingStore(BackingStore):
 		data['probe_id'] = data.index
 		data.reset_index(drop=True, inplace=True)
 
-		sdata = SparseDataFrame(data)
+		sdata = StitchFrame(data)
 		self._data = sdata
 
 	@property
@@ -218,7 +216,7 @@ class QubeBackingStore(BackingStore):
 		data['slots'] = data['resources'].apply(lambda x: get_slots(x))
 		data['subjobs'] = data['subjobs'].apply(lambda x: x[0])
 
-		sdata = SparseDataFrame(data)
+		sdata = StitchFrame(data)
 		data = sdata.flatten()
 
 		slot_pct = data['slots_used'] / data['slots_total']

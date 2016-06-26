@@ -1,6 +1,5 @@
 '''
 .. module:: probe
-	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Probe command line search tool
 
@@ -9,9 +8,9 @@
 # ------------------------------------------------------------------------------
 
 import argparse
-from sparse.views.probe_cli import ProbeCLI
-from sparse.frameworks.probe.qube_backingstore import QubeBackingStore
-from sparse.frameworks.probe.renderlog_backingstore import RenderLogBackingStore
+from stitch.views.probe_cli import ProbeCLI
+from stitch.testing.utils.qube_backingstore import QubeBackingStore
+from stitch.testing.utils.renderlog_backingstore import RenderLogBackingStore
 
 BACKINGSTORES = {'qube': QubeBackingStore, 'renderlog': RenderLogBackingStore}
 PROMPT = ["SpQL[", "]> "]

@@ -2,12 +2,11 @@ import os
 import re
 import time
 from random import *
-from sparse.core.utils import round_to
+from stitch.core.utils import round_to
 # ------------------------------------------------------------------------------
 
 '''
 .. module:: qb
-	:date: 12.29.2013
 	:platform: Unix
 	:synopsis: Mock qb library
 
@@ -16,7 +15,7 @@ from sparse.core.utils import round_to
 
 BASE_TIME = time.time() - (500 * randint(0, 2))
 STOPS = [135, 135, 130, 130, 180, 112, 116, 100, 110, 90, 47, 47, 25, 25, 14, 14]
-LOGPATH = os.path.join(os.getcwd(), 'sparse/resources/qube_logs')
+LOGPATH = os.path.join(os.getcwd(), 'stitch/testing/resources/qube_logs')
 
 def gen_jobids():
 	jobids = ['124000', '123999', '123205', '123202', '123204', '123066', '124015',

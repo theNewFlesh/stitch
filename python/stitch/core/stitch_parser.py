@@ -1,36 +1,27 @@
 from pyparsing import printables, nums
 from pyparsing import Word, Keyword, Or, Group
 from pyparsing import delimitedList, oneOf, OneOrMore, Suppress
-from sparse.core.utils import Base
+from stitch.core.utils import Base
 # ------------------------------------------------------------------------------
 
 '''
-.. module:: spql_parser
-	:date: 01.18.2015
+.. module:: stitch_parser
 	:platform: Unix
-	:synopsis: Sparse Query Langauge parser
+	:synopsis: Stitch Query Langauge parser
 
 .. moduleauthor:: Alex Braun <alexander.g.braun@gmail.com>
 '''
 
-class SpQLParser(Base):
+class StitchParser(Base):
 	'''
 	Class for generating queries for which to filter DataFrames
 
 	Attributes:
-		cls (str): Class descriptor
-		name (str): Name descriptor
-		last_search (str): Last SpQL query generated. Default: None.
+		last_search (str): Last stitchql query generated. Default: None.
 		search_stats(str): Print statistics about the last query made.
 	'''
 
 	def __init__(self):
-		'''
-		Initializer for SparseParser
-
-		Args:
-			name (str): Name descriptor
-		'''
 		all_chars            = printables + ' '
 		regex                = Suppress('"') + Word(all_chars, excludeChars=',")') + Suppress('"')
 		word                 = Word(printables, excludeChars=',")')
@@ -84,10 +75,10 @@ class SpQLParser(Base):
 		Generate query from string and place it in last_search
 
 		Args:
-			string(str): SpQL formatted string to be parsed.
+			string(str): stitchql formatted string to be parsed.
 
 		Returns:
-			SpQL query.
+			stitchql query.
 		'''
 		results = []
 		for fragment in self._line.parseString(string):
@@ -114,7 +105,7 @@ def main():
 	import __main__
 	help(__main__)
 
-__all__ = ['SpQLParser']
+__all__ = ['StitchParser']
 
 if __name__ == '__main__':
 	main()

@@ -1,7 +1,7 @@
 import sys
 from cmd import Cmd
-from sparse.core.errors import *
-from sparse.frameworks.probe.probe_api import ProbeAPI
+from stitch.core.errors import *
+from stitch.frameworks.probe.probe_api import ProbeAPI
 import pandas as pd
 pd.options.display.width = 500
 pd.options.display.max_rows = 1000
@@ -11,7 +11,6 @@ pd.options.display.expand_frame_repr = False
 
 '''
 .. module:: probe_cli
-	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Command line interface for the Probe API
 
@@ -20,7 +19,7 @@ pd.options.display.expand_frame_repr = False
 
 class ProbeCLI(Cmd):
 	def __init__(self, backingstore, updates='automatic', display_fields=[],
-				 debug_mode=False, prompt='SpQL>'):
+				 debug_mode=False, prompt='stitchql>'):
 		Cmd.__init__(self)
 		self.prompt = prompt
 		self._api = ProbeAPI(backingstore, updates=updates)
@@ -91,7 +90,7 @@ class ProbeCLI(Cmd):
 		print 'as its arguments.'
 		print ''
 		print 'For instance, in arithematic, the addition operator (+) combines'
-		print 'its two operands into a single value (2 + 2 = 4).  In SpQL, an'
+		print 'its two operands into a single value (2 + 2 = 4).  In stitchql, an'
 		print 'operator peforms a test on the values of the fields denoted as'
 		print 'the left operands, using the values denoted in the right operands'
 		print 'as criteria.  So, "(name) contains (jupiter)" searches all the'

@@ -5,14 +5,13 @@ import os
 import json
 import imp
 import pandas
-from sparse.core.utils import Base, interpret_nested_dict
-from sparse.frameworks.tune import config_path
-from sparse.core.sparse_lut import SparseLUT
+from stitch.core.utils import Base, interpret_nested_dict
+from stitch.frameworks.tune import config_path
+from stitch.core.stitch_lut import StitchLUT
 # ------------------------------------------------------------------------------
 
 '''
 .. module:: tuner
-	:date: 08.22.2014
 	:platform: Unix
 	:synopsis: Configuration framework
 
@@ -79,7 +78,7 @@ class Tuner(Base):
 				master_lut = pandas.concat(master_luts, axis=1)
 			else:
 				master_lut = master_luts[0]
-			self._lut = SparseLUT(master_lut)
+			self._lut = StitchLUT(master_lut)
 
 	def get_module(self, filepath):
 		module = os.path.basename(filepath)

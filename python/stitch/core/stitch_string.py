@@ -3,18 +3,15 @@ from collections import OrderedDict
 import numpy
 import pandas
 from pandas import DataFrame, Series
-from sparse.core.utils import Base
-from sparse.core.sparse_dataframe import SparseDataFrame
-from sparse.core.sparse_phrase import SparsePhrase, SparseWord
+from stitch.core.utils import Base
+from stitch.core.stitch_frame import StitchFrame
+from stitch.core.stitch_phrase import StitchPhrase, StitchWord
 # ------------------------------------------------------------------------------
 
-'''The sparse_string module contains the SparseString class.
+'''The stitch_string module contains the StitchString class.
 
-The SparseString class is used for easily composing a grammar out of SparsePhrases
-and SparseWords from a csv document.
-
-Date:
-	01.18.2015
+The StitchString class is used for easily composing a grammar out of StitchPhrases
+and StitchWords from a csv document.
 
 Platform:
 	Unix
@@ -23,7 +20,7 @@ Author:
 	Alex Braun <alexander.g.braun@gmail.com> <http://www.AlexBraunVFX.com>
 '''
 
-class SparseString(Base):
+class StitchString(Base):
 	def __init__(self, data=None):
 		self.data = data
 		self._charset = {}
@@ -92,7 +89,7 @@ class SparseString(Base):
 			flg = row['flags']
 			cap = row['capture']
 			rest = row['restricted']
-			self._elements[desc] = SparseWord(descriptor=desc, determiners=det, tokens=tok, terminators=term,
+			self._elements[desc] = StitchWord(descriptor=desc, determiners=det, tokens=tok, terminators=term,
 									 flags=flg, capture=cap, restricted=rest)
 
 		def add_phrase(row):
@@ -100,7 +97,7 @@ class SparseString(Base):
 			link = row['linking']
 			elem = row['elements']
 			elem = [self._elements[x] for x in elem]
-			self._elements[desc] = SparsePhrase(desc, elem, linking=link)
+			self._elements[desc] = StitchPhrase(desc, elem, linking=link)
 
 		data = self.data
 		word_data = data[data['type'] == 'word']
@@ -149,7 +146,7 @@ class SparseString(Base):
 		if output == 'DataFrame':
 			data = conform(diagnosis)
 			data = interpret_nested_dict(data, lambda x: convert(x))
-			sdf = SparseDataFrame()
+			sdf = StitchFrame()
 			sdf.from_nested_dict(data)
 			return sdf.data
 		else:
@@ -172,7 +169,7 @@ def main():
 	import __main__
 	help(__main__)
 
-__all__ = ['SparseString']
+__all__ = ['StitchString']
 
 if __name__ == '__main__':
 	main()

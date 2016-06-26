@@ -3,7 +3,6 @@ import re
 
 '''
 .. module:: errors
-	:date: 12.29.2013
 	:platform: Unix
 	:synopsis: Library of error messages
 

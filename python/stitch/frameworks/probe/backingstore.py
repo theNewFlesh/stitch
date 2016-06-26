@@ -1,15 +1,12 @@
 import json
-import pandas
 from pandas import Series
-import numpy
-from sparse.core.sparse_dataframe import SparseDataFrame
-from sparse.core.utils import *
-from sparse.core.errors import *
+from stitch.core.stitch_dataframe import StitchFrame
+from stitch.core.utils import *
+from stitch.core.errors import *
 # ------------------------------------------------------------------------------
 
 '''
 .. module:: backingstore
-	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Backingstore base for interfacing with Probe API
 
@@ -49,7 +46,7 @@ class BackingStore(Base):
 		data = []
 		for datum in self.source_data:
 			data.append(Series(datum))
-		sdata = SparseDataFrame(data)
+		sdata = StitchFrame(data)
 		sdata.flatten()
 		sdata.coerce_nulls()
 		data = sdata._data
@@ -69,7 +66,7 @@ class BackingStore(Base):
 		order = json.loads(order)
 		dtype = order['metadata']['data_type']
 		if dtype == u'json orient=records, DataFrame':
-			results = SparseDataFrame()
+			results = StitchFrame()
 			results.read_json(order['data'], orient='records')
 			self._results = results
 		else:

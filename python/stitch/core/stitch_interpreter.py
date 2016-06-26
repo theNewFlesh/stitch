@@ -1,45 +1,37 @@
 import numpy
 import pandas
-from sparse.core.spql_parser import SpQLParser
-from sparse.core.utils import *
+from stitch.core.stitch_parser import StitchParser
+from stitch.core.utils import *
 # ------------------------------------------------------------------------------
 
 '''
-.. module:: spql_interpreter
-	:date: 01.18.2015
+.. module:: stitch_interpreter
 	:platform: Unix
-	:synopsis: Sparse Query Langauge interpreter
+	:synopsis: Stitch Query Langauge interpreter
 
 .. moduleauthor:: Alex Braun <alexander.g.braun@gmail.com>
 '''
 
-class SpQLInterpreter(SpQLParser):
+class StitchInterpreter(StitchParser):
 	'''
-	Subclass of SpQLParser used for performing SpQL queries on supplied DataFrames
+	Subclass of StitchParser used for performing stitchql queries on supplied DataFrames
 
 	Attributes:
-		cls (str): Class descriptor.
-		name (str): Name descriptor.
-		last_search (str): Last SpQL query generated. Default: None.
+		last_search (str): Last stitchql query generated. Default: None.
 		search_stats(str): Print statistics about the last query made.
 	'''
 	def __init__(self):
-		'''
-		SparseInterpreter initializer
-		Args:
-			name (str, optional): Name of object. Default: None
-		'''
-		super(SpQLInterpreter, self).__init__()
+		super(StitchInterpreter, self).__init__()
 	# --------------------------------------------------------------------------
 
 	def _gen_dataframe_query(self, dataframe, fields=['all'], operator='==', values=[''], field_operator='=='):
 		'''
-		Semi-private method for processing invidual SpQL queries.
+		Semi-private method for processing invidual stitchql queries.
 
 		Args:
 			dataframe (DataFrame): DataFrame to query.
 			fields (list, optional): Fields to query. Default: ['all'].
-			operator (str, optional): SpQL operator to use in the query. Default '=='.
+			operator (str, optional): stitchql operator to use in the query. Default '=='.
 			values (list, optional): Values to look for. Default [''].
 
 		Returns:
@@ -88,7 +80,7 @@ def main():
 	import __main__
 	help(__main__)
 
-__all__ = ['SpQLInterpreter']
+__all__ = ['StitchInterpreter']
 
 if __name__ == '__main__':
 	main()

@@ -1,1 +1,1 @@
-import sparse
+import stitch

@@ -1,15 +1,14 @@
 from __future__ import with_statement
 from collections import OrderedDict
 import json
-from sparse.core.errors import *
-from sparse.core.utils import *
-from sparse.core.spql_interpreter import SpQLInterpreter
-from sparse.core.sparse_dataframe import SparseDataFrame
+from stitch.core.errors import *
+from stitch.core.utils import *
+from stitch.core.stitch_interpreter import StitchInterpreter
+from stitch.core.stitch_dataframe import StitchFrame
 # ------------------------------------------------------------------------------
 
 '''
 .. module:: probe_api
-	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: API for Probe BackingStore
 
@@ -28,7 +27,7 @@ class ProbeAPI(Base):
 		self._updates = updates
 		self._database = None
 		self._results = None
-		self._spql = SpQLInterpreter()
+		self._interpreter = StitchInterpreter()
 		self._mongodb = None
 		self._elasticsearch = None
 		if self._updates == 'manual':
@@ -71,10 +70,10 @@ class ProbeAPI(Base):
 		self._updates = 'automatic'
 	# --------------------------------------------------------------------------
 
-	def spql_search(self, string, field_operator='==', display_fields=[]):
-		results = SparseDataFrame()
+	def stitch_search(self, string, field_operator='==', display_fields=[]):
+		results = StitchFrame()
 		results.read_json(self.data)
-		results.spql_search(string, field_operator=field_operator)
+		results.stitch_search(string, field_operator=field_operator)
 
 		if len(results.data) == 0:
 			raise NotFound('No search results found')

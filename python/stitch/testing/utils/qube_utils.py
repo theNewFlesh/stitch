@@ -1,15 +1,13 @@
 import re
 from copy import copy
 import time
-import numpy
+import numpy as np
 from pandas import DataFrame
-import pandas
-from sparse.core.utils import *
+from stitch.core.utils import *
 # ------------------------------------------------------------------------------
 
 '''
 .. module:: qube_utils
-	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Qube BackingStore utilities
 
@@ -117,7 +115,7 @@ def get_jobtype(item):
 	if found:
 		return found.group(0)
 	else:
-		return numpy.nan
+		return np.nan
 
 def get_agenda_stats(item, id, embed_graphs=False):
 	data = DataFrame(item)
@@ -125,7 +123,7 @@ def get_agenda_stats(item, id, embed_graphs=False):
 	epoch = 946800000
 
 	# Coerce bad timestamps
-	data['timestart'] = data['timestart'].apply(lambda x: numpy.nan if x < epoch else x)
+	data['timestart'] = data['timestart'].apply(lambda x: np.nan if x < epoch else x)
 
 	# Add framespan and failedframes
 	mask = data[data['status'] == 'running']
@@ -146,7 +144,7 @@ def get_agenda_stats(item, id, embed_graphs=False):
 	c = len(mask)
 	s = output['frame_sum'] - (output['frame_min'] * c)
 	f = (output['frame_max'] - output['frame_min']) * c
-	d = numpy.nan
+	d = np.nan
 	try:
 		d = s/f
 		d = round_to(d, 3)
@@ -184,15 +182,15 @@ def get_agenda_stats(item, id, embed_graphs=False):
 
 		fg['failed'] = fg['all']
 		mask = data[data['status'] != 'failed']
-		fg.loc[mask.index, 'failed'] = numpy.nan
+		fg.loc[mask.index, 'failed'] = np.nan
 
 		fg['complete'] = fg['all']
 		mask = data[data['status'] != 'complete']
-		fg.loc[mask.index, 'complete'] = numpy.nan
+		fg.loc[mask.index, 'complete'] = np.nan
 
 		fg['running'] = fg['all']
 		mask = data[data['status'] != 'running']
-		fg.loc[mask.index, 'running'] = numpy.nan
+		fg.loc[mask.index, 'running'] = np.nan
 
 		fg = fg.sort(columns=['all'], ascending=False)
 		fg.dropna(how='all', inplace=True)
@@ -212,7 +210,7 @@ def create_complete_subids(id, subids):
 		if subids:
 			return [str(id) + '.' + str(x) for x in subids.split(', ')]
 		return [str(id) + '.0']
-	return numpy.nan
+	return np.nan
 # ------------------------------------------------------------------------------
 
 def main():

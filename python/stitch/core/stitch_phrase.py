@@ -3,17 +3,13 @@ from collections import OrderedDict
 import numpy
 import pandas
 from pandas import DataFrame, Series
-from sparse.core.utils import Base
-from sparse.core.sparse_dataframe import SparseDataFrame
+from stitch.core.utils import Base
 # ------------------------------------------------------------------------------
 
-'''The sparse_phrase module contains the SparsePhrase class.
+'''The stitch_phrase module contains the StitchPhrase class.
 
-The SparsePhrase class is used for parsing strings and generating regular
+The StitchPhrase class is used for parsing strings and generating regular
 expressions according to the DTT (determiner, token, terminator) paradigm.
-
-Date:
-	01.18.2015
 
 Platform:
 	Unix
@@ -24,11 +20,11 @@ Author:
 
 SEP = '\xff'
 
-class SparseWord(Base):
+class StitchWord(Base):
 	'''
-	Class for representing a word within the Sparse grammatical paradigm
+	Class for representing a word within the Stitch grammatical paradigm
 
-	A SparseWord functions as a token within a larger combinatorial grammar.
+	A StitchWord functions as a token within a larger combinatorial grammar.
 	They are defined by three components rather a single one.  The first is
 	called the "determiner", which is a list of regular expressions used to
 	demarcate the beginning of the word.  The second is called the "token",
@@ -38,12 +34,12 @@ class SparseWord(Base):
 	three-part paradigm is called the DKT (Determiner, Token, Terminator)
 	paradigm.
 
-	With this paradigm, SparseWords can not only parse strings by internally
+	With this paradigm, StitchWords can not only parse strings by internally
 	defined	regular expressions, but they can diagnose what is wrong with them
 	when they fail and repair them. Both diagnostics and repair function by
 	means of component mutations made possible by the DKT paradigm.
 
-	SparseWords are fit into SparsePhrases which utilize these components in
+	StitchWords are fit into StitchPhrases which utilize these components in
 	order to chain words together into new phrase structures and perform
 	mutations.
 	'''
@@ -204,7 +200,7 @@ class SparseWord(Base):
 
 		o = OrderedDict()
 		o['descriptor'] = self._descriptor
-		o['class'] = 'SparseWord'
+		o['class'] = 'StitchWord'
 
 		found = self.parse(string)
 		if found:
@@ -232,17 +228,17 @@ class SparseWord(Base):
 		return o
 # ------------------------------------------------------------------------------
 
-class SparsePhrase(Base):
+class StitchPhrase(Base):
 	'''
-	Class for representing a phrase within the Sparse grammatical paradigm
+	Class for representing a phrase within the Stitch grammatical paradigm
 
-	A SparsePhrase functions as a complete combinatorial (and mutative) grammar
-	comprised of other, simpler SparsePhrases and (ultimately) SparseWords.
-	Based on diagnoses performed after failed parse operatons; SparsePhrases are
+	A StitchPhrase functions as a complete combinatorial (and mutative) grammar
+	comprised of other, simpler StitchPhrases and (ultimately) StitchWords.
+	Based on diagnoses performed after failed parse operatons; StitchPhrases are
 	able to repair themselves such that they succeed upon reparsing the same
 	string.
 
-	Grammars are represented as tables within SparsePhrases.  From the "regex"
+	Grammars are represented as tables within StitchPhrases.  From the "regex"
 	column of this table a regular expression is derived and used to parse
 	supllied strings.  When a parse fails, the phrase performs a diagnosis and
 	repair process which reconfigures this table in such a way that the next
@@ -312,7 +308,7 @@ class SparsePhrase(Base):
 	def markers(self):
 		data = self.data
 		markers = data[data['component'] != 'token']
-		# markers = markers[markers['class'] == 'SparseWord']
+		# markers = markers[markers['class'] == 'StitchWord']
 		markers = markers[['raw']]
 		markers['length'] = markers['raw'].apply(lambda x: len(x))
 		markers.sort(columns=['length'], ascending=False, inplace=True)
@@ -718,7 +714,7 @@ def main():
 	import __main__
 	help(__main__)
 
-__all__ = ['SparseWord', 'SparsePhrase']
+__all__ = ['StitchWord', 'StitchPhrase']
 
 if __name__ == '__main__':
 	main()

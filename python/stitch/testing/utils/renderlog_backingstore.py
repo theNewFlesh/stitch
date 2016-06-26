@@ -4,17 +4,15 @@ import re
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
-
-from sparse.core.sparse_dataframe import SparseDataFrame
-from sparse.frameworks.probe.backingstore import BackingStore
-from sparse.utilities.renderlog_utils import *
-from sparse.core.utils import *
-from sparse.core.errors import *
+from stitch.core.stitch_frame import StitchFrame
+from stitch.frameworks.probe.backingstore import BackingStore
+from stitch.testing.utils.renderlog_utils import *
+from stitch.core.utils import *
+from stitch.core.errors import *
 # ------------------------------------------------------------------------------
 
 '''
 .. module:: renderlog_backingstore
-	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: Error Log Backing Store for interfacing with Probe API
 
@@ -156,7 +154,7 @@ class RenderLogBackingStore(BackingStore):
 
 		data['probe_id'] = data.index
 
-		sdata = SparseDataFrame(data)
+		sdata = StitchFrame(data)
 		self._data = sdata
 # ------------------------------------------------------------------------------
 

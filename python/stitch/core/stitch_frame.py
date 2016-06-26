@@ -5,19 +5,16 @@ from collections import OrderedDict
 import pandas as pd
 from pandas import DataFrame, Series
 import numpy as np
-from sparse.core.utils import *
-from sparse.core.spql_interpreter import SpQLInterpreter
+from stitch.core.utils import *
+from stitch.core.stitch_interpreter import StitchInterpreter
 # ------------------------------------------------------------------------------
 
-'''The sparse_dataframe module contains the SparseDataFrame class
+'''The stitch_frame module contains the StitchFrame class
 
-The SparseDataFrame class is an extension of the DataFrame class from the Pandas
-library.  SparseDataFrames contain additional methods for converting sparse data,
-such as esoteric databases, logs and custom made tables, into SparseDataFrames,
+The StitchFrame class is an extension of the DataFrame class from the Pandas
+library.  StitchFrames contain additional methods for converting stitch data,
+such as esoteric databases, logs and custom made tables, into StitchFrames,
 with the actual data residing within a Pandas DataFrame.
-
-Date:
-    01.18.2015
 
 Platform:
     Unix
@@ -26,19 +23,17 @@ Author:
     Alex Braun <alexander.g.braun@gmail.com> <http://www.AlexBraunVFX.com>
 '''
 
-class SparseDataFrame(Base):
+class StitchFrame(Base):
     '''
-    Class for converting sparse data into well-formated, tabular data
+    Class for converting stitch data into well-formated, tabular data
 
-    The SparseDataFrame class which is an extension of the DataFrame class from
-    the Pandas library.  SparseDataFrames contain additional methods for converting
-    sparse data, such as esoteric databases, logs and custom made tables, into
-    SparseDataFrames, with the actual data residing within a Pandas DataFrame,
+    The StitchFrame class which is an extension of the DataFrame class from
+    the Pandas library.  StitchFrames contain additional methods for converting
+    stitch data, such as esoteric databases, logs and custom made tables, into
+    StitchFrames, with the actual data residing within a Pandas DataFrame,
     acessible through the data attribute.
 
     Attributes:
-        cls (str): Class descriptor
-        name (str): Name descriptor
         data (DataFrame): Internal DataFrame where data is actually stored
 
     Example:
@@ -49,12 +44,12 @@ class SparseDataFrame(Base):
 
         >>> columns = ['name', 'age', 'profession']
 
-        >>> sdf = SparseDataFrame(data=data, columns=columns)
+        >>> sdf = StitchFrame(data=data, columns=columns)
 
         >>> print sdf
-        <sparse.core.sparse_dataframe.SparseDataFrame object at 0x10accfed0>
+        <stitch.core.stitch_frame.StitchFrame object at 0x10accfed0>
 
-        >>> print sdf.data
+        >>> print sf.data
            name  age profession
         0   joe   12   mechanic
         1  bill   22    soldier
@@ -62,7 +57,7 @@ class SparseDataFrame(Base):
         3  jane   43    teacher
     '''
     def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False):
-        '''SparseDataFrame initializer
+        '''StitchFrame initializer
 
         Args:
             data (array-like or DataFrame, optional): Data to be ingested. Default: None
@@ -73,9 +68,9 @@ class SparseDataFrame(Base):
             name (str, optional): Name of object. Default: None
 
         Returns:
-            SparseDataFrame
+            StitchFrame
         '''
-        self._spql = SpQLInterpreter()
+        self._interpreter = StitchInterpreter()
 
         if type(data) is DataFrame:
             self._data = data
@@ -121,14 +116,14 @@ class SparseDataFrame(Base):
             DataFrame mask
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
                name  age profession
             0   joe   12   mechanic
             1  bill   22    soldier
             2   sue   65      pilot
             3  jane   43    teacher
 
-            >>> mask = sdf.is_iterable()
+            >>> mask = sf.is_iterable()
             >>> print mask
                name    age profession
             0  True  False       True
@@ -136,7 +131,7 @@ class SparseDataFrame(Base):
             2  True  False       True
             3  True  False       True
 
-            >>> print sdf.data[mask]
+            >>> print sf.data[mask]
                name  age profession
             0   joe  NaN   mechanic
             1  bill  NaN    soldier
@@ -170,22 +165,22 @@ class SparseDataFrame(Base):
             DataFrame
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
                name  age profession
             0   joe   12   mechanic
             1  bill   22    soldier
             2   sue   65      pilot
             3  jane   43    teacher
 
-            >>> print sdf.data.applymap(type)
+            >>> print sf.data.applymap(type)
                        name                   age    profession
             0  <type 'str'>  <type 'np.int64'>  <type 'str'>
             1  <type 'str'>  <type 'np.int64'>  <type 'str'>
             2  <type 'str'>  <type 'np.int64'>  <type 'str'>
             3  <type 'str'>  <type 'np.int64'>  <type 'str'>
 
-            >>> sdf.as_type(str)
-            >>> print sdf.data.applymap(type)
+            >>> sf.as_type(str)
+            >>> print sf.data.applymap(type)
                        name           age    profession
             0  <type 'str'>  <type 'str'>  <type 'str'>
             1  <type 'str'>  <type 'str'>  <type 'str'>
@@ -204,14 +199,14 @@ class SparseDataFrame(Base):
             DataFrame of iterable elements
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
                name  age profession
             0   joe   12   mechanic
             1  bill   22    soldier
             2   sue   65      pilot
             3  jane   43    teacher
 
-            >>> print sdf.as_iterable()
+            >>> print sf.as_iterable()
                name   age profession
             0   joe  [12]   mechanic
             1  bill  [22]    soldier
@@ -231,14 +226,14 @@ class SparseDataFrame(Base):
             DataFrame of coerced elements
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
                name age profession
             0   joe  12   mechanic
             1  bill  ()         {}
             2   sue  65       [{}]
             3        43    teacher
 
-            >>> print sdf.coerce_nulls()
+            >>> print sf.coerce_nulls()
                    name  age profession
                 0   joe   12   mechanic
                 1  bill  NaN        NaN
@@ -284,14 +279,14 @@ class SparseDataFrame(Base):
             DataFrame of regex matches
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
                name  age         profession
             0   joe   12  Airplane Mechanic
             1  bill   22            soldier
             2   sue   65              pilot
             3  jane   43            teacher
 
-            >>> print sdf.regex_match('airplane (mechanic)', group=1, ignore_case=True)
+            >>> print sf.regex_match('airplane (mechanic)', group=1, ignore_case=True)
                name  age profession
             0   joe   12   Mechanic
             1  bill   22    soldier
@@ -314,14 +309,14 @@ class SparseDataFrame(Base):
             DataFrame of regex searches
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
                name  age                      profession
             0   joe   12  Experimental Airplane Mechanic
             1  bill   22                         soldier
             2   sue   65                           pilot
             3  jane   43                         teacher
 
-            >>> print sdf.regex_search('airplane (mechanic)', group=1, ignore_case=True)
+            >>> print sf.regex_search('airplane (mechanic)', group=1, ignore_case=True)
                name  age profession
             0   joe   12   Mechanic
             1  bill   22    soldier
@@ -345,14 +340,14 @@ class SparseDataFrame(Base):
             DataFrame of regex substitutions
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
                name  age         profession
             0   joe   12  Airplane Mechanic
             1  bill   22            soldier
             2   sue   65              pilot
             3  jane   43            teacher
 
-            >>> print sdf.regex_sub('airplane', 'Helicopter', ignore_case=True)
+            >>> print sf.regex_sub('airplane', 'Helicopter', ignore_case=True)
                name  age           profession
             0   joe   12  Helicopter Mechanic
             1  bill   22              soldier
@@ -373,15 +368,15 @@ class SparseDataFrame(Base):
             DataFrame of with matched elements as lists of groups
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
                name  age           profession
             0   joe   12  Helicopter Mechanic
             1  bill   22              soldier
             2   sue   65     helicopter pilot
             3  jane   43              teacher
 
-            >>> sdf.regex_split('(helicopter) (.*)', ignore_case=True)
-            >>> print sdf.data
+            >>> sf.regex_split('(helicopter) (.*)', ignore_case=True)
+            >>> print sf.data
                name  age              profession
             0   joe   12  [Helicopter, Mechanic]
             1  bill   22                 soldier
@@ -402,14 +397,14 @@ class SparseDataFrame(Base):
             DataFrame with nan elements at the bottom
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
                name  age profession
             0   joe   12   mechanic
             1  bill  NaN        NaN
             2   sue   65        NaN
             3   NaN   43    teacher
 
-            >>> print sdf.nan_to_bottom()
+            >>> print sf.nan_to_bottom()
                name  age profession
             0   joe   12   mechanic
             1  bill   65    teacher
@@ -428,14 +423,14 @@ class SparseDataFrame(Base):
             Unique DataFrame
 
         Example:
-            >>> sdf.data
+            >>> sf.data
                 make  model color  year
             0    gmc    suv  blue  2007
             1  honda    suv  blue  2007
             2   fiat    car  blue  2007
             3    gmc  truck  blue  1999
 
-            >>> sdf.unique()
+            >>> sf.unique()
                 make  model color  year
             0    gmc    suv  blue  2007
             1  honda    car   NaN  1999
@@ -522,14 +517,14 @@ class SparseDataFrame(Base):
             Flattened DataFrame
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
                                foo             bar
             0  {u'a': 1, u'b': 10}     some string
             1  {u'a': 2, u'b': 20}  another string
             2  {u'a': 3, u'b': 30}            blah
 
-            >>> sdf.flatten()
-            >>> print sdf.data
+            >>> sf.flatten()
+            >>> print sf.data
                 foo_a    foo_b             bar
             0       1       10     some string
             1       2       20  another string
@@ -612,7 +607,7 @@ class SparseDataFrame(Base):
             Stacked (striped) DataFrame
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
                name  age profession
             0   joe   12   Mechanic
             1  bill   22    soldier
@@ -623,7 +618,7 @@ class SparseDataFrame(Base):
             6  jane   22   engineer
             7  jane   43    teacher
 
-            >>> print sdf.stack_by_column('name')
+            >>> print sf.stack_by_column('name')
                joe        joe  bill       bill  sue        sue  jane       jane
                age profession   age profession  age profession   age profession
             0   12   Mechanic    22    soldier   65      pilot    22   engineer
@@ -668,12 +663,12 @@ class SparseDataFrame(Base):
             Unstriped DataFrame
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
               name profession  name profession  name profession  name profession
             0  joe   Mechanic  bill    soldier  bill  policeman  jane    teacher
             1  sue      pilot   NaN        NaN  jane   engineer   NaN        NaN
 
-            >>> print sdf.unstripe()
+            >>> print sf.unstripe()
                name profession
             0   joe   Mechanic
             1   sue      pilot
@@ -717,21 +712,21 @@ class SparseDataFrame(Base):
             drop (bool optional): Drop columns to be merged. Default: False
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
               first_name last_name  age    job_1    job_2
             0       john   jenkins   23    pilot     None
             1       jane     smith   46  surgeon     None
             2      harry    harmon   27  teacher  chemist
             3        sue     marie   78    nurse    baker
 
-            >>> print sdf.merge_columns(['first_name', 'last_name'])
+            >>> print sf.merge_columns(['first_name', 'last_name'])
               first_name last_name  age    job_1    job_2 first_name_last_name
             0       john   jenkins   23    pilot     None          johnjenkins
             1       jane     smith   46  surgeon     None          janesmith
             2      harry    harmon   27  teacher  chemist          harryharmon
             3        sue     marie   78    nurse    baker          suemarie
 
-            >>> print sdf.merge_columns(['job_1', 'job_2'],
+            >>> print sf.merge_columns(['job_1', 'job_2'],
                 func=lambda x: [ x[x.index[0]], x[x.index[1]] ],
                 new_column='jobs')
 
@@ -741,7 +736,7 @@ class SparseDataFrame(Base):
             2      harry    harmon   27  teacher  chemist  [teacher, chemist]
             3        sue     marie   78    nurse    baker      [nurse, baker]
 
-            >>> print sdf.merge_columns(['job_1', 'job_2'],
+            >>> print sf.merge_columns(['job_1', 'job_2'],
                 func=lambda x: {'1st': x[x.index[0]], '2nd': x[x.index[1]] },
                 new_column='jobs', drop=True)
               first_name last_name  age                                      jobs
@@ -1042,7 +1037,7 @@ class SparseDataFrame(Base):
         '''Converts a list of columns containing dict or dict matrices to an inverted index
 
         Example:
-            >>> sdf.data
+            >>> sf.data
 
         '''
         if isinstance(columns, str):
@@ -1079,24 +1074,24 @@ class SparseDataFrame(Base):
 
     # search
     def spql_search(self, string, field_operator='=='):
-        '''Query data using the Sparse Query Language (SpQL)
+        '''Query data using the Stitch Query Language (stitchql)
 
         Args:
-            string (str): SpQL search string
+            string (str): stitchql search string
             field_operator (str): Advanced feature, do not use.  Default: '=='
 
         Returns:
             Queried (likely reduced) DataFrame
 
         Example:
-            >>> print sdf.data
+            >>> print sf.data
                 name  age
             0    abe   15
             1  carla   22
             2   jack   57
 
-            >>> sdf.spql_search('(name) is (abe) | (age) < (50)')
-            >>> print sdf.data
+            >>> sf.spql_search('(name) is (abe) | (age) < (50)')
+            >>> print sf.data
                 name  age
             0    abe   15
             1  carla   22
@@ -1137,7 +1132,7 @@ class SparseDataFrame(Base):
             as its arguments.
 
             For instance, in arithematic, the addition operator (+) combines
-            its two operands into a single value (2 + 2 = 4).  In SpQL, an
+            its two operands into a single value (2 + 2 = 4).  In stitchql, an
             operator peforms a test on the values of the fields denoted as
             the left operands, using the values denoted in the right operands
             as criteria.  So, "(name) contains (jupiter)" searches all the
@@ -1165,8 +1160,8 @@ class SparseDataFrame(Base):
             single result.  Both operands are executed as independent queries and
             their results are then merged together with duplicate rows removed.
         '''
-        self._spql.search(string)
-        data = self._spql.dataframe_query(self._data, field_operator=field_operator)
+        self._interpreter.search(string)
+        data = self._interpreter.dataframe_query(self._data, field_operator=field_operator)
 
         self._data = data
         return self
@@ -1180,7 +1175,7 @@ def main():
     import __main__
     help(__main__)
 
-__all__ = ['SparseDataFrame']
+__all__ = ['StitchFrame']
 
 if __name__ == '__main__':
     main()

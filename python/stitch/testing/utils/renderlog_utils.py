@@ -4,7 +4,6 @@ import numpy
 
 '''
 .. module:: renderlog_utils
-	:date: 04.13.2014
 	:platform: Unix
 	:synopsis: RenderLogBackingStore utilities
 

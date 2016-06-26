@@ -31,7 +31,7 @@
 	:platform: Unix
 	:synopsis: API for Probe BackingStore
 
-.. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
+.. moduleauthor:: Alex Braun <alexander.g.braun@gmail.com>
 '''
 # ------------------------------------------------------------------------------
 
@@ -39,12 +39,12 @@ from __future__ import with_statement
 from collections import OrderedDict
 import json
 import pandas
-from sparse.utilities.errors import *
-from sparse.utilities.utils import *
+from sparse.core.errors import *
+from sparse.core.utils import *
 from sparse.core.spql_interpreter import SpQLInterpreter
 from sparse.core.sparse_dataframe import SparseDataFrame
-from sparse.frameworks.tune.tuner import Tuner
-TUNER = Tuner()
+# from sparse.frameworks.tune.tuner import Tuner
+# TUNER = Tuner()
 # ------------------------------------------------------------------------------
 
 class ProbeAPI(Base):
@@ -57,7 +57,7 @@ class ProbeAPI(Base):
 
 		self._backingstore = backingstore
 		self._updates = updates
-		self._database = None		
+		self._database = None
 		self._results = None
 		self._spql = SpQLInterpreter()
 		self._mongodb = None
@@ -102,43 +102,23 @@ class ProbeAPI(Base):
 		self._updates = 'automatic'
 	# --------------------------------------------------------------------------
 
-	@property
-	def elasticsearch(self):
-		return self._elasticsearch
-
-	@property
-	def mongodb(self):
-		return self._mongodb
-
-	def spql_search(self, string, data_type='sparse', field_operator='==', display_fields=[]):
+	def spql_search(self, string, field_operator='==', display_fields=[]):
 		if string in TUNER['probe_api']['custom_search_words'].keys():
 			string = TUNER['probe_api']['custom_search_words'][string]
 			print 'SpQL search:', string
 
-		if data_type == 'sparse':
-			results = SparseDataFrame()
-			results.read_json(self.data)
-			results.spql_search(string, field_operator=field_operator, inplace=True)
+		results = SparseDataFrame()
+		results.read_json(self.data)
+		results.spql_search(string, field_operator=field_operator)
 
-			if len(results.data) == 0:
-				raise NotFound('No search results found')
-				
-			if display_fields:
-				results.data = results.data[display_fields]
-				
-			results = results.to_json(orient='records')
-			self._results = results
-					
-		elif data_type is 'mongodb':
-			query = self._spql.mongo_query
-			self._results = self._mongodb.aggregate(query)
-		
-		elif data_type is 'elasticsearch':
-			query = self._spql.elasticsearch_query
-			self._results = self._elasticsearch.aggregate(query)
+		if len(results.data) == 0:
+			raise NotFound('No search results found')
 
-		else:
-			raise TypeError('Database type not recognized')
+		if display_fields:
+			results._data = results._data[display_fields]
+
+		results = results._data.to_json(orient='records')
+		self._results = results
 	# --------------------------------------------------------------------------
 
 	def send_order(self, instructions):

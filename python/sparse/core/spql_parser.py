@@ -1,28 +1,7 @@
-#! /usr/bin/env python
-# Alex Braun 01.18.2015
-
-# ------------------------------------------------------------------------------
-# The MIT License (MIT)
-
-# Copyright (c) 2014 Alex Braun
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+from pyparsing import printables, nums
+from pyparsing import Word, Keyword, Or, Group
+from pyparsing import delimitedList, oneOf, OneOrMore, Suppress
+from sparse.core.utils import Base
 # ------------------------------------------------------------------------------
 
 '''
@@ -31,15 +10,8 @@
 	:platform: Unix
 	:synopsis: Sparse Query Langauge parser
 
-.. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
+.. moduleauthor:: Alex Braun <alexander.g.braun@gmail.com>
 '''
-# ------------------------------------------------------------------------------
-
-from pyparsing import printables, nums
-from pyparsing import Word, Keyword, Or, Group
-from pyparsing import delimitedList, oneOf, OneOrMore, Suppress
-from sparse.utilities.utils import Base
-# ------------------------------------------------------------------------------
 
 class SpQLParser(Base):
 	'''
@@ -52,16 +24,13 @@ class SpQLParser(Base):
 		search_stats(str): Print statistics about the last query made.
 	'''
 
-	def __init__(self, name=None):
+	def __init__(self):
 		'''
 		Initializer for SparseParser
 
 		Args:
 			name (str): Name descriptor
 		'''
-		super(SpQLParser, self).__init__(name=name)
-		self._cls = 'SpQLParser'
-
 		all_chars            = printables + ' '
 		regex                = Suppress('"') + Word(all_chars, excludeChars=',")') + Suppress('"')
 		word                 = Word(printables, excludeChars=',")')
@@ -89,7 +58,7 @@ class SpQLParser(Base):
 		query                = Group(fields + operator + values)
 		compound_query       = Group(delimitedList(query, delim=and_))
 		fragment             = OneOrMore(compound_query)
-		self._line           = delimitedList(fragment, delim=or_)		
+		self._line           = delimitedList(fragment, delim=or_)
 
 		self._last_search = None
 
@@ -132,7 +101,7 @@ class SpQLParser(Base):
 						query[key] = value.asList()
 				compound_query.append(query)
 			results.append(compound_query)
-		
+
 		self._last_search = results
 		return results
 # ------------------------------------------------------------------------------

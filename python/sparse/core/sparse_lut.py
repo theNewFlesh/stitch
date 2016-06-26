@@ -1,28 +1,15 @@
-#! /usr/bin/env python
-# Alex Braun 01.18.2015
-
-# ------------------------------------------------------------------------------
-# The MIT License (MIT)
-
-# Copyright (c) 2014 Alex Braun
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+from __future__ import with_statement
+import re
+import warnings
+from collections import OrderedDict
+from itertools import *
+import json
+import pandas
+from pandas import DataFrame, Series, Panel
+import numpy
+from sparse.core.utils import *
+from sparse.core.errors import *
+from sparse.core.sparse_dataframe import SparseDataFrame
 # ------------------------------------------------------------------------------
 
 '''The sparse_lut module contains the SparseLut class.
@@ -38,23 +25,8 @@ Platform:
 	Unix
 
 Author:
-	Alex Braun <ABraunCCS@gmail.com> <http://www.AlexBraunVFX.com>
+	Alex Braun <alexander.g.braun@gmail.com> <http://www.AlexBraunVFX.com>
 '''
-# ------------------------------------------------------------------------------
-
-from __future__ import with_statement
-import re
-import warnings
-from collections import OrderedDict
-from itertools import *
-import json
-import pandas
-from pandas import DataFrame, Series, Panel
-import numpy
-from sparse.utilities.utils import *
-from sparse.utilities.errors import *
-from sparse.core.sparse_dataframe import SparseDataFrame
-# ------------------------------------------------------------------------------
 
 class SparseLUT(Base):
 	'''Lookup table for non-numeric or partially numeric data
@@ -65,18 +37,14 @@ class SparseLUT(Base):
 		keys (DataFrame): Input data that has been reduced to unique values.
 		values (DataFrame): Numeric values mapped to the keys.
 	'''
-	def __init__(self, data=None, null='missing data', null_value=-1.0, name=None):
+	def __init__(self, data=None, null='missing data', null_value=-1.0):
 		'''SparseLut initializer
 
 		Args:
 			data (DataFrame): Keys data.
 			null (string, optional): Placeholder for missing keys data. Default: 'missing data'.
 			null_value (int, optional): Placeholder value for missing values data. Default: -1.0.
-			name (string, optional): Name descriptor. Default: None.
-		'''		
-		super(SparseLUT, self).__init__(name=name)
-		self._cls = 'SparseLUT'
-
+		'''
 		self._null = null
 		self._null_value = null_value
 		self._keys = None
@@ -87,8 +55,8 @@ class SparseLUT(Base):
 	def _reduce_keys(self):
 		'''Semi-private method for reducing the keys table'''
 		keys = self._keys
-		keys.unique(inplace=True)
-		keys.data = keys.data.applymap(lambda x: self._null if pandas.isnull(x) else x)
+		keys.unique()
+		keys._data = keys._data.applymap(lambda x: self._null if pandas.isnull(x) else x)
 
 	def ingest(self, data):
 		'''
@@ -100,12 +68,12 @@ class SparseLUT(Base):
 		Returns:
 			None
 		'''
-		self._keys = SparseDataFrame(data, name='keys')
+		self._keys = SparseDataFrame(data)
 		self._reduce_keys()
 		self.generate_values()
 
 	def generate_values(self, start=1, step=1):
-		'''Generate a table of floating point values according to the keys table 
+		'''Generate a table of floating point values according to the keys table
 
 		Args:
 			start (int, optional): Minimum floating point value. Default: 1.
@@ -114,7 +82,7 @@ class SparseLUT(Base):
 		Returns:
 			None
 		'''
-		data = self._keys.data.copy()
+		data = self._keys._data.copy()
 		mask = data.applymap(lambda x: bool_test(x, '==', [self._null]))
 		x, y = data.shape
 		x += start
@@ -122,7 +90,7 @@ class SparseLUT(Base):
 		data = data.applymap(lambda x: vals.next())
 		data[mask] = self._null_value
 		data = data.applymap(lambda x: float(x))
-		self._values = SparseDataFrame(data, name='values')
+		self._values = SparseDataFrame(data)
 
 	def read_json(self, string, keys_only=True, orient='records'):
 		'''
@@ -130,26 +98,25 @@ class SparseLUT(Base):
 
 		Args:
 			string (str): JSON formatted string.
-			keys_only (bool, optional): Read keys and generate values from them. Default: True.   
+			keys_only (bool, optional): Read keys and generate values from them. Default: True.
 			orient (str, optional): Type of JSON orientation. Default: 'records'.
 
 		Returns:
 			None
 		'''
 		if keys_only:
-			data = SparseDataFrame(name='keys')
+			data = SparseDataFrame()
 			data.read_json(string, orient=orient)
 			self._keys = data
 			self._reduce_keys()
 			self.generate_values()
 		else:
 			data = json.loads(string, orient=orient)
-			self._keys = SparseDataFrame(data['keys'], name='keys')
-			self._values = SparseDataFrame(data['values'], name='values')
+			self._keys = SparseDataFrame(data['keys'])
+			self._values = SparseDataFrame(data['values'])
 
 	def to_json(self, keys_only=True, orient='records'):
-		'''
-		Write interal data to a JSON string
+		'''Write internal data to a JSON string
 
 		Args:
 			keys_only (bool, optional): Write only keys. Default: True.
@@ -159,17 +126,17 @@ class SparseLUT(Base):
 			json
 		'''
 		if keys_only:
-			return self._keys.to_json(orient=orient)
+			return self._keys._data.to_json(orient=orient)
 		else:
 			output = {}
-			output['keys'] = self._keys.data.to_dict()
-			output['values'] = self._values.data.to_dict()
+			output['keys'] = self._keys._data.to_dict()
+			output['values'] = self._values._data.to_dict()
 			return json.dumps(output, orient=orient)
 	# --------------------------------------------------------------------------
 
 	@property
 	def keys(self):
-		'''Ketys table
+		'''Keys table
 
 		Returns:
 			DataFrame of keys.
@@ -196,20 +163,20 @@ class SparseLUT(Base):
 			verbosity (str, optional): Level of verbosity (error, warn or None). Default: None
 
 		Returns:
-			Numeric equivalent of key. 
-		'''		
+			Numeric equivalent of key.
+		'''
 		output = None
 		if reverse:
 			output = self._values.spql_search(string)
 			columns = self._values._spql.last_search[0][0]['fields']
 			index = output.dropna(how='all').index
-			output = self._keys.data.loc[index, columns]
+			output = self._keys._data.loc[index, columns]
 		else:
 			output = self._keys.spql_search(string)
 			columns = self._keys._spql.last_search[0][0]['fields']
 			index = output.dropna(how='all').index
-			output = self._values.data.loc[index, columns]
-			
+			output = self._values._data.loc[index, columns]
+
 		if len(output) == 0:
 			message = 'No search results found. SpQL search: ' + string
 			if verbosity == 'error':
@@ -233,7 +200,7 @@ class SparseLUT(Base):
 			verbosity (str, optional): Level of verbosity (error, warn or None). Default: None
 
 		Returns:
-			Numeric equivalent of key. 
+			Numeric equivalent of key.
 		'''
 		def _transform_item(item):
 			source = '(' + source_column + ') ' + operator + ' (' + item + ')'
@@ -251,8 +218,7 @@ class SparseLUT(Base):
 			return _transform_item(item)
 
 	def make_numerical(self, data, spql=False):
-		'''
-		Convert supplied data to its numerical equivalents determined by lookups.
+		'''Convert supplied data to its numerical equivalents determined by lookups.
 
 		Args:
 			data (DataFrame): DataFrame to be converted.
@@ -268,8 +234,7 @@ class SparseLUT(Base):
 		return data
 
 	def lookup_item(self, item, column, spql=False, operator='=', verbosity=None):
-		'''
-		Lookup value of given item within a specified column.
+		'''Lookup value of given item within a specified column.
 
 		Args:
 			item (item): Item to be use queried.
@@ -286,9 +251,9 @@ class SparseLUT(Base):
 			search = '(' + str(column) + ') ' + operator + ' (' + str(item) + ')'
 			output = self.spql_lookup(search, verbosity=verbosity)
 			return output
-		
-		mask = self._keys.data[column].apply(lambda x: x == item)
-		result = self._values.data[mask]
+
+		mask = self._keys._data[column].apply(lambda x: x == item)
+		result = self._values._data[mask]
 		result = result[column]
 		if not result.empty:
 			output = result.tolist()[0]

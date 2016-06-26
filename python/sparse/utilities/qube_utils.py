@@ -1,28 +1,10 @@
-#! /usr/bin/env python
-# Alex Braun 04.13.2014
-
-# ------------------------------------------------------------------------------
-# The MIT License (MIT)
-
-# Copyright (c) 2014 Alex Braun
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+import re
+from copy import copy
+import time
+import numpy
+from pandas import DataFrame
+import pandas
+from sparse.core.utils import *
 # ------------------------------------------------------------------------------
 
 '''
@@ -31,22 +13,12 @@
 	:platform: Unix
 	:synopsis: Qube BackingStore utilities
 
-.. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
+.. moduleauthor:: Alex Braun <alexander.g.braun@gmail.com>
 '''
-# ------------------------------------------------------------------------------
 
-import re
-from copy import copy
-import time
-import numpy
-from pandas import DataFrame
-import pandas
-from sparse.utilities.utils import *
-# ------------------------------------------------------------------------------
-
-def flatten_qube_field(database, fields):   
+def flatten_qube_field(database, fields):
 	new_db = []
-	for job in database:       
+	for job in database:
 		frames = []
 		for field in fields:
 			for item in job[field]:
@@ -54,17 +26,17 @@ def flatten_qube_field(database, fields):
 					item = eval(str(item))
 				temp = {}
 			for key, value in item.iteritems():
-				temp[field + '_' + key] = value    
+				temp[field + '_' + key] = value
 			frames.append(temp)
 
 		head = job
-		
+
 		for frame in frames:
 			new_job = copy(head)
 			for key, value in frame.iteritems():
 				new_job[key] = value
 			new_db.append(new_job)
-			
+
 	return new_db
 
 def fix_missing_fields(database, fields):
@@ -80,7 +52,7 @@ def fix_missing_fields(database, fields):
 					items = eval(str(items))
 				for key in items:
 					keys.append(key)
-		
+
 		replacement = {}
 		for key in keys:
 			replacement[key] = None
@@ -139,7 +111,7 @@ def get_plus_ram(item):
 	return ''
 
 def get_jobtype(item):
-	job_re = re.compile('maya|mayabatch|nuke|vray|vrscene|houdini|generate|email|shotgun', 
+	job_re = re.compile('maya|mayabatch|nuke|vray|vrscene|houdini|generate|email|shotgun',
 						flags=re.IGNORECASE)
 	found = job_re.search(item)
 	if found:
@@ -151,7 +123,7 @@ def get_agenda_stats(item, id, embed_graphs=False):
 	data = DataFrame(item)
 	rounding = 2
 	epoch = 946800000
-	
+
 	# Coerce bad timestamps
 	data['timestart'] = data['timestart'].apply(lambda x: numpy.nan if x < epoch else x)
 
@@ -163,7 +135,7 @@ def get_agenda_stats(item, id, embed_graphs=False):
 	output = {}
 	mask = data[data['span'] > (0.5 / 60)] # Drop frames under 30 sec
 	output['frame_max']              = round_to(mask['span'].max(), rounding)
-	output['frame_min']              = round_to(mask['span'].min(), rounding) 
+	output['frame_min']              = round_to(mask['span'].min(), rounding)
 	output['frame_sum']              = round_to(mask['span'].sum(), rounding)
 	output['frame_retry']            = round_to(mask['retry'].max(), rounding)
 	output['frame_total']            = len(data)
@@ -191,7 +163,7 @@ def get_agenda_stats(item, id, embed_graphs=False):
 	output['status_total']       = data['status'].nunique()
 	output['subid_total']        = data['subid'].nunique()
 	output['name_total']         = data['name'].nunique()
-	
+
 	output['count_max']          = data['count'].max()
 	output['id_max']             = data['id'].max()
 	output['retry_max']          = data['retry'].max()
@@ -209,7 +181,7 @@ def get_agenda_stats(item, id, embed_graphs=False):
 	if embed_graphs:
 		fg = data[['span']].copy()
 		fg.columns = ['all']
-		
+
 		fg['failed'] = fg['all']
 		mask = data[data['status'] != 'failed']
 		fg.loc[mask.index, 'failed'] = numpy.nan

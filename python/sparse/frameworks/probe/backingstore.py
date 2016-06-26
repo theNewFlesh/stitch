@@ -31,7 +31,7 @@
 	:platform: Unix
 	:synopsis: Backingstore base for interfacing with Probe API
 
-.. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
+.. moduleauthor:: Alex Braun <alexander.g.braun@gmail.com>
 '''
 # ------------------------------------------------------------------------------
 
@@ -40,8 +40,8 @@ import pandas
 from pandas import Series
 import numpy
 from sparse.core.sparse_dataframe import SparseDataFrame
-from sparse.utilities.utils import *
-from sparse.utilities.errors import *
+from sparse.core.utils import *
+from sparse.core.errors import *
 # ------------------------------------------------------------------------------
 
 class BackingStore(Base):
@@ -70,7 +70,7 @@ class BackingStore(Base):
 		database = {}
 		database['metadata'] = {}
 		database['metadata']['data_type'] = 'json orient=records, DataFrame'
-		database['data'] = self.data.to_json(orient='records')
+		database['data'] = self._data.to_json(orient='records')
 		return database
 
 	def update(self):
@@ -78,19 +78,19 @@ class BackingStore(Base):
 		for datum in self.source_data:
 			data.append(Series(datum))
 		sdata = SparseDataFrame(data)
-		sdata.flatten(inplace=True)
-		sdata.coerce_nulls(inplace=True)
-		data = sdata.data
+		sdata.flatten()
+		sdata.coerce_nulls()
+		data = sdata._data
 		# data.dropna(how='all', axis=1, inplace=True)
 		data['probe_id'] = data.index
-		sdata.data = data
+		sdata._data = data
 		self._data = sdata
 	# --------------------------------------------------------------------------
 
 	def _execute_instruction(self, instruction):
 		func = instruction['func']
 		args = instruction['args']
-		kwargs = instruction['kwargs']	
+		kwargs = instruction['kwargs']
 		getattr(self, func)(*args, **kwargs)
 
 	def process_order(self, order):

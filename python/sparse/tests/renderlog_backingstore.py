@@ -1,40 +1,3 @@
-#! /usr/bin/env python
-# Alex Braun 04.13.2014
-
-# ------------------------------------------------------------------------------
-# The MIT License (MIT)
-
-# Copyright (c) 2014 Alex Braun
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-# ------------------------------------------------------------------------------
-
-'''
-.. module:: renderlog_backingstore
-	:date: 04.13.2014
-	:platform: Unix
-	:synopsis: Error Log Backing Store for interfacing with Probe API
-
-.. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
-'''
-# ------------------------------------------------------------------------------
-
 import os
 import warnings
 import re
@@ -45,11 +8,20 @@ from pandas import DataFrame
 from sparse.core.sparse_dataframe import SparseDataFrame
 from sparse.frameworks.probe.backingstore import BackingStore
 from sparse.utilities.renderlog_utils import *
-from sparse.utilities.utils import *
-from sparse.utilities.errors import *
-from sparse.frameworks.tune.tuner import Tuner
-TUNER = Tuner()
+from sparse.core.utils import *
+from sparse.core.errors import *
+# from sparse.frameworks.tune.tuner import Tuner
+# TUNER = Tuner()
 # ------------------------------------------------------------------------------
+
+'''
+.. module:: renderlog_backingstore
+	:date: 04.13.2014
+	:platform: Unix
+	:synopsis: Error Log Backing Store for interfacing with Probe API
+
+.. moduleauthor:: Alex Braun <alexander.g.braun@gmail.com>
+'''
 
 class RenderLogBackingStore(BackingStore):
 	def __init__(self, path=None, text=None, expand=False, name=None):
@@ -115,10 +87,10 @@ class RenderLogBackingStore(BackingStore):
 
 		data2 = data.dropna(subset=['warning'])
 		data2.reset_index(drop=True, inplace=True)
-		
+
 		err = data['raw_data'].apply(lambda x: get_errors(x))
 		data['error'] = err
-		
+
 		if self._expand:
 			tbs = data['raw_data'].apply(lambda x: get_tracebacks(x)).dropna()
 
@@ -134,10 +106,10 @@ class RenderLogBackingStore(BackingStore):
 					if e - t < 100:
 						new_chunk = range(t, e + 1)
 						chunks.extend(new_chunk)
-						mask = [str(c).zfill(3) for x in new_chunk]	
+						mask = [str(c).zfill(3) for x in new_chunk]
 						chunk_ids.extend(mask)
 						c += 1
-				
+
 				# drop data not in chunks
 				data = data.ix[chunks]
 
@@ -153,12 +125,12 @@ class RenderLogBackingStore(BackingStore):
 				err_name = data['error'].bfill().apply(lambda x: x[0:3])
 				data['chunk_id'] = err_name + data['chunk_id']
 				data['chunk_id'] = data['chunk_id'].apply(lambda x: x.lower())
-			
+
 			data['chunk'] = data['error'].bfill()
 
 			data['traceback_line'] = data['raw_data'].apply(lambda x: get_traceback_line(x))
 			data['traceback_file'] = data['raw_data'].apply(lambda x: get_traceback_file(x))
-		
+
 		# merge traceback data and warning data
 		data = pandas.concat([data, data2])
 
@@ -183,7 +155,7 @@ class RenderLogBackingStore(BackingStore):
 
 		data.reset_index(drop=True, inplace=True)
 		data.fillna('', inplace=True)
-				
+
 		data['probe_id'] = data.index
 
 		# data.columns = TUNER.tune(data.columns, 'renderlog_backingstore')

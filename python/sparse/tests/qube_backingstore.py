@@ -1,40 +1,3 @@
-#! /usr/bin/env python
-# Alex Braun 04.13.2014
-
-# ------------------------------------------------------------------------------
-# The MIT License (MIT)
-
-# Copyright (c) 2014 Alex Braun
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-# ------------------------------------------------------------------------------
-
-'''
-.. module:: qube_backingstore
-	:date: 04.13.2014
-	:platform: Unix
-	:synopsis: Qube BackingStore for interfacing with Probe API
-
-.. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
-'''
-# ------------------------------------------------------------------------------
-
 import warnings
 import re
 import json
@@ -52,13 +15,22 @@ from sparse.frameworks.probe.renderlog_backingstore import RenderLogBackingStore
 from sparse.utilities.qube_utils import *
 from sparse.utilities.utils import *
 from sparse.utilities.errors import *
-from sparse.frameworks.tune.tuner import Tuner
-TUNER = Tuner()
-qb = TUNER['qb']
+# from sparse.frameworks.tune.tuner import Tuner
+# TUNER = Tuner()
+# qb = TUNER['qb']
 # ------------------------------------------------------------------------------
 
+'''
+.. module:: qube_backingstore
+	:date: 04.13.2014
+	:platform: Unix
+	:synopsis: Qube BackingStore for interfacing with Probe API
+
+.. moduleauthor:: Alex Braun <alexander.g.braun@gmail.com>
+'''
+
 class QubeBackingStore(BackingStore):
-	def __init__(self, 
+	def __init__(self,
 						jobinfo=False,
 						hostinfo=False,
 						supervisor=None,
@@ -96,11 +68,11 @@ class QubeBackingStore(BackingStore):
 
 	def _get_agenda_stats(self, data):
 		sdata = SparseDataFrame(data)
-		sdata.merge_columns(['agenda', 'id'], 
+		sdata.merge_columns(['agenda', 'id'],
 			func=lambda x: get_agenda_stats(x[x.index[0]], x[x.index[1]], self._embed_graphs),
-			new_column='agenda', inplace=True)
-		sdata.flatten(columns=['agenda'], inplace=True)
-		data = sdata.data
+			new_column='agenda')
+		sdata.flatten(columns=['agenda'])
+		data = sdata._data
 		return data
 
 	def _get_log_data(self, data):
@@ -108,20 +80,20 @@ class QubeBackingStore(BackingStore):
 		data.loc[mask.index, 'stdout_subids'] = data['id'].apply(lambda x: str(x))
 
 		sdata = SparseDataFrame(data)
-		sdata.merge_columns(['stdout_subids', 'agenda_subids'], 
+		sdata.merge_columns(['stdout_subids', 'agenda_subids'],
 			func=lambda x: create_complete_subids( x[x.index[0]], x[x.index[1]] ),
 			new_column='stdout_subids', iterables=True, inplace=True)
 
-		sdata.data['stdout'] = sdata.data['stdout_subids'].apply(lambda x: self._get_stdout_data(x))
-		mask = sdata.data['stdout'].dropna()
-		sdata.data['stdout'] = sdata.data['stdout'].apply(lambda x: self._get_stdout_stats(x))
+		sdata._data['stdout'] = sdata._data['stdout_subids'].apply(lambda x: self._get_stdout_data(x))
+		mask = sdata._data['stdout'].dropna()
+		sdata._data['stdout'] = sdata._data['stdout'].apply(lambda x: self._get_stdout_stats(x))
 		sdata.flatten(columns=['stdout'], inplace=True)
-		data = sdata.data
+		data = sdata._data
 		return data
 
 	def _get_callbacks(self, data):
 		sdata = SparseDataFrame(data)
-		data = sdata.merge_columns(['pgrp', 'callbacks'], 
+		data = sdata.merge_columns(['pgrp', 'callbacks'],
 			func=lambda x: [ x[x.index[0]], x[x.index[1]] ], new_column='dependency')
 
 		def _get_dependency(item):
@@ -147,7 +119,7 @@ class QubeBackingStore(BackingStore):
 				return output
 
 			return numpy.nan
-			
+
 		data['dependency'] = data['dependency'].apply(lambda x: _get_dependency(x))
 		return data
 
@@ -161,7 +133,7 @@ class QubeBackingStore(BackingStore):
 		text = ''
 		for t in temp:
 			text += t['data']
-		
+
 		if text:
 			return text
 		else:
@@ -186,7 +158,7 @@ class QubeBackingStore(BackingStore):
 
 		sdata = SparseDataFrame(data)
 		sdata.flatten(columns=['todotally'], inplace=True)
-		data = sdata.data
+		data = sdata._data
 		data = data.applymap(lambda x: str_to_nan(x))
 
 		# Add custom fields
@@ -199,7 +171,7 @@ class QubeBackingStore(BackingStore):
 		data['percent_done'] = data['percent_done'].apply(lambda x: round_to(x, 3) * 100)
 		data['percent_utilized'] = data['todotally_running'] / (data['todo'] - data['todotally_complete'])
 		data['percent_utilized'] = data['percent_utilized'].apply(lambda x: round_to(x, 3) * 100)
-		
+
 		data['jobtype'] = data['name'].apply(lambda x: get_jobtype(x))
 
 		# mask = data['status'].apply(lambda x: x in ['failed', 'running'])
@@ -213,14 +185,14 @@ class QubeBackingStore(BackingStore):
 			data = self._get_log_data(data)
 
 		if self._callbacks:
-			data = self._get_callbacks(data)	
+			data = self._get_callbacks(data)
 
-		data.fillna('', inplace=True)	
+		data.fillna('', inplace=True)
 		data['probe_id'] = data.index
 		data.reset_index(drop=True, inplace=True)
 
 		sdata = SparseDataFrame(data)
-		sdata.data.columns = TUNER.tune(sdata.data.columns, 'qube_backingstore')
+		sdata._data.columns = TUNER.tune(sdata._data.columns, 'qube_backingstore')
 		self._data = sdata
 
 	@property
@@ -259,10 +231,10 @@ class QubeBackingStore(BackingStore):
 		data['slots_percent'] = slot_pct.apply(lambda x: round_to(x, 3) * 100.0)
 
 		mask = data[data['state'] == 'active']
-		
+
 		lmask = mask[mask['slots_total'] == 0]
 		data.loc[lmask.index, 'state'] = 'locked'
-		
+
 		imask = mask['subjobs_pid'].apply(lambda x: x in [0, None])
 		imask  = mask[imask].dropna()
 		data.loc[imask.index, 'state'] = 'idle'
@@ -270,7 +242,7 @@ class QubeBackingStore(BackingStore):
 		data.reset_index(drop=True, inplace=True)
 		data['probe_id'] = data.index
 		data.columns = TUNER.tune(data.columns, 'qube_backingstore')
-		sdata.data = data
+		sdata._data = data
 
 		self._data = sdata
 
@@ -307,7 +279,7 @@ class QubeBackingStore(BackingStore):
 			raise NotFound('Database not specified')
 	# --------------------------------------------------------------------------
 
-	def set_priority(self, priority): 
+	def set_priority(self, priority):
 		job_ids = self._results.data['id'].tolist()
 		self._database.set_priority(job_ids, priority)
 # ------------------------------------------------------------------------------

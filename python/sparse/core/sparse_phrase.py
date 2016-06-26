@@ -1,34 +1,16 @@
-#! /usr/bin/env python
-# Alex Braun 01.18.2015
-
-# ------------------------------------------------------------------------------
-# The MIT License (MIT)
-
-# Copyright (c) 2014 Alex Braun
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+import re
+from collections import OrderedDict
+import numpy
+import pandas
+from pandas import DataFrame, Series
+from sparse.core.utils import Base
+from sparse.core.sparse_dataframe import SparseDataFrame
 # ------------------------------------------------------------------------------
 
 '''The sparse_phrase module contains the SparsePhrase class.
 
 The SparsePhrase class is used for parsing strings and generating regular
-expressions according to the DTT (determiner, token, terminator) paradigm. 
+expressions according to the DTT (determiner, token, terminator) paradigm.
 
 Date:
 	01.18.2015
@@ -37,19 +19,9 @@ Platform:
 	Unix
 
 Author:
-	Alex Braun <ABraunCCS@gmail.com> <http://www.AlexBraunVFX.com>
+	Alex Braun <alexander.g.braun@gmail.com> <http://www.AlexBraunVFX.com>
 '''
-# ------------------------------------------------------------------------------
 
-import re
-from collections import OrderedDict
-import numpy
-import pandas
-from pandas import DataFrame, Series
-from sparse.utilities.utils import Base
-from sparse.core.sparse_dataframe import SparseDataFrame
-from sparse.utilities.utils import flatten_nested_dict, combine, insert_level
-# ------------------------------------------------------------------------------
 SEP = '\xff'
 
 class SparseWord(Base):
@@ -57,13 +29,13 @@ class SparseWord(Base):
 	Class for representing a word within the Sparse grammatical paradigm
 
 	A SparseWord functions as a token within a larger combinatorial grammar.
-	They are defined by three components rather a single one.  The first is 
-	called the "determiner", which is a list of regular expressions used to 
-	demarcate the beginning of the word.  The second is called the "token", 
+	They are defined by three components rather a single one.  The first is
+	called the "determiner", which is a list of regular expressions used to
+	demarcate the beginning of the word.  The second is called the "token",
 	which is a list of regular expressions used to capture the substring you are
-	actually interested in.	The last is called the "terminator", which is a 
+	actually interested in.	The last is called the "terminator", which is a
 	list of regular expressions used to	demarcate the end of the word.  This
-	three-part paradigm is called the DKT (Determiner, Token, Terminator) 
+	three-part paradigm is called the DKT (Determiner, Token, Terminator)
 	paradigm.
 
 	With this paradigm, SparseWords can not only parse strings by internally
@@ -75,15 +47,12 @@ class SparseWord(Base):
 	order to chain words together into new phrase structures and perform
 	mutations.
 	'''
-	def __init__(self, descriptor='token', 
+	def __init__(self, descriptor='token',
 				 determiners=[''], tokens=['.*'], terminators=[''],
 				 flags=0, capture=[0, 1, 0], restricted=True,
-				 data=None, name=None):
-		super(SparseWord, self).__init__(name=name)
-		self._cls = 'SparseWord'
-
+				 data=None):
 		self._restricted = restricted
-		
+
 		def reduce(raw):
 			raw = re.sub('(?<!\\\\)\{.*(?<!\\\\)\}', '', raw)
 			raw = re.sub('(?<!\\\\)\(.*(?<!\\\\)\)', '', raw)
@@ -125,17 +94,17 @@ class SparseWord(Base):
 			data['mutation'] = 0
 			data['total_mutations'] = data['mutations'].apply(lambda x: len(x))
 			data['restricted'] = self._restricted
-			data['conflict'] = False	
+			data['conflict'] = False
 			data['regex'] = data['raw']
-		
-			cols = ['class', 'phrase', 'word', 'component', 'descriptor', 
+
+			cols = ['class', 'phrase', 'word', 'component', 'descriptor',
 					'flags', 'mutation', 'mutations', 'total_mutations',
 					'restricted', 'capture', 'conflict', 'raw', 'regex']
 			data = data[cols]
 			self.data = data
 			self.mutate([0,0,0])
 			self._backup = data.copy()
-	
+
 		self._descriptor = self.data[self.data['component'] == 'determiner']['phrase'].item()
 
 
@@ -152,7 +121,7 @@ class SparseWord(Base):
 				mutation = '(?P<' + mask['descriptor'].item() + '>' + mutation + ')'
 			data.loc[mask.index, 'regex'] = mutation
 			data.loc[mask.index, 'mutation'] = integer
-		
+
 		mutation = _mutation_handler(mutation)
 		for key, val in mutation.iteritems():
 			_mutate(key, val)
@@ -164,7 +133,7 @@ class SparseWord(Base):
 
 	@property
 	def regex(self):
-		data = self.data	
+		data = self.data
 		regex = data['regex'].tolist()
 		regex = ''.join(regex)
 		regex = re.compile(regex, flags=data.ix[1]['flags'])
@@ -183,7 +152,7 @@ class SparseWord(Base):
 			phrase = self.regex.pattern
 			repl_re = re.compile('\(\?P<' + self._descriptor + '>.*?\)')
 			phrase = repl_re.sub(repl, phrase)
-			phrase = self._descriptor.upper() + ' (?:' + phrase + ')' 
+			phrase = self._descriptor.upper() + ' (?:' + phrase + ')'
 			return '\n'.join([word, phrase])
 		else:
 			return word
@@ -203,7 +172,7 @@ class SparseWord(Base):
 				if diagnosis['fix']:
 					self.repair(diagnosis['fix'])
 		return self.parse(string)
-		
+
 	def repair(self, fix):
 		self.mutate(fix[0]['mutation'])
 
@@ -215,7 +184,7 @@ class SparseWord(Base):
 				return True
 			return False
 
-		def mutate_test(component, mutate):		
+		def mutate_test(component, mutate):
 			data = self.data
 			data = data[data['component'] == component]
 			total = data['total_mutations']
@@ -227,7 +196,7 @@ class SparseWord(Base):
 					found_token = test([i, mutate[1], mutate[2]])
 				elif component == 'token':
 					found_token = test([mutate[0], i, mutate[2]])
-				else:	
+				else:
 					found_token = test([mutate[0], mutate[1], i])
 				if found_token:
 					return i
@@ -255,34 +224,31 @@ class SparseWord(Base):
 				mutation[2] = mutate_test('terminator', [-1, t, 0])
 
 		if None not in mutation:
-			o['fix'].append({'element': self._descriptor, 
-							 'type': 'mutation', 
+			o['fix'].append({'element': self._descriptor,
+							 'type': 'mutation',
 							 'mutation': mutation})
 
 		self.mutate([0, 0, 0])
 		return o
 # ------------------------------------------------------------------------------
-		
+
 class SparsePhrase(Base):
 	'''
 	Class for representing a phrase within the Sparse grammatical paradigm
 
 	A SparsePhrase functions as a complete combinatorial (and mutative) grammar
 	comprised of other, simpler SparsePhrases and (ultimately) SparseWords.
-	Based on diagnoses performed after failed parse operatons; SparsePhrases are 
-	able to repair themselves such that they succeed upon reparsing the same 
-	string.  
+	Based on diagnoses performed after failed parse operatons; SparsePhrases are
+	able to repair themselves such that they succeed upon reparsing the same
+	string.
 
 	Grammars are represented as tables within SparsePhrases.  From the "regex"
-	column of this table a regular expression is derived and used to parse 
+	column of this table a regular expression is derived and used to parse
 	supllied strings.  When a parse fails, the phrase performs a diagnosis and
 	repair process which reconfigures this table in such a way that the next
 	regular expression derived from succeeds.
 	'''
-	def __init__(self, descriptor, elements, linking=True, data=None, name=None):
-		super(SparsePhrase, self).__init__(name=name)
-		self._cls = 'SparsePhrase'
-
+	def __init__(self, descriptor, elements, linking=True, data=None):
 		elem = OrderedDict()
 		for e in elements:
 			elem[e._descriptor] = e
@@ -299,14 +265,14 @@ class SparsePhrase(Base):
 			self.construct_data()
 
 	def construct_data(self):
-		cols = ['class', 'phrase', 'word', 'component', 'descriptor', 
+		cols = ['class', 'phrase', 'word', 'component', 'descriptor',
 				'flags', 'mutation', 'mutations', 'total_mutations',
 				'restricted', 'capture', 'conflict', 'raw', 'regex']
-		
+
 		data = DataFrame(columns=cols)
 		for element in self._elements.values():
 			temp = element.data.copy()
-			data = pandas.concat([data, temp])	
+			data = pandas.concat([data, temp])
 		data.reset_index(drop=True, inplace=True)
 		self.data = data
 		self.determine_conflicts()
@@ -317,7 +283,7 @@ class SparsePhrase(Base):
 		items = data[data['component'] != 'token']
 		items = items['regex'].tolist()
 		items = items[1:-1]
-	
+
 		temp = []
 		new_item = []
 		for item in items:
@@ -337,7 +303,7 @@ class SparsePhrase(Base):
 				conflicts.append(True)
 				conflicts.append(False)
 		conflicts.append(False)
-						
+
 		data['conflict'] = conflicts
 		return self.data
 
@@ -364,7 +330,7 @@ class SparsePhrase(Base):
 			slots = re.sub(item, '<item>', slots)
 		markers = slots.split('<item>')
 		markers = [x for x in markers if x != '']
-		
+
 		slots = re.sub(self.markers, '<marker>', slots)
 		slots = re.sub('<', '', slots)
 		slots = slots.split('>')
@@ -382,7 +348,7 @@ class SparsePhrase(Base):
 				if items:
 					data.append(['item', items.pop()])
 		data = DataFrame(data, columns=['type', 'raw'])
-		
+
 		substrings = []
 		substring = data['raw'].ix[0]
 		for i, row in data.ix[1:].iterrows():
@@ -404,13 +370,13 @@ class SparsePhrase(Base):
 		def _mutate(data, component, integer):
 			mask = data[data['component'] == component]
 			data = self.data
-		
+
 			data.loc[mask.index, 'mutation'] = integer
 
 			mutations = mask['mutations'].apply(lambda x: x[integer])
 			data.loc[mask.index, 'raw'] = mutations
 			data.loc[mask.index, 'regex'] = mutations
-			
+
 			mask = mask[mask['capture'] == True]
 			data.loc[mask.index, 'regex'] = '(?P<'
 			data.loc[mask.index, 'regex'] += data.loc[mask.index, 'descriptor']
@@ -419,7 +385,7 @@ class SparsePhrase(Base):
 			data.loc[mask.index, 'regex'] += ')'
 
 		mutation = _mutation_handler(mutation)
-			
+
 		data = self.data
 		if index.__class__.__name__ != 'NoneType':
 			data = data.ix[index]
@@ -427,7 +393,7 @@ class SparsePhrase(Base):
 			data = data[data['conflict']]
 		elif mode == 'ends':
 			head = data.head(1).index.item()
-			tail = data.tail(1).index.item() 
+			tail = data.tail(1).index.item()
 			data = data.ix[[head, tail]]
 		elif mode == 'both':
 			both = data['conflict'].tolist()
@@ -453,7 +419,7 @@ class SparsePhrase(Base):
 				return wild_re.sub('.', regex)
 			return regex
 
-		data = self.data		
+		data = self.data
 		if self._linking:
 			# mask restricted
 			rmask = data['restricted'].tolist()
@@ -541,7 +507,7 @@ class SparsePhrase(Base):
 			return False
 
 		def test():
-			o = OrderedDict()        
+			o = OrderedDict()
 			found = self.parse(string)
 			if found:
 				o['error'] = False
@@ -570,7 +536,7 @@ class SparsePhrase(Base):
 									 'type': 'scaffold',
 									 'mutation': [-1, 0, 0],
 									 'mode': 'both'})
-					
+
 					if mutation_test(string, [-1, 0, 0], mode='conflict'):
 						o['fix'][-1]['mode'] = 'conflict'
 						return o
@@ -614,7 +580,7 @@ class SparsePhrase(Base):
 						o['fix'].append({'element': name,
 										'type': 'element',
 										'fix': diagnosis['fix']})
-						element.repair(diagnosis['fix'])			
+						element.repair(diagnosis['fix'])
 					else:
 						o['unfound_elements'].append(name)
 						continue
@@ -663,7 +629,7 @@ class SparsePhrase(Base):
 					if unfound:
 						null = unfound.pop(0)
 						new_elements[null] = self._elements[null]
-			
+
 			if new_elements == self._elements:
 				o['broken_phrase_structure'] = False
 			else:
@@ -673,7 +639,7 @@ class SparsePhrase(Base):
 								 'type': 'phrase_structure',
 								 'element_order': new_elements.keys()})
 			return o
-		
+
 		elements = self._elements
 		output = test()
 		self._elements = elements

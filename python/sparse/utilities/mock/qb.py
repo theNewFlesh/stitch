@@ -1,28 +1,8 @@
-#! /usr/bin/env python
-# Alex Braun 04.13.2014
-
-# ------------------------------------------------------------------------------
-# The MIT License (MIT)
-
-# Copyright (c) 2014 Alex Braun
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+import os
+import re
+import time
+from random import *
+from sparse.core.utils import round_to
 # ------------------------------------------------------------------------------
 
 '''
@@ -31,24 +11,16 @@
 	:platform: Unix
 	:synopsis: Mock qb library
 
-.. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
+.. moduleauthor:: Alex Braun <alexander.g.braun@gmail.com>
 '''
-# ------------------------------------------------------------------------------
-
-import os
-import re
-import time
-from random import *
-from sparse.utilities.utils import round_to
-# ------------------------------------------------------------------------------
 
 BASE_TIME = time.time() - (500 * randint(0, 2))
 STOPS = [135, 135, 130, 130, 180, 112, 116, 100, 110, 90, 47, 47, 25, 25, 14, 14]
 LOGPATH = os.path.join(os.getcwd(), 'sparse/resources/qube_logs')
 
 def gen_jobids():
-	jobids = ['124000', '123999', '123205', '123202', '123204', '123066', '124015', 
-			  '124013', '124011', '124012', '123002', '123000', '123101', '123100', 
+	jobids = ['124000', '123999', '123205', '123202', '123204', '123066', '124015',
+			  '124013', '124011', '124012', '123002', '123000', '123101', '123100',
 			  '123096', '123097']
 	output = []
 	for i in range(0, 3):
@@ -127,15 +99,15 @@ def _jobinfo(filters={}, agenda=False, subjobs=False, fields=None, callbacks=Fal
 	{'id': 123100, 'name':          'vfx_hyperion_nuke_shot01_v004', 'priority':  500, 'status':  'running', 'reservations':  'processors=16+, memory=8000+', 'pgrp': 123100, 'label': 'Archive',               'callbacks': u'{"triggers": ""                                     }' },
 	{'id': 123096, 'name':             'vfx_atlas_nuke_shot22_v007', 'priority':  500, 'status':  'pending', 'reservations':    'processors=24, memory=8000', 'pgrp': 123096, 'label': 'New.Nuke.Dependency',   'callbacks': u'{"triggers": ""                                     }' },
 	{'id': 123097, 'name':             'vfx_atlas_nuke_shot22_v007', 'priority':  500, 'status':   'failed', 'reservations':    'processors=24, memory=8000', 'pgrp': 123096, 'label': 'New-Nuke-Job',          'callbacks': u'{"triggers": "complete-work-New.Nuke.Dependency"    }' }
-	] 
+	]
 
 	for item in jobs:
-		failed = randint(0, 20) 
+		failed = randint(0, 20)
 		complete = randint(0, 40)
 		running = randint(0, 60)
 		pending = randint(0, 30)
 
-		item['todotally'] = {'failed': failed, 
+		item['todotally'] = {'failed': failed,
 							 'complete': complete,
 							 'running': running,
 							 'pending': pending}
@@ -197,20 +169,20 @@ def _hostinfo(filters={}, subjobs=False, fields=None, id=None, state=None, name=
 	down_slots = ['0/16', '0/24', '0/32']
 	clusters = ['/atlas', '/hyperion', '/vancouver', '/los_angeles']
 	states = ['active', 'idle', 'locked', 'down', 'random']
-	
+
 	hosts = []
 	names = ['render_node_' + str(x).zfill(4) for x in range(1, 101)]
 
 
-	for i in range(0, 5):	
+	for i in range(0, 5):
 		host = {}
 		host['name'] = names[0]
 		host['cluster'] = clusters[0]
 
 		host['state'] = 'active'
 		host['resources'] = 'host.processors=' + str(slots[0])
-		
-		subjob = {}	
+
+		subjob = {}
 		subjob['pid'] = JOBIDS[i][:-2]
 		subjob['id'] = i
 
@@ -220,11 +192,11 @@ def _hostinfo(filters={}, subjobs=False, fields=None, id=None, state=None, name=
 	for i, name in enumerate(names[1:16]):
 
 		host = {}
-		host['name'] = names[i] 
+		host['name'] = names[i]
 		host['cluster'] = clusters[randint(0, 3)]
 		host['state'] = 'active'
 		host['resources'] = 'host.processors=' + str(slots[randint(0, 10)])
-		
+
 		subjob = {}
 		subjob['pid'] = JOBIDS[i][:-2]
 		subjob['id'] = randint(0, 101)
@@ -335,7 +307,7 @@ def jobinfo(filters={}, agenda=False, subjobs=False, fields=None, callbacks=Fals
 	return JOBINFO
 
 def hostinfo(filters={}, subjobs=False, fields=None, id=None, state=None, name=None):
-	return HOSTINFO	
+	return HOSTINFO
 # ------------------------------------------------------------------------------
 
 def main():

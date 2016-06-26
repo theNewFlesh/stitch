@@ -1,28 +1,11 @@
-#! /usr/bin/env python
-# Alex Braun 04.13.2014
-
-# ------------------------------------------------------------------------------
-# The MIT License (MIT)
-
-# Copyright (c) 2014 Alex Braun
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+import warnings
+import re
+from copy import copy, deepcopy
+from decimal import Decimal
+import numpy as np
+import pandas as pd
+from pandas import DataFrame, Series
+from collections import OrderedDict, namedtuple
 # ------------------------------------------------------------------------------
 
 '''
@@ -31,51 +14,13 @@
 	:platform: Unix
 	:synopsis: General Python utilities
 
-.. moduleauthor:: Alex Braun <ABraunCCS@gmail.com>
+.. moduleauthor:: Alex Braun <alexander.g.braun@gmail.com>
 '''
-# ------------------------------------------------------------------------------
-
-import warnings
-import re
-from copy import copy, deepcopy
-from decimal import Decimal
-import numpy
-import pandas
-from pandas import DataFrame
-from matplotlib import pyplot
-from collections import OrderedDict, namedtuple
-# ------------------------------------------------------------------------------
 
 class Base(object):
-	'''
-	Generic base class
-	'''
-	def __init__(self, name=None):
-		'''
-		:kwarg name: name of instance
-		:returns: Base instance
-		:rtype: Base
-		'''
-		self._cls = 'Base'
-		self._name = name
-
-	@property
-	def cls(self):
-		'''
-		class of instance
-		'''
-		return self._cls
-
-	@property
-	def name(self):
-		'''
-		name of instance
-		'''
-		return self._name
-
+	'''Generic base class'''
 	def _print_public(self):
-		'''Pretty print public methods and attributes
-		'''
+		'''Pretty print public methods and attributes'''
 		nonPublicRE = re.compile('^_')
 		for item in dir(self):
 			found = nonPublicRE.match(item)
@@ -83,8 +28,7 @@ class Base(object):
 				print item
 
 	def _print_semiprivate(self):
-		'''Pretty print semi-private methods and attributes
-		'''
+		'''Pretty print semi-private methods and attributes'''
 		semiPrivateRE = re.compile('^_[^_]+')
 		for item in dir(self):
 			found = semiPrivateRE.match(item)
@@ -92,8 +36,7 @@ class Base(object):
 				print item
 
 	def _print_private(self):
-		'''Pretty print private methods and attributes
-		'''
+		'''Pretty print private methods and attributes'''
 		privateRE = re.compile('^__')
 		for item in dir(self):
 			found = privateRE.match(item)
@@ -101,25 +44,22 @@ class Base(object):
 				print item
 # ------------------------------------------------------------------------------
 
-def to_type(item, dtype):
-	'''Convert item to given type
-	'''
+def as_type(item, dtype):
+	'''Convert item to given type'''
 	try:
 		return dtype(item)
 	except ValueError:
 		return item
 
-def to_iterable(item):
-	'''Return item in a list if it is not already iterable
-	'''
+def as_iterable(item):
+	'''Return item in a list if it is not already iterable'''
 	if is_iterable(item):
 		return item
 	else:
 		return [item]
 
 def is_iterable(item):
-	'''Determine if item is iterable
-	'''
+	'''Determine if item is iterable'''
 	try:
 		result = iter(item)
 		return True
@@ -127,18 +67,15 @@ def is_iterable(item):
 		return False
 
 def is_dictlike(item):
-	'''Determine if an item id dictlike
-	'''
+	'''Determine if an item id dictlike'''
 	return item.__class__.__name__ in ['dict', 'OrderedDict']
 
 def is_listlike(item):
-	'''Determine if an item id listlike
-	'''
+	'''Determine if an item id listlike'''
 	return item.__class__.__name__ in ['list', 'tuple', 'set']
 
 def is_dict_matrix(item):
-	'''Determine if an item is an iterable of dicts
-	'''
+	'''Determine if an item is an iterable of dicts'''
 	if is_listlike(item):
 		if len(item) > 0:
 			if is_dictlike(item[0]):
@@ -147,26 +84,22 @@ def is_dict_matrix(item):
 # ------------------------------------------------------------------------------
 
 def set_decimal_expansion(item, expansion):
-	'''Truncates a float item at specified number of digits after the decimal
-	'''
+	'''Truncates a float item at specified number of digits after the decimal'''
 	return int(item * 10 ** expansion) / float(10 ** expansion)
 
 def round_to(item, order):
-	'''Rounds a given number to a given order of magnitudes after the decimal
-	'''
+	'''Rounds a given number to a given order of magnitudes after the decimal'''
 	return round(Decimal(item), order)
 
 def try_(item, func):
-	'''Wraps a supplied function in a try block
-	'''
+	'''Wraps a supplied function in a try block'''
 	try:
 		return func(item)
 	except:
 		return item
 
 def eval_(item):
-	'''Evaluates item as expression
-	'''
+	'''Evaluates item as expression'''
 	try:
 		return eval(item)
 	except:
@@ -219,14 +152,21 @@ def _nreig(item, value):
 	else:
 		return False
 
-OPERATORS = {'==': _eq, '!=': _ne, '<': _lt, '<=': _lte, '>': _gt, '>=': _gte, 
-			're': _re, 're.IGNORECASE': _reig, 'nre': _nre, 'nre.IGNORECASE': _nreig}
-
 def bool_test(item, operator, values):
-	'''Perform a boolean operation between an item and a given set of values
-	'''
-	op = OPERATORS[operator]
-	values = to_iterable(values)
+	'''Perform a boolean operation between an item and a given set of values'''
+	ops = { '==': _eq,
+			'!=': _ne,
+			'<': _lt,
+			'<=': _lte,
+			'>': _gt,
+			'>=': _gte,
+			're': _re,
+			're.IGNORECASE': _reig,
+			'nre': _nre,
+			'nre.IGNORECASE': _nreig
+	}
+	op = ops[operator]
+	values = as_iterable(values)
 	for value in values:
 		if op(item, value):
 			return True
@@ -314,7 +254,7 @@ def reduce_units(iterable, new_unit='-', min=0):
 	Example:
 		This function is usefull for simplifying indentation
 		>>> for indent, line in zip(indents, text):
-		>>>		print indent, line 
+		>>>		print indent, line
 		First
 		  Second
 				  Third
@@ -357,7 +297,7 @@ def flatten_nested_dict(item, separator='_', null='null'):
 			a_b1 : null,
 			a_b2 : 0,
 			a_b1_c : 1
-		}	
+		}
 	'''
 	temp = OrderedDict()
 	def _flatten_nested_dict(item, name):
@@ -408,8 +348,7 @@ def nested_dict_to_matrix(item, justify='left'):
 	return matrix
 
 def nested_dict_to_index(item, justify='left'):
-	'''Convert a nested dictionary to a MultiIndex object
-	'''
+	'''Convert a nested dictionary to a MultiIndex object'''
 	index = nested_dict_to_matrix(item, justify=justify)
 	index = DataFrame(index).transpose().values.tolist()
 	return index
@@ -428,7 +367,7 @@ def matrix_to_nested_dict(matrix):
 					  'c': 1},
 			   'b2': 0
 			}
-		}	
+		}
 	'''
 	output = {}
 	for row in matrix:
@@ -507,6 +446,33 @@ def merge(data, store, merge_func=lambda store, key, val: [val, store[key]] ):
 		return store
 	return _merge(deepcopy(data), deepcopy(store))
 
+def merge_list_dicts(source, target, source_key, target_key, remove_key=False):
+	def _list_dict_to_dict(items, key, remove_key=False):
+		output = {}
+		for item in items:
+			value = {}
+			new_key = str(item[key])
+			if remove_key:
+				del item[key]
+			value[new_key] = item
+
+			out_key = value.keys()[0]
+			out_value = value[out_key]
+			output[out_key] = out_value
+		return output
+
+	source = _list_dict_to_dict(source, source_key, remove_key=remove_key)
+	target = _list_dict_to_dict(target, target_key, remove_key=remove_key)
+	output = []
+	for key, value in source.iteritems():
+		row = {}
+		for k, v in value.iteritems():
+			row[source_key + '_' + str(k)] = v
+		for k, v in target[key].iteritems():
+			row[target_key + '_' + str(k)] = v
+		output.append(row)
+	return output
+
 def flatten_list(item):
 	store = []
 	def _flatten(items):
@@ -520,7 +486,7 @@ def flatten_list(item):
 		return store
 	return _flatten(item)
 
-def to_prototype(items):
+def as_prototype(items):
 	'''Converts items to a prototypical dictionary
 
 	Example:
@@ -528,16 +494,16 @@ def to_prototype(items):
 		[{'first': 'tom',    'last': 'flately'},
 		 {'first': 'dick',   'last': 'schmidt'},
 		 {'first': 'harry',  'last': 'schmidt'}]
-		
-		# >>> to_prototype(people)
+
+		# >>> as_prototype(people)
 		# { last : ['flately', 'schmidt', 'schmidt']
 		#   first : ['tom', 'dick', 'harry'] }
 
-		>>> to_prototype(people)
+		>>> as_prototype(people)
 		{ last : [],
 		  first : [] }
 	'''
-	
+
 	prototype = {}
 	for item in items:
 		prototype = merge(prototype, item)
@@ -548,12 +514,12 @@ def to_prototype(items):
 	return prototype
 
 
-def to_inverted_index(item, key, prototype=True):
+def as_inverted_dict(item, key, prototype=True):
 	'''Converts item into inverted index
 
 	Example:
 		>>> employee = {'employee': {'name': 'alex', 'id': 123}}
-		>>> to_inverted_index(employee, ['employee', 'name'])
+		>>> as_inverted_dict(employee, ['employee', 'name'])
 		{'alex': {'employee': {'id': 123, 'name': 'alex'}}}
 
 		>>> employees
@@ -562,12 +528,12 @@ def to_inverted_index(item, key, prototype=True):
 		  {'employee': {'name': 'janus', 'id': 456}}, # duplicate record
 		  {'employee': {'name': 'atticus', 'id': 789}} ]
 
-		>>> to_inverted_index(employees, ['employee', 'id'])
+		>>> as_inverted_dict(employees, ['employee', 'id'])
 		{'123': {'employee': {'id': 123, 'name': 'alex'}},
 		 '456': {'employee': {'id': 456, 'name': 'janus'}},
 		 '789': {'employee': {'id': 789, 'name': 'atticus'}}}
 	'''
-	def _to_inverted_index(item, key):
+	def _as_inverted_dict(item, key):
 		output = {}
 		val = item
 		if key.__class__.__name__ != 'list':
@@ -580,58 +546,27 @@ def to_inverted_index(item, key, prototype=True):
 
 	if is_listlike(item):
 		if prototype:
-			output = [_to_inverted_index(x, key) for x in item]
-			return to_prototype(output)
+			output = [_as_inverted_dict(x, key) for x in item]
+			return as_prototype(output)
 		else:
 			output = {}
 			for entry in item:
-				output.update( _to_inverted_index(entry, key) )
+				output.update( _as_inverted_dict(entry, key) )
 			return output
 	else:
-		return _to_inverted_index(item, key)
+		return _as_inverted_dict(item, key)
 # ------------------------------------------------------------------------------
-
-def irregular_concat(items, axis=0, ignore_index=True):
-	'''Concatenate DataFrames of different dimensions
-
-	Example:
-		>>> x = DataFrame(numpy.arange(0, 9).reshape(3, 3))
-		>>> y = DataFrame(numpy.arange(100, 116).reshape(4, 4))
-		>>> irregular_concat([x, y], axis=1)
-			0   1   2    0    1    2    3
-		0   0   1   2  100  101  102  103
-		1   3   4   5  104  105  106  107
-		2   6   7   8  108  109  110  111
-		3 NaN NaN NaN  112  113  114  115
-	''' 
-	max_len = 0
-	for item in items:
-		if len(item) > max_len:
-			max_len = len(item)
-	
-	for item in items:
-		bufr = item.head(1)
-		bufr = bufr.apply(lambda x: numpy.nan)
-		buf_len = max_len - len(item)
-		for i in range(buf_len):
-			if ignore_index:
-				item.append(bufr, ignore_index=True)
-			else:
-				item.append(bufr)
-	
-	data = pandas.concat(items, axis=axis)
-	return data
 
 def index_to_matrix(index):
 	'''Convert a index to a matrix
 
 	Example:
 		>>> data.index
-		MultiIndex(levels=[[u'A', u'B', u'C'], 
+		MultiIndex(levels=[[u'A', u'B', u'C'],
 						   [u'a', u'b', u'c']],
-				   labels=[[0, 1, 2], 
+				   labels=[[0, 1, 2],
 						   [0, 1, 2]])
-		
+
 		>>> index_to_matrix(data.index)
 		[['A', 'B', 'C']
 		 ['a', 'b', 'c']]
@@ -643,114 +578,20 @@ def index_to_matrix(index):
 	else:
 		index = [index.tolist()]
 	return index
-
-def insert_level(index, item, level=0):
-	'''Insert level into index
-
-	Example:
-		>>> data
-				   0  1  2
-		level_1 0  0  1  2
-				1  3  4  5
-				2  6  7  8
-
-		>>> index = insert_level(data.index, 'new_level_1', 1)
-		>>> data.index = index
-		>>> data
-							   0  1  2
-		level_1 new_level_1 0  0  1  2
-							1  3  4  5
-							2  6  7  8
-	'''
-	index = index_to_matrix(index)
-	item = [item] * len(index[0])
-	index.insert(level, item)
-	return index
-
-def combine(items):
-	'''Combines multiple DataFrames with hierarchical indexes
-
-		Args:
-			items (list): List of DataFrames to be combined.
-
-		Returns:
-			DataFrame
-
-		Example:
-			>>> joe
-									  values
-			employee username -->      jabra
-					 age      -->         67
-					 name     last   abrante
-							  first      joe
-			id       -->      -->          1
-
-			>>> jane
-									  values
-			employee username -->    jjoplin
-					 age      -->         53
-					 name     last    joplin
-							  first     jane
-			id       -->      -->          3
-
-			>>> combine([joe, jane])
-									  values
-			employee username -->      jabra
-					 age      -->         67
-					 name     last   abrante
-							  first      joe
-			id       -->      -->          1
-			employee username -->    jjoplin
-					 age      -->         53
-					 name     last    joplin
-							  first     jane
-			id       -->      -->          3
-	'''
-
-	items = [x.copy() for x in items]
-	max_ = 0
-	indexes = []
-	for item in items:
-		index = index_to_matrix(item.index)
-		if max_ < len(index):
-			max_ = len(index)
-		indexes.append(index)
-		
-	for i, index in enumerate(indexes):
-		top_level = index[0]
-		for r in range(max_ - len(index)):
-			index.insert(0, top_level)
-		items[i].index = index
-		
-	output = items[0]
-	for item in items[1:]:
-		output = output.append(item)
-	return output
-
-def get_revolutions(left, right):
-    output = []
-    for l in left:
-        for r in right:
-            temp = [l]
-            if isinstance(l, list):
-                temp = copy(l)
-            temp.append(r)
-            output.append(temp)
-    return output
 # ------------------------------------------------------------------------------
 
 def double_lut_transform(items, input_lut, output_lut):
 	# Check luts and issue warnings/errors if necessary
 	if input_lut.keys() != output_lut.keys():
 		raise KeyError('input lut keys do not match output lut keys')
-	
+
 	input_test = input_lut.values()
 	for item in input_lut.values():
 		input_test.remove(item)
 	if len(input_test) > 0:
 		input_test = ', '.join(input_test)
 		warnings.warn('input lut has duplicate values: ' + input_test, Warning)
-	
+
 	output_test = output_lut.values()
 	for item in output_lut.values():
 		output_test.remove(item)
@@ -759,7 +600,7 @@ def double_lut_transform(items, input_lut, output_lut):
 		warnings.warn('output lut has duplicate values: ' + output_test, Warning)
 	# --------------------------------------------------------------------------
 
-	reverse_lut = dict(zip(input_lut.values(), input_lut.keys() ))       
+	reverse_lut = dict(zip(input_lut.values(), input_lut.keys() ))
 	output = []
 	for item in items:
 		new_item = item
@@ -773,70 +614,118 @@ def list_to_lut(items, interchange_lut):
 	for i, item in enumerate(items):
 		lut[lut.keys()[i]] = item
 	return lut
-# ------------------------------------------------------------------------------
 
-def plot(frame, embedded_column=None, ax=None, colormap=None, figsize=None, 
-		 fontsize=None, grid=None, kind='line', legend=True, loglog=False, 
-		 logx=False, logy=False, mark_right=True, rot=None, secondary_y=False,
-		 sharex=True, sharey=False, sort_columns=False, stacked=False, style=None,
-		 subplots=False, table=False, title=None, use_index=True, x=None, xerr=None,
-		 xlabel=None, xlim=None, xticks=None, xtick_labels=None, y=None, yerr=None,
-		 ylabel=None, ylim=None, yticks=None, ytick_labels=None, 
-		 bbox_to_anchor=(0.99, 0.99), loc=0, borderaxespad=0., **kwds):
+def as_snakecase(string):
+    output = re.sub('([^_])([A-Z][a-z]+)', r'\1_\2', string)
+    output = re.sub('([a-z0-9])([A-Z])', r'\1_\2', output).lower()
+    output = re.sub('\.', '_', output)
+    output = re.sub(' +', '_', output)
+    output = re.sub('__+', '_', output)
+    return output
 
-	fig = pyplot.figure()
-	
-	if embedded_column:
-		frame = frame[embedded_column]
-		frame = frame.apply(DataFrame).tolist()
-		frame = pandas.concat(frame, axis=1)
-	
-	if not style:
-		style = ['#5F95DE', '#FFFFFF', '#F77465', '#EDED9F', '#AC92DE', 
-				 '#7EC4CF', '#A3C987', '#919191']
-		style = style * len(frame)
-		
-	frame.plot(ax=ax, colormap=colormap, figsize=figsize, fontsize=fontsize, 
-			   grid=grid, kind=kind, legend=legend, loglog=loglog, logx=logx,
-			   logy=logy, mark_right=mark_right, rot=rot, secondary_y=secondary_y, 
-			   sharex=sharex, sharey=sharey, sort_columns=sort_columns,
-			   stacked=stacked, style=style, subplots=subplots, table=table,
-			   title=title, use_index=use_index, x=x, xerr=xerr, xlim=xlim, 
-			   xticks=xticks, y=y, yerr=yerr, ylim=ylim, yticks=yticks, **kwds)
-	
-	if legend:
-		pyplot.legend(bbox_to_anchor=bbox_to_anchor, loc=loc, borderaxespad=borderaxespad)
+def nan_to_bottom(series):
+	'''Pushes all nan elements to the bottom rows of the Series
 
-	plt = pyplot.gca()
-	if xtick_labels:
-		plt.set_xticklabels(xtick_labels)
-	if ytick_labels:
-		plt.set_yticklabels(ytick_labels)
-	if xlabel:
-		plt.axes.set_xlabel(xlabel, size='large')
-	if ylabel:
-		plt.axes.set_ylabel(ylabel, size='large')
-	pyplot.show()
+	Args:
+		series (Series): pandas Series object.
+
+	Returns:
+		Series with nan elements at the bottom.
+	'''
+	data = series.dropna()
+	buf = [np.nan] * (series.size - data.size)
+	data = data.append(Series(buf))
+	data = Series(list(data), index=series.index)
+	return data
+
+def reduce_units(series, new_unit='-', min=0):
+	'''Replaces all units within a series with a set of smaller units
+
+	Args:
+		new_unit (str, optional): Replacement character. Default: '-'.
+		min (int, optional): Minimum length of units. Default: 0.
+
+	Returns:
+		Series of reduced units.
+
+	Example:
+		Suppose you are trying to reduce the white space in a file's
+		indentation, without disrupting its hierarchical structure. You
+		first strip the indentation into its own series, and then reduce it.
+
+		>>> file = file.readlines()
+		>>> print file
+			:A
+				:B
+					:C
+				:E
+					:F
+		>>> indents = [x.split(':')[0] for x in file]
+		>>> data = [x.split(':')[1] for x in file]
+		>>> print indents
+		['	', '		', '			', '		', '			']
+		>>> ss = SparseSeries(indents)
+		>>> ss.reduce_units(' ', inplace=True)
+		>>> print ss
+		['', ' ', '  ', ' ', '  ']
+		>>> print [line for line in zip(indents, data)]
+		A
+		 B
+		  C
+		 E
+		  F
+	'''
+	old = sorted(series.unique())
+	new = range(0, len(old))
+	new = [new_unit * (x + min) for x in new]
+	lut = dict(zip(old, new))
+	data = series.apply(lambda x: lut[x])
+	return data
 # ------------------------------------------------------------------------------
 
 def main():
-	'''
-	Run help if called directly
-	'''
+	'''Run help if called directly'''
 
 	import __main__
 	help(__main__)
 
 __all__ = [
-	'Base',	"to_type", "to_iterable", "is_iterable", "is_dictlike", "is_listlike", 
-	"is_dict_matrix", 'set_decimal_expansion', 'try_', 'round_to', 'eval_', 
-	'bool_test', 'regex_match', 'regex_search', 'regex_sub', 'regex_split', 
-	'invert', 'reduce_units', 'dict_to_namedtuple', 'flatten_nested_dict', 
-	'nested_dict_to_matrix', 'nested_dict_to_index', 'matrix_to_nested_dict',
-	'interpret_nested_dict', 'to_inverted_index', 'recurse', 'merge',
-	'flatten_list', 'to_prototype', 'irregular_concat', 'index_to_matrix', 
-	'insert_level', 'combine', 'get_revolutions', 'double_lut_transform', 
-	'list_to_lut', 'plot'
+	'Base',
+	'as_type',
+	'as_iterable',
+	'is_iterable',
+	'is_dictlike',
+	'is_listlike',
+	'is_dict_matrix',
+	'set_decimal_expansion',
+	'round_to',
+	'try_',
+	'eval_',
+	'bool_test',
+	'regex_match',
+	'regex_search',
+	'regex_sub',
+	'regex_split',
+	'invert',
+	'reduce_units',
+	'dict_to_namedtuple',
+	'flatten_nested_dict',
+	'nested_dict_to_matrix',
+	'nested_dict_to_index',
+	'matrix_to_nested_dict',
+	'interpret_nested_dict',
+	'recurse',
+	'merge',
+	'merge_list_dicts',
+	'flatten_list',
+	'as_prototype',
+	'as_inverted_dict',
+	'index_to_matrix',
+	'double_lut_transform',
+	'list_to_lut',
+	'as_snakecase',
+	'nan_to_bottom',
+	'reduce_units'
 ]
 
 if __name__ == '__main__':

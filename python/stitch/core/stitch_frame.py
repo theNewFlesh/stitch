@@ -826,7 +826,7 @@ class StitchFrame(Base):
         data = self._data.copy()
 
         spindex = data.columns.tolist()
-        spindex = [x for x in spindex if re.search('sp_index', x)]
+        spindex = [x for x in spindex if re.search('index', x)]
 
         index = data[spindex]
         _index = index.as_matrix().tolist()
@@ -994,7 +994,7 @@ class StitchFrame(Base):
         self._data = output
         return self
 
-    def from_nested_dict(self, item, sp_index=False, justify='left'):
+    def from_nested_dict(self, item, index=False, justify='left'):
         '''Reads nested dictionary into a DataFrame
 
         Args:
@@ -1006,11 +1006,11 @@ class StitchFrame(Base):
         '''
         values = flatten_nested_dict(item).values()
         data = None
-        if sp_index:
+        if index:
             index = nested_dict_to_matrix(item, justify=justify)
             columns = []
             for i, item in enumerate(index[0]):
-                columns.append("sp_index_" + str(i).zfill(2))
+                columns.append("index_" + str(i).zfill(2))
             data = DataFrame(index, columns=columns)
         else:
             index = nested_dict_to_index(item, justify=justify)
@@ -1019,14 +1019,14 @@ class StitchFrame(Base):
         mask = data.apply(lambda x: x != 'null')
         mask = mask[mask].dropna()
         data = data.ix[mask.index]
-        if sp_index:
+        if index:
             data.reset_index(drop=True)
 
         self._data = data
         return self
 
     def to_nested_dict(self):
-        if 'sp_index_00' in self._data.columns:
+        if 'index_00' in self._data.columns:
             temp = self._data.values.tolist()
             matrix = []
             for row in temp:

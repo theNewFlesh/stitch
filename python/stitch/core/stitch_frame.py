@@ -507,7 +507,7 @@ class StitchFrame(Base):
     # --------------------------------------------------------------------------
 
     # external reshape
-    def flatten(self, columns=[], prefix=True, drop=True, dtype=dict, attach='inplace'):
+    def flatten(self, columns=[], prefix=True, drop=True, dtype=dict, inplace=True):
         '''Split items of iterable elements into separate columns
 
         Args:
@@ -556,7 +556,7 @@ class StitchFrame(Base):
                     columns = {}
                     for k in frame.columns:
                         columns[k] = str(col) + '_' + str(k)
-                    frame.rename(columns=columns)
+                    frame.rename(columns=columns, inplace=True)
                 frames.append(frame)
                 col_index[col].extend( frame.columns.tolist() )
             data = pd.concat(frames, axis=1)
@@ -588,7 +588,7 @@ class StitchFrame(Base):
         data = pd.concat([data, flatdata], axis=1)
 
         # reorganize columns
-        if attach == 'inplace':
+        if inplace:
             cols = _reorder_columns(old_cols, col_index)
             data = data[cols]
 

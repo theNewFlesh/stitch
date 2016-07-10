@@ -9,8 +9,8 @@
 
 import argparse
 from stitch.views.probe_cli import ProbeCLI
-from stitch.testing.utils.qube_backingstore import QubeBackingStore
-from stitch.testing.utils.renderlog_backingstore import RenderLogBackingStore
+from stitch.test.utils.qube_backingstore import QubeBackingStore
+from stitch.test.utils.renderlog_backingstore import RenderLogBackingStore
 
 BACKINGSTORES = {'qube': QubeBackingStore, 'renderlog': RenderLogBackingStore}
 PROMPT = ["SpQL[", "]> "]

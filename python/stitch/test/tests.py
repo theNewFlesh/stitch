@@ -4,7 +4,7 @@ from stitch.core.stitch_string import StitchString
 # ------------------------------------------------------------------------------
 
 _YAML = '/Users/alex/Documents/projects/'
-_YAML += 'stitch/python/stitch/testing/resources/stitch_string.yml'
+_YAML += 'stitch/python/stitch/test/resources/stitch_string.yml'
 _JSON = dict(
     a1=dict(
         b1=dict(

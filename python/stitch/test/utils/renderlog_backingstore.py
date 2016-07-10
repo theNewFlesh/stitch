@@ -6,7 +6,7 @@ import pandas as pd
 from pandas import DataFrame
 from stitch.core.stitch_frame import StitchFrame
 from stitch.frameworks.probe.backingstore import BackingStore
-from stitch.testing.utils.renderlog_utils import *
+from stitch.test.utils.renderlog_utils import *
 from stitch.core.utils import *
 from stitch.core.errors import *
 # ------------------------------------------------------------------------------

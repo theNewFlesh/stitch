@@ -10,8 +10,8 @@ from pandas import DataFrame, Series
 from stitch.core.stitch_frame import StitchFrame
 from stitch.core.utils import *
 from stitch.frameworks.probe.backingstore import BackingStore
-from stitch.testing.utils.renderlog_backingstore import RenderLogBackingStore
-from stitch.testing.utils.qube_utils import *
+from stitch.test.utils.renderlog_backingstore import RenderLogBackingStore
+from stitch.test.utils.qube_utils import *
 from stitch.core.errors import *
 # ------------------------------------------------------------------------------
 

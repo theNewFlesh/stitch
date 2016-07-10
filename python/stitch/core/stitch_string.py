@@ -122,11 +122,10 @@ class StitchString(Base):
 			add_phrase(row)
 			self._master_phrase = self._elements[row['descriptor']]
 
-	def smart_parse(self, string):
-		self._master_phrase.smart_parse(string)
-
-	def parse(self, string):
-		self._master_phrase.parse(string)
+	def parse(self, string, smart=True):
+		if smart:
+			return self._master_phrase.smart_parse(string)
+		return self._master_phrase.parse(string)
 
 	def diagnose(self, string, as_dataframe=True):
 		def conform(dict_):

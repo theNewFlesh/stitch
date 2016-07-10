@@ -1,10 +1,10 @@
 from __future__ import with_statement, print_function
+import os
 from stitch.core.stitch_frame import StitchFrame
 from stitch.core.stitch_string import StitchString
 # ------------------------------------------------------------------------------
 
-_YAML = '/Users/alex/Documents/projects/'
-_YAML += 'stitch/python/stitch/test/resources/stitch_string.yml'
+_YAML = os.path.abspath('./resources/stitch_string.yml')
 _JSON = dict(
     a1=dict(
         b1=dict(

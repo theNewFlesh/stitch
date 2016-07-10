@@ -20,9 +20,8 @@ from stitch.core.errors import *
 '''
 
 class RenderLogBackingStore(BackingStore):
-	def __init__(self, path=None, text=None, expand=False, name=None):
-		super(RenderLogBackingStore, self).__init__(name=name)
-		self._cls = 'RenderLogBackingStore'
+	def __init__(self, path=None, text=None, expand=False):
+		super(RenderLogBackingStore, self).__init__()
 
 		self._data = None
 		self._results = None
@@ -137,7 +136,7 @@ class RenderLogBackingStore(BackingStore):
 			data.drop_duplicates(['warning', 'error', 'progress'], inplace=True)
 			data.dropna(subset=['warning', 'error', 'progress'], how='all', inplace=True)
 
-		data = data.sort(['filename', 'line'])
+		data = data.sort_values(['filename', 'line'])
 		return data
 
 	def update(self):

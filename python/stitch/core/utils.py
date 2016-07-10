@@ -369,6 +369,9 @@ def matrix_to_nested_dict(matrix):
 			}
 		}
 	'''
+	# ensures deepest branches appear first
+	matrix = list(reversed(sorted(matrix)))
+
 	output = {}
 	for row in matrix:
 		keys = row[0:-1]

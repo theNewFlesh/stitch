@@ -192,7 +192,7 @@ def get_agenda_stats(item, id, embed_graphs=False):
 		mask = data[data['status'] != 'running']
 		fg.loc[mask.index, 'running'] = np.nan
 
-		fg = fg.sort(columns=['all'], ascending=False)
+		fg = fg.sort_values('all', ascending=False)
 		fg.dropna(how='all', inplace=True)
 		fg.reset_index(drop=True, inplace=True)
 

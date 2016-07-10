@@ -14,9 +14,8 @@ from stitch.core.errors import *
 '''
 
 class BackingStore(Base):
-	def __init__(self, name=None):
-		super(BackingStore, self).__init__(name=name)
-		self._cls = 'BackingStore'
+	def __init__(self):
+		super(BackingStore, self).__init__()
 		self._data = None
 		self._results = None
 

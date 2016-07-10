@@ -1,0 +1,76 @@
+---
+vars:
+  # captures
+  cap:    [0, 1, 0]
+  no_cap: [0, 0, 0]
+
+  # charsets
+  _null:  ['']
+  _dot:   ['\.']
+  _end:   ['$']
+  _sep:   ['\.', '_']
+  _scn_h: ['scene', 'scn']
+  _scene: ['[a-zA-Z]+\d+']
+  _shot:  ['shot\d+', 'sht\d+']
+  _layer: ['layer[a-zA-Z0-9]+', 'lyr[a-zA-Z0-9]+']
+  _v:     ['v']
+  _v_num: ['0\d\d']
+  _ext:   ['exr', 'jpg']
+
+words:
+  scene_null:
+    items: [_sep, _null, _scn_h]
+    flags: 0
+    capture: no_cap
+    restricted: false
+  scene:
+    items: [_scn_h, _scene, _dot]
+    flags: 0
+    capture: cap
+    restricted: true
+  shot:
+    items: [_sep, _shot, _sep]
+    flags: 0
+    capture: cap
+    restricted: true
+  layer:
+    items: [_sep, _layer, _sep]
+    flags: 0
+    capture: cap
+    restricted: true
+  ver_null:
+    items: [_sep, _null, _v]
+    flags: 0
+    capture: cap
+    restricted: true
+  version:
+    items: [_v, _v_num, _dot]
+    flags: 0
+    capture: cap
+    restricted: true
+  extension:
+    items: [_dot, _ext, _end]
+    flags: 0
+    capture: cap
+    restricted: true
+
+phrases:
+  a_scene:
+    items: [scene_null, scene]
+    flags: 0
+    linking: true
+  a_version:
+    items: [ver_null, version]
+    flags: 0
+    linking: true
+  shot_element:
+    items: [shot, layer]
+    flags: 0
+    linking: true
+
+# master phrase
+master_phrase:
+  filename:
+    items: [a_scene, shot, layer, a_version, extension]
+    flags: 0
+    linking: true

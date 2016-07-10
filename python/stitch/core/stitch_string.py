@@ -1,9 +1,10 @@
 import re
 from collections import OrderedDict
+import yaml
 import numpy
 import pandas
 from pandas import DataFrame, Series
-from stitch.core.utils import Base
+from stitch.core.utils import *
 from stitch.core.stitch_frame import StitchFrame
 from stitch.core.stitch_phrase import StitchPhrase, StitchWord
 # ------------------------------------------------------------------------------
@@ -21,63 +22,67 @@ Author:
 '''
 
 class StitchString(Base):
-	def __init__(self, data=None):
-		self.data = data
-		self._charset = {}
+	def __init__(self, source=None, data=None):
+		self._data = data
 		self._elements = {}
 		self._master_phrase = None
 		if data != None:
 			self.generate_grammar
 
-	def _process_data(self, data):
-		data.fillna('', inplace=True)
+		if source:
+			self.from_yaml(source)
 
-		# remove whitespace characters
-		data['type'] = data['type'].apply(lambda x: x.strip(' '))
-		data['descriptor'] = data['descriptor'].apply(lambda x: x.strip(' '))
-		data['capture'] = data['capture'].apply(lambda x: x.strip(' '))
+	def from_yaml(self, source):
+		lex = None
+		with open(source, 'r') as f:
+			lex = yaml.load(f)
+		lut = lex['vars']
 
-		# determine capture patterns
-		mask = data['type'] == 'capture'
-		data['items'][mask] = data['items'][mask].apply(lambda x: x.split(','))
-		data['items'][mask] = data['items'][mask].apply(lambda x: [int(y) for y in x])
-		caps = {}
-		for i, row in data[mask].iterrows():
-			caps[row['descriptor']] = row['items']
-		self._captures = caps
-		mask = data['capture'].apply(lambda x: x in caps)
-		data['capture'][mask] = data['capture'][mask].apply(lambda x: caps[x])
+		data = []
+		for word, val in lex['words'].iteritems():
+			val['items'] = [ lut[x] for x in val['items'] ]
+			val['capture'] = lut[val['capture']]
+			val['descriptor'] = word
+			val['type'] = 'word'
+			data.append(val)
 
-		# determine characater set
-		mask = data['type'] == 'charset'
-		data['items'][mask] = data['items'][mask].apply(lambda x: eval('[' + x + ']'))
-		charset = {}
-		for i, row in data[mask].iterrows():
-			charset[row['descriptor']] = row['items']
-		self._charset = charset
+		for phrase, val in lex['phrases'].iteritems():
+			val['descriptor'] = phrase
+			val['type'] = 'phrase'
+			data.append(val)
 
-		# transfer word items to respective component columns and swap with charset equivalents
-		mask = data['type'].apply(lambda x: x in ['word', 'phrase', 'compound_phrase', 'master'])
-		data['items'][mask] = data['items'][mask].apply(lambda x: re.split(' *', x))
+		for phrase, val in lex['master_phrase'].iteritems():
+			val['descriptor'] = phrase
+			val['type'] = 'master'
+			data.append(val)
+
+		data = DataFrame(data)
+
 		data['determiners'] = None
 		data['tokens'] = None
 		data['terminators'] = None
-
-		mask = data['type'] == 'word'
-		data['determiners'][mask] = data['items'][mask].apply(lambda x: charset[x[0]])
-		data['tokens'][mask]      = data['items'][mask].apply(lambda x: charset[x[1]])
-		data['terminators'][mask] = data['items'][mask].apply(lambda x: charset[x[2]])
-
-		data['flags']    = data['flags'].apply(lambda x: 0 if x == '' else int(x))
+		mask = data[data['type'] == 'word']
+		data.loc[mask.index, 'determiners'] = mask['items'].apply(lambda x: x[0])
+		data.loc[mask.index,      'tokens'] = mask['items'].apply(lambda x: x[1])
+		data.loc[mask.index, 'terminators'] = mask['items'].apply(lambda x: x[2])
 		data['elements'] = data['items']
-		mask = data['type'].apply(lambda x: x in ['charset', 'capture'])
-		data['elements'][mask] = None
 
-		return data
+		cols = [
+			'type',
+			'descriptor',
+			'items',
+			'flags',
+			'capture',
+			'restricted',
+			'linking',
+			'determiners',
+			'tokens',
+			'terminators',
+			'elements'
+		]
+		data = data[cols]
 
-	def read_csv(self, csv):
-		data = pandas.read_csv(csv, sep='\t', quotechar="'")
-		self.data = self._process_data(data)
+		self._data = data
 		self.generate_grammar()
 
 	def generate_grammar(self):
@@ -99,7 +104,7 @@ class StitchString(Base):
 			elem = [self._elements[x] for x in elem]
 			self._elements[desc] = StitchPhrase(desc, elem, linking=link)
 
-		data = self.data
+		data = self._data
 		word_data = data[data['type'] == 'word']
 		for i, row in word_data.iterrows():
 			add_word(row)
@@ -123,7 +128,7 @@ class StitchString(Base):
 	def parse(self, string):
 		self._master_phrase.parse(string)
 
-	def diagnose(self, string, output='DataFrame'):
+	def diagnose(self, string, as_dataframe=True):
 		def conform(dict_):
 			for k, v in dict_.iteritems():
 				if k in ['mutation', 'element_order']:
@@ -143,12 +148,12 @@ class StitchString(Base):
 			return items
 
 		diagnosis = self._master_phrase.diagnose(string)
-		if output == 'DataFrame':
+		if as_dataframe:
 			data = conform(diagnosis)
 			data = interpret_nested_dict(data, lambda x: convert(x))
 			sdf = StitchFrame()
 			sdf.from_nested_dict(data)
-			return sdf.data
+			return sdf._data
 		else:
 			return diagnosis
 

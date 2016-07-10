@@ -16,9 +16,8 @@ from stitch.core.stitch_frame import StitchFrame
 '''
 
 class ProbeAPI(Base):
-	def __init__(self, backingstore, updates='automatic', name=None):
-		super(ProbeAPI, self).__init__(name=name)
-		self._cls = 'ProbeAPI'
+	def __init__(self, backingstore, updates='automatic'):
+		super(ProbeAPI, self).__init__()
 
 		if updates not in ['manual', 'automatic']:
 			raise NameError('Improper update mode supplied. Should be manual or automatic. Value provided: ' + updates)

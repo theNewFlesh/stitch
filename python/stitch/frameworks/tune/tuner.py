@@ -21,7 +21,6 @@ from stitch.core.stitch_lut import StitchLUT
 class Tuner(Base):
 	def __init__(self):
 		super(Tuner, self).__init__()
-		self._cls = 'Tuner'
 		self._config = {}
 		self._config_path = None
 		self._lut = None

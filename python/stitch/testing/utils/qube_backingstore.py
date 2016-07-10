@@ -33,14 +33,11 @@ class QubeBackingStore(BackingStore):
 						fields=[],
 						filters={},
 						id=None,
-						name=None,
 						status=None,
 						subjobs=False,
 						embed_graphs=False):
 
 		super(QubeBackingStore, self).__init__(name=name)
-		self._cls = 'QubeBackingStore'
-
 		self._jobinfo = jobinfo
 		self._hostinfo = hostinfo
 		self._supervisor = supervisor
@@ -49,7 +46,6 @@ class QubeBackingStore(BackingStore):
 		self._fields = fields
 		self._filters = filters
 		self._id = id
-		self._name = name
 		self._status = status
 		self._subjobs = subjobs
 		self._embed_graphs = embed_graphs

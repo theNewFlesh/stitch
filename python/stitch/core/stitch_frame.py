@@ -1,5 +1,6 @@
 from __future__ import with_statement
 import re
+import os
 from itertools import *
 from collections import OrderedDict
 import pandas as pd
@@ -267,7 +268,7 @@ class StitchFrame(Base):
 
     # regex
     def regex_match(self, pattern, group=0, ignore_case=False, columns=[], errors=False):
-        # May be deprecated in favor of spql_search
+        # May be deprecated in favor of search
         '''Apply regular expression matches to all DataFrame elements
 
         Args:
@@ -297,7 +298,7 @@ class StitchFrame(Base):
         return self.applymap(func, columns, errors)
 
     def regex_search(self, pattern, group=0, ignore_case=False, columns=[], errors=False):
-        # May be deprecated in favor of spql_search
+        # May be deprecated in favor of search
         '''Apply regular expression searches to all DataFrame elements
 
         Args:
@@ -845,7 +846,7 @@ class StitchFrame(Base):
                         col = r
 
                     try:
-                        data.loc[ind, 'values'] = val_func(data.loc[ind, 'values'])
+                        data.loc[ind, 'value'] = val_func(data.loc[ind, 'value'])
                     except:
                         continue
 
@@ -994,6 +995,39 @@ class StitchFrame(Base):
         self._data = output
         return self
 
+    def from_walk(self, source, aggregate=False, skip_regex='\.DS_Store'):
+        index = []
+        values = []
+        for root, dirs, files in os.walk(source):
+            for file in filter(lambda x: not re.search(skip_regex, x), files):
+                ind = filter(lambda x: x != '', re.split(os.sep, root))
+                index.append(ind)
+                values.append(file)
+
+        sizes = map(len, index)
+        max_ = max(sizes)
+        sizes = [max_ - s for s in sizes]
+        index = [i + ['-->']*s for i, s in zip(index, sizes)]
+        cols = ['i' + str(i).zfill(2) for i in range(max_)]
+        data = DataFrame(index, columns=cols)
+        data['value'] = values
+
+        if aggregate:
+            x = DataFrame()
+            x['index'] = data[cols].apply(
+                lambda row: reduce(
+                    lambda x,y: os.path.join(x,y), row.tolist()
+                ), axis=1
+            )
+            x['value'] = data.value
+            x = x.groupby('index').agg(lambda x: x.tolist())
+            index = Series(x.index).apply(lambda x: x.split(os.sep)).tolist()
+            data = DataFrame(index, columns=cols)
+            data['value'] = x.value.tolist()
+
+        self._data = data
+        return self
+
     def from_nested_dict(self, item, index=False, justify='left'):
         '''Reads nested dictionary into a DataFrame
 
@@ -1015,7 +1049,7 @@ class StitchFrame(Base):
         else:
             index = nested_dict_to_index(item, justify=justify)
             data = DataFrame(index=index)
-        data['values'] = values
+        data['value'] = values
         mask = data.apply(lambda x: x != 'null')
         mask = mask[mask].dropna()
         data = data.ix[mask.index]
@@ -1026,12 +1060,10 @@ class StitchFrame(Base):
         return self
 
     def to_nested_dict(self):
-        if 'index_00' in self._data.columns:
-            temp = self._data.values.tolist()
-            matrix = []
-            for row in temp:
-                matrix.append([x for x in ifilter(lambda x: x != '-->', row)])
-            return matrix_to_nested_dict(matrix)
+        matrix = []
+        for row in self._data.values.tolist():
+            matrix.append(list(filter(lambda x: x != '-->', row)))
+        return matrix_to_nested_dict(matrix)
 
     def to_inverted_dict(self, columns, key, prototype=True):
         '''Converts a list of columns containing dict or dict matrices to an inverted index
@@ -1073,7 +1105,7 @@ class StitchFrame(Base):
     # --------------------------------------------------------------------------
 
     # search
-    def spql_search(self, string, field_operator='=='):
+    def search(self, string, field_operator='=='):
         '''Query data using the Stitch Query Language (stitchql)
 
         Args:
@@ -1090,7 +1122,7 @@ class StitchFrame(Base):
             1  carla   22
             2   jack   57
 
-            >>> sf.spql_search('(name) is (abe) | (age) < (50)')
+            >>> sf.search('(name) is (abe) | (age) < (50)')
             >>> print sf.data
                 name  age
             0    abe   15

@@ -55,13 +55,13 @@ class StitchWord(Base):
 			raw = re.sub('(?<!\\\\)[.?+*^$\[\]]', '', raw)
 			return raw
 
-		self.data = data
+		self._data = data
 		if not data:
 			markers = determiners + terminators
 			markers = [reduce(x) for x in markers]
 			markers = DataFrame(markers, columns=['raw'])
 			markers['length'] = markers['raw'].apply(lambda x: len(x))
-			markers.sort(columns=['length'], inplace=True)
+			markers.sort_values('length', inplace=True)
 			markers = markers['raw'].unique().tolist()
 			markers_ = '[^' + ''.join(markers) + ']+'
 
@@ -83,7 +83,7 @@ class StitchWord(Base):
 							  [ 'token',       descriptor,   tokens[0],       tokens,      capture[1]],
 							  [ 'terminator',  t_desc,       terminators[0],  terminators, capture[2]]],
 							 columns=cols)
-			data['class'] = self._cls
+			data['class'] = self.__class__.__name__
 			data['phrase'] = descriptor
 			data['word'] = descriptor
 			data['flags'] = flags
@@ -97,19 +97,19 @@ class StitchWord(Base):
 					'flags', 'mutation', 'mutations', 'total_mutations',
 					'restricted', 'capture', 'conflict', 'raw', 'regex']
 			data = data[cols]
-			self.data = data
+			self._data = data
 			self.mutate([0,0,0])
 			self._backup = data.copy()
 
-		self._descriptor = self.data[self.data['component'] == 'determiner']['phrase'].item()
+		self._descriptor = self._data[self._data['component'] == 'determiner']['phrase'].item()
 
 
 	def reset(self):
-		self.data = self._backup.copy()
+		self._data = self._backup.copy()
 
 	def mutate(self, mutation):
 		def _mutate(component, integer):
-			data = self.data
+			data = self._data
 			mask = data[data['component'] == component]
 			mutation = mask['mutations'].item()[integer]
 			data.loc[mask.index, 'raw'] = mutation
@@ -121,15 +121,15 @@ class StitchWord(Base):
 		mutation = _mutation_handler(mutation)
 		for key, val in mutation.iteritems():
 			_mutate(key, val)
-		return self.data
+		return self._data
 
 	def nullify(self):
 		self.mutate([-1, -2, -1])
-		self.data['capture'] = False
+		self._data['capture'] = False
 
 	@property
 	def regex(self):
-		data = self.data
+		data = self._data
 		regex = data['regex'].tolist()
 		regex = ''.join(regex)
 		regex = re.compile(regex, flags=data.ix[1]['flags'])
@@ -138,9 +138,9 @@ class StitchWord(Base):
 	@property
 	def grok(self):
 		# Logstash grok support
-		word = self._descriptor.upper() + ' (' + self.data['raw'].ix[1] + ')'
+		word = self._descriptor.upper() + ' (' + self._data['raw'].ix[1] + ')'
 
-		if self.data['capture'].ix[1]:
+		if self._data['capture'].ix[1]:
 			word = '_' + word
 			repl = '%{_' + self._descriptor.upper()
 			repl += ':' + self._descriptor.lower()
@@ -181,7 +181,7 @@ class StitchWord(Base):
 			return False
 
 		def mutate_test(component, mutate):
-			data = self.data
+			data = self._data
 			data = data[data['component'] == component]
 			total = data['total_mutations']
 			if self._restricted:
@@ -256,7 +256,7 @@ class StitchPhrase(Base):
 		self._descriptor = descriptor
 		self._linking = linking
 
-		self.data = data
+		self._data = data
 		if not data:
 			self.construct_data()
 
@@ -267,15 +267,15 @@ class StitchPhrase(Base):
 
 		data = DataFrame(columns=cols)
 		for element in self._elements.values():
-			temp = element.data.copy()
+			temp = element._data.copy()
 			data = pandas.concat([data, temp])
 		data.reset_index(drop=True, inplace=True)
-		self.data = data
+		self._data = data
 		self.determine_conflicts()
 		self.markers
 
 	def determine_conflicts(self):
-		data = self.data
+		data = self._data
 		items = data[data['component'] != 'token']
 		items = items['regex'].tolist()
 		items = items[1:-1]
@@ -301,17 +301,17 @@ class StitchPhrase(Base):
 		conflicts.append(False)
 
 		data['conflict'] = conflicts
-		return self.data
+		return self._data
 
 	# may be removed
 	@property
 	def markers(self):
-		data = self.data
+		data = self._data
 		markers = data[data['component'] != 'token']
 		# markers = markers[markers['class'] == 'StitchWord']
 		markers = markers[['raw']]
 		markers['length'] = markers['raw'].apply(lambda x: len(x))
-		markers.sort(columns=['length'], ascending=False, inplace=True)
+		markers.sort_values('length', ascending=False, inplace=True)
 		markers = markers['raw'].unique().tolist()
 		self._markers = markers
 		return '|'.join(self._markers)
@@ -358,14 +358,14 @@ class StitchPhrase(Base):
 		return substrings
 
 	def nullify(self):
-		self.data['capture'] = False
+		self._data['capture'] = False
 		self.mutate([-1, -1, -1])
 		self.mutate([-2, -1, -1], index=[0])
 
 	def mutate(self, mutation, mode='all', index=None):
 		def _mutate(data, component, integer):
 			mask = data[data['component'] == component]
-			data = self.data
+			data = self._data
 
 			data.loc[mask.index, 'mutation'] = integer
 
@@ -382,7 +382,7 @@ class StitchPhrase(Base):
 
 		mutation = _mutation_handler(mutation)
 
-		data = self.data
+		data = self._data
 		if index.__class__.__name__ != 'NoneType':
 			data = data.ix[index]
 		if mode == 'conflict':
@@ -404,7 +404,7 @@ class StitchPhrase(Base):
 		if len(data) > 0:
 			for key, val in mutation.iteritems():
 				_mutate(data, key, val)
-		return self.data
+		return self._data
 
 	@property
 	def regex(self):
@@ -415,7 +415,7 @@ class StitchPhrase(Base):
 				return wild_re.sub('.', regex)
 			return regex
 
-		data = self.data
+		data = self._data
 		if self._linking:
 			# mask restricted
 			rmask = data['restricted'].tolist()
@@ -583,8 +583,9 @@ class StitchPhrase(Base):
 					o['error'] = True
 
 				# replace element result with marker
-				tail = element.data.tail(1)['regex']
-				element.data.tail(1)['regex'] = ''
+				tail = element._data.tail(1)['regex']
+				t = element._data.tail(1)
+				element._data.loc[t.index, 'regex'] = ''
 				padded_re = SEP + element.regex.pattern
 				padded_re = re.compile(padded_re)
 				found = padded_re.search(help_str)
@@ -592,7 +593,8 @@ class StitchPhrase(Base):
 					help_str = padded_re.sub(SEP + name + SEP, help_str)
 				else:
 					help_str = element.regex.sub(SEP + name + SEP, help_str)
-				element.data.tail(1)['regex'] = tail
+				e = element._data.tail(1)
+				element._data.loc[e.index, 'regex'] = tail
 
 			# test phrase with mutated elements in original order
 			self.construct_data()

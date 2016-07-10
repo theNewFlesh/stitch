@@ -62,7 +62,7 @@ def run():
 					prompt=prompt)
 
 	if args.search:
-		cli._api.spql_search(args.search, display_fields=args.displayfields)
+		cli._api.search(args.search, display_fields=args.displayfields)
 		print cli.results
 	else:
 		cli.cmdloop()

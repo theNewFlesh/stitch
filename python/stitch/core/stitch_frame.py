@@ -78,6 +78,7 @@ class StitchFrame(Base):
         else:
             self._data = DataFrame(data=data, index=index, columns=columns, dtype=dtype, copy=copy)
     # --------------------------------------------------------------------------
+
     def applymap(self, func, columns=[], errors=False):
         data = self._data
         func_ = func

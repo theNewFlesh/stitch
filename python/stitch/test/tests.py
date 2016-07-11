@@ -37,7 +37,32 @@ _JSON = dict(
 )
 _JSON = [_JSON]
 _JSON = [_JSON, _JSON, _JSON]
+
+_DATA = [
+    [1,2,3],
+    [4,5,6],
+    [7,8,9]
+]
 # ------------------------------------------------------------------------------
+
+def frame_applymap_001_test():
+    data = StitchFrame(_DATA)\
+        .applymap(lambda x: 'test', columns=[0])\
+        .to_dataframe().loc[0, 0]
+    assert(data == 'test')
+
+def frame_flatten_001_test():
+    data = StitchFrame(_JSON)\
+        .flatten(prefix=False)\
+        .flatten()\
+        .flatten()\
+        .flatten('a2_b2_c4', dtype=list)\
+        .flatten('a2_b2_c5', prefix=False)\
+        .flatten([0,1], prefix=False)\
+        .to_dataframe().ix[0].T.tolist()
+    assert(data == [1, 2, 3, 'a', 'b', 'c', 'd', 'e', 'f', 'a', 'b', 'c', 'd',
+        [[1, 2, 3], [4, 5, 6], [7, 8, 9]], 'b3']
+    )
 
 def string_parse_001_test():
     st = StitchString(_YAML)
@@ -121,20 +146,6 @@ def string_parse_006_test():
         'ver_null': '',
         'version': '001'
         }
-    )
-
-def frame_flatten_001_test():
-    st = StitchFrame(_JSON)\
-        .flatten(prefix=False)\
-        .flatten()\
-        .flatten()\
-        .flatten('a2_b2_c4', dtype=list)\
-        .flatten('a2_b2_c5', prefix=False)\
-        .flatten([0,1], prefix=False)
-
-    etl = st.to_dataframe().ix[0].T.tolist()
-    assert(etl == [1, 2, 3, 'a', 'b', 'c', 'd', 'e', 'f', 'a', 'b', 'c', 'd',
-        [[1, 2, 3], [4, 5, 6], [7, 8, 9]], 'b3']
     )
 # ------------------------------------------------------------------------------
 

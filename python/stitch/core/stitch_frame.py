@@ -1029,35 +1029,6 @@ class StitchFrame(Base):
         self._data = data
         return self
 
-    def to_hierarchical(self, columns=[]):
-        data = self._data
-        cols = data.columns.tolist()
-        cols = filter(lambda x: re.search('k\d\d\d', x), cols)
-        if columns:
-            cols = columns
-        data.set_index(cols, inplace=True)
-
-        self._data = data
-        return self
-
-    def to_columns(self):
-        data = self._data
-        keys = DataFrame(data.index.tolist())
-        vals = DataFrame(data.values)
-        data = pd.concat(
-            [keys, vals],
-            ignore_index=True,
-            axis=1
-        )
-
-        k = ['k' + str(x).zfill(3) for x in range(keys.shape[1])]
-        v = ['v' + str(x).zfill(3) for x in range(vals.shape[1])]
-        data.set_axis(1, k+v)
-
-        self._data = data
-        return self
-
-
     def from_nested_dict(self, item, justify='left'):
         '''Reads nested dictionary into a DataFrame
 
@@ -1083,6 +1054,34 @@ class StitchFrame(Base):
         data = data.ix[mask.index]
         if index:
             data.reset_index(drop=True)
+
+        self._data = data
+        return self
+
+    def to_hierarchical(self, columns=[]):
+        data = self._data
+        cols = data.columns.tolist()
+        cols = filter(lambda x: re.search('k\d\d\d', x), cols)
+        if columns:
+            cols = columns
+        data.set_index(cols, inplace=True)
+
+        self._data = data
+        return self
+
+    def to_columns(self):
+        data = self._data
+        keys = DataFrame(data.index.tolist())
+        vals = DataFrame(data.values)
+        data = pd.concat(
+            [keys, vals],
+            ignore_index=True,
+            axis=1
+        )
+
+        k = ['k' + str(x).zfill(3) for x in range(keys.shape[1])]
+        v = ['v' + str(x).zfill(3) for x in range(vals.shape[1])]
+        data.set_axis(1, k+v)
 
         self._data = data
         return self

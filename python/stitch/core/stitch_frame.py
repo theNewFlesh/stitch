@@ -847,7 +847,7 @@ class StitchFrame(Base):
                         col = r
 
                     try:
-                        data.loc[ind, 'value'] = val_func(data.loc[ind, 'value'])
+                        data.loc[ind, 'v000'] = val_func(data.loc[ind, 'v000'])
                     except:
                         continue
 
@@ -1009,9 +1009,9 @@ class StitchFrame(Base):
         max_ = max(sizes)
         sizes = [max_ - s for s in sizes]
         index = [i + ['-->']*s for i, s in zip(index, sizes)]
-        cols = ['i' + str(i).zfill(2) for i in range(max_)]
+        cols = ['k' + str(i).zfill(3) for i in range(max_)]
         data = DataFrame(index, columns=cols)
-        data['value'] = values
+        data['v000'] = values
 
         if aggregate:
             x = DataFrame()
@@ -1020,16 +1020,45 @@ class StitchFrame(Base):
                     lambda x,y: os.path.join(x,y), row.tolist()
                 ), axis=1
             )
-            x['value'] = data.value
+            x['v000'] = data.v000
             x = x.groupby('index').agg(lambda x: x.tolist())
             index = Series(x.index).apply(lambda x: x.split(os.sep)).tolist()
             data = DataFrame(index, columns=cols)
-            data['value'] = x.value.tolist()
+            data['v000'] = x.v000.tolist()
 
         self._data = data
         return self
 
-    def from_nested_dict(self, item, index=False, justify='left'):
+    def to_hierarchical(self, columns=[]):
+        data = self._data
+        cols = data.columns.tolist()
+        cols = filter(lambda x: re.search('k\d\d\d', x), cols)
+        if columns:
+            cols = columns
+        data.set_index(cols, inplace=True)
+
+        self._data = data
+        return self
+
+    def to_columns(self):
+        data = self._data
+        keys = DataFrame(data.index.tolist())
+        vals = DataFrame(data.values)
+        data = pd.concat(
+            [keys, vals],
+            ignore_index=True,
+            axis=1
+        )
+
+        k = ['k' + str(x).zfill(3) for x in range(keys.shape[1])]
+        v = ['v' + str(x).zfill(3) for x in range(vals.shape[1])]
+        data.set_axis(1, k+v)
+
+        self._data = data
+        return self
+
+
+    def from_nested_dict(self, item, justify='left'):
         '''Reads nested dictionary into a DataFrame
 
         Args:
@@ -1041,16 +1070,14 @@ class StitchFrame(Base):
         '''
         values = flatten_nested_dict(item).values()
         data = None
-        if index:
-            index = nested_dict_to_matrix(item, justify=justify)
-            columns = []
-            for i, item in enumerate(index[0]):
-                columns.append("index_" + str(i).zfill(2))
-            data = DataFrame(index, columns=columns)
-        else:
-            index = nested_dict_to_index(item, justify=justify)
-            data = DataFrame(index=index)
-        data['value'] = values
+
+        index = nested_dict_to_matrix(item, justify=justify)
+        columns = []
+        for i, item in enumerate(index[0]):
+            columns.append('k' + str(i).zfill(3))
+        data = DataFrame(index, columns=columns)
+
+        data['v000'] = values
         mask = data.apply(lambda x: x != 'null')
         mask = mask[mask].dropna()
         data = data.ix[mask.index]

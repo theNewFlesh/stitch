@@ -533,7 +533,7 @@ def as_inverted_dict(item, key, prototype=True):
 		return _as_inverted_dict(item, key)
 # ------------------------------------------------------------------------------
 
-def index_to_matrix(index):
+def index_to_matrix(index, sep=None):
 	'''Convert a index to a matrix
 
 	Example:
@@ -547,12 +547,20 @@ def index_to_matrix(index):
 		[['A', 'B', 'C']
 		 ['a', 'b', 'c']]
 	'''
-	if index.__class__.__name__ == 'MultiIndex':
+	if sep:
+		index = map(lambda x: x.split(sep), index.tolist())
+		max_ = max(map(len, index))
+		index = map(lambda x: x + (['-->'] * (max_ - len(x))), index)
+		index = np.array(index).T.tolist()
+
+	elif index.__class__.__name__ == 'MultiIndex':
 		index = [list(x) for x in index]
 		index = DataFrame(index)
 		index = [x[1].tolist() for x in index.iteritems()]
+
 	else:
 		index = [index.tolist()]
+
 	return index
 # ------------------------------------------------------------------------------
 

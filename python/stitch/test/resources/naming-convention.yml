@@ -1,0 +1,79 @@
+---
+vars:
+  # captures
+  cap:    [0, 1, 0]
+  no_cap: [0, 0, 0]
+
+  # charsets
+  _null:  ['']
+  _dot:   ['\.']
+  _end:   ['$']
+  _sep:   ['_']
+  _dash:  ['-']
+  _proj:  ['[a-z-]+\d*']
+  _desc:  ['desc', '[a-z0-9-]+']
+  _v:     ['v']
+  _v_num: ['\d\d\d']
+  _pass:  ['[a-z-]+\d*']
+  _f:     ['#', '']
+  _f_num: ['\d\d\d\d']
+  _ext:   ['exr|jpg|png|ixo|ma|mb|txt|py|readme|mel']
+
+words:
+  project:
+    items: [_null, _proj, _sep]
+    flags: 0
+    capture: cap
+    restricted: true
+  descriptor:
+    items: [_sep, _desc, _sep]
+    flags: 0
+    capture: cap
+    restricted: true
+  ver_null:
+    items: [_sep, _null, _v]
+    flags: 0
+    capture: no_cap
+    restricted: true
+  version:
+    items: [_v, _v_num, _sep]
+    flags: 0
+    capture: cap
+    restricted: true
+  pass:
+    items: [_sep, _pass, _sep]
+    flags: 0
+    capture: cap
+    restricted: true
+  frame_null:
+    items: [_sep, _null, _f]
+    flags: 0
+    capture: no_cap
+    restricted: true
+  frame:
+    items: [_f, _f_num, _dot]
+    flags: 0
+    capture: cap
+    restricted: true
+  extension:
+    items: [_dot, _ext, _end]
+    flags: 0
+    capture: cap
+    restricted: true
+
+phrases:
+  a_version:
+    items: [ver_null, version]
+    flags: 0
+    linking: true
+  a_frame:
+    items: [frame_null, frame]
+    flags: 0
+    linking: true
+
+# master phrase
+master_phrase:
+  filename:
+    items: [project, descriptor, a_version, pass, a_frame, extension]
+    flags: 0
+    linking: true

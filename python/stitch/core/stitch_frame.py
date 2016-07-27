@@ -1003,28 +1003,54 @@ class StitchFrame(Base):
             for file in filter(lambda x: not re.search(skip_regex, x), files):
                 ind = filter(lambda x: x != '', re.split(os.sep, root))
                 index.append(ind)
-                values.append(file)
+
+                fullpath = os.path.join(root, file)
+
+                datum = os.stat(fullpath)
+                mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime = os.stat(fullpath)
+                datum = dict(
+                    # mode=mode,
+                    # ino=ino,
+                    # dev=dev,
+                    # nlink=nlink,
+                    uid=uid,
+                    gid=gid,
+                    size=size,
+                    last_access=atime,
+                    modified=mtime,
+                    creation=ctime
+                )
+
+                datum['filename'] = file
+                datum['fullpath'] = fullpath
+                values.append(datum)
 
         sizes = map(len, index)
         max_ = max(sizes)
         sizes = [max_ - s for s in sizes]
         index = [i + ['-->']*s for i, s in zip(index, sizes)]
-        cols = ['k' + str(i).zfill(3) for i in range(max_)]
-        data = DataFrame(index, columns=cols)
-        data['v000'] = values
+        kcols = ['k' + str(i).zfill(3) for i in range(max_)]
+        keys = DataFrame(index)
+        vals = DataFrame(values)
+        vcols = vals.columns.tolist()
+        data = pd.concat([keys, vals], axis=1, ignore_index=True)
+        data.columns = kcols + vcols
+        cols = kcols + ['filename', 'fullpath', 'size', 'modified', 'creation',
+            'last_access', 'uid', 'gid']
+        data = data[cols]
 
         if aggregate:
             x = DataFrame()
-            x['index'] = data[cols].apply(
+            x['index'] = data[kcols].apply(
                 lambda row: reduce(
                     lambda x,y: os.path.join(x,y), row.tolist()
                 ), axis=1
             )
-            x['v000'] = data.v000
+            x['filename'] = data.filename
             x = x.groupby('index').agg(lambda x: x.tolist())
             index = Series(x.index).apply(lambda x: x.split(os.sep)).tolist()
-            data = DataFrame(index, columns=cols)
-            data['v000'] = x.v000.tolist()
+            data = DataFrame(index, columns=kcols)
+            data['filename'] = x.filename.tolist()
 
         self._data = data
         return self

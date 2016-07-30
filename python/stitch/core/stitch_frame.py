@@ -1002,7 +1002,7 @@ class StitchFrame(Base):
         values = []
         for root, dirs, files in os.walk(source):
             for file in filter(lambda x: not re.search(skip_regex, x), files):
-                ind = filter(lambda x: x != '', re.split(os.sep, root))
+                ind = list(filter(lambda x: x != '', re.split(os.sep, root)))
                 index.append(ind)
 
                 fullpath = os.path.join(root, file)
@@ -1026,7 +1026,7 @@ class StitchFrame(Base):
                 datum['fullpath'] = fullpath
                 values.append(datum)
 
-        sizes = map(len, index)
+        sizes = list(map(len, index))
         max_ = max(sizes)
         sizes = [max_ - s for s in sizes]
         index = [i + ['-->']*s for i, s in zip(index, sizes)]
@@ -1066,7 +1066,7 @@ class StitchFrame(Base):
         Returns:
             DataFrame
         '''
-        values = flatten_nested_dict(item).values()
+        values = list(flatten_nested_dict(item).values())
         data = None
 
         index = nested_dict_to_matrix(item, justify=justify)
@@ -1088,7 +1088,7 @@ class StitchFrame(Base):
     def to_hierarchical(self, columns=[]):
         data = self._data
         cols = data.columns.tolist()
-        cols = filter(lambda x: re.search('k\d\d\d', x), cols)
+        cols = list(filter(lambda x: re.search('k\d\d\d', x), cols))
         if columns:
             cols = columns
         data.set_index(cols, inplace=True)

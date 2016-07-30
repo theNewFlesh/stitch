@@ -304,7 +304,7 @@ def flatten_nested_dict(item, separator='_', null='null'):
 	'''
 	temp = OrderedDict()
 	def _flatten_nested_dict(item, name):
-		for key, val in item.iteritems():
+		for key, val in item.items():
 			if type(val) is dict and val != {}:
 				temp[name + separator + str(key)] = null
 				_flatten_nested_dict(val, name + separator + str(key))
@@ -313,7 +313,7 @@ def flatten_nested_dict(item, separator='_', null='null'):
 	_flatten_nested_dict(item, '__null__')
 	output = OrderedDict()
 	header = 8 + len(separator)
-	for key, value in temp.iteritems():
+	for key, value in temp.items():
 		output[key[header:]] = value
 	return output
 
@@ -414,7 +414,7 @@ def interpret_nested_dict(item, predicate):
 		}
 	'''
 	def _interpret_nested_dict(item, cursor):
-		for key, val in item.iteritems():
+		for key, val in item.items():
 			if type(val) is dict and val != {}:
 				cursor[key] = _interpret_nested_dict(val, val)
 			else:
@@ -429,7 +429,7 @@ def recurse(data, nondict_func=lambda store, key, val: val,
 	def _recurse(data, store):
 		if not is_dictlike(data):
 			return data
-		for key, val in data.iteritems():
+		for key, val in data.items():
 			if is_dictlike(val):
 				store[key_func(key)] = _recurse(dict_func(store, key, val), {})
 			else:
@@ -441,7 +441,7 @@ def merge(data, store, merge_func=lambda store, key, val: [val, store[key]] ):
 	def _merge(data, store):
 		if not is_dictlike(data):
 			return store
-		for key, val in data.iteritems():
+		for key, val in data.items():
 			if store.has_key(key):
 				if not isinstance(val, dict) and not isinstance(store[key], dict):
 					store[key] = merge_func(store, key, val)
@@ -559,7 +559,7 @@ def index_to_matrix(index, sep=None):
 	elif index.__class__.__name__ == 'MultiIndex':
 		index = [list(x) for x in index]
 		index = DataFrame(index)
-		index = [x[1].tolist() for x in index.iteritems()]
+		index = [x[1].tolist() for x in index.items()]
 
 	else:
 		index = [index.tolist()]

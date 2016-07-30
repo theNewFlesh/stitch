@@ -89,10 +89,11 @@ class StitchParser(Base):
 			for q in fragment:
 				query = {}
 				for key, value in q.asDict().items():
-					if key == 'operator':
-						query[key] = value
-					else:
-						query[key] = value.asList()
+					query[key] = value
+					# if key == 'operator':
+					# 	query[key] = value
+					# else:
+					# 	query[key] = value.asList()
 				compound_query.append(query)
 			results.append(compound_query)
 

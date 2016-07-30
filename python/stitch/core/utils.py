@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 from collections import OrderedDict, namedtuple
+from xattr import xattr
 # ------------------------------------------------------------------------------
 
 '''
@@ -24,25 +25,25 @@ class Base(object):
 	'''Generic base class'''
 	def _print_public(self):
 		'''Pretty print public methods and attributes'''
-		nonPublicRE = re.compile('^_')
+		non_public_re = re.compile('^_')
 		for item in dir(self):
-			found = nonPublicRE.match(item)
+			found = non_public_re.match(item)
 			if not found:
 				print(item)
 
 	def _print_semiprivate(self):
 		'''Pretty print semi-private methods and attributes'''
-		semiPrivateRE = re.compile('^_[^_]+')
+		semi_private_re = re.compile('^_[^_]+')
 		for item in dir(self):
-			found = semiPrivateRE.match(item)
+			found = semi_private_re.match(item)
 			if found:
 				print(item)
 
 	def _print_private(self):
 		'''Pretty print private methods and attributes'''
-		privateRE = re.compile('^__')
+		private_re = re.compile('^__')
 		for item in dir(self):
-			found = privateRE.match(item)
+			found = private_re.match(item)
 			if found:
 				print(item)
 # ------------------------------------------------------------------------------
@@ -667,6 +668,24 @@ def reduce_units(series, new_unit='-', min=0):
 	lut = dict(zip(old, new))
 	data = series.apply(lambda x: lut[x])
 	return data
+
+def get_xattr(fullpath):
+    return dict(xattr(fullpath).items())
+
+def set_xattr(fullpath, xattrs):
+    x = xattr(fullpath)
+    for k,v in xattrs.items():
+        x.set(
+            str(k).encode(),
+            str(v).encode()
+        )
+
+def remove_xattr(fullpath, xattrs):
+    if isinstance(xattrs, dict):
+        xattrs = xattrs.keys()
+    x = xattr(fullpath)
+    for k in xattrs:
+        x.remove(k)
 # ------------------------------------------------------------------------------
 
 def main():
@@ -711,7 +730,10 @@ __all__ = [
 	'list_to_lut',
 	'as_snakecase',
 	'nan_to_bottom',
-	'reduce_units'
+	'reduce_units',
+	'get_xattr',
+	'set_xattr',
+	'remove_xattr'
 ]
 
 if __name__ == '__main__':

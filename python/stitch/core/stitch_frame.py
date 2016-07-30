@@ -1007,9 +1007,8 @@ class StitchFrame(Base):
 
                 fullpath = os.path.join(root, file)
 
-                datum = os.stat(fullpath)
                 mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime = os.stat(fullpath)
-                datum = dict(
+                stat_ = dict(
                     # mode=mode,
                     # ino=ino,
                     # dev=dev,
@@ -1021,9 +1020,11 @@ class StitchFrame(Base):
                     modified=mtime,
                     creation=ctime
                 )
-
+                datum = {}
                 datum['filename'] = file
                 datum['fullpath'] = fullpath
+                datum['xattr'] = get_xattr(fullpath)
+                datum['stat'] = stat_
                 values.append(datum)
 
         sizes = list(map(len, index))
@@ -1036,8 +1037,7 @@ class StitchFrame(Base):
         vcols = vals.columns.tolist()
         data = pd.concat([keys, vals], axis=1, ignore_index=True)
         data.columns = kcols + vcols
-        cols = kcols + ['filename', 'fullpath', 'size', 'modified', 'creation',
-            'last_access', 'uid', 'gid']
+        cols = kcols + ['filename', 'fullpath', 'xattr', 'stat']
         data = data[cols]
 
         if aggregate:

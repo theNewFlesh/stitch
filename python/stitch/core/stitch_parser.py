@@ -1,3 +1,6 @@
+from __future__ import with_statement, print_function, absolute_import
+from itertools import *
+from functools import *
 from pyparsing import printables, nums
 from pyparsing import Word, Keyword, Or, Group
 from pyparsing import delimitedList, oneOf, OneOrMore, Suppress
@@ -59,16 +62,16 @@ class StitchParser(Base):
 
 	@property
 	def search_stats(self):
-		print '---------------------------------'
-		print ''
+		print('---------------------------------')
+		print('')
 		for i, cq in enumerate(self._last_search):
-			print 'COMPOUND QUERY: ' + str(i)
+			print('COMPOUND QUERY: ' + str(i))
 			for x, q in enumerate(cq):
-				print '  QUERY: ' + str(x)
+				print('  QUERY: ' + str(x))
 				for key, val in q.iteritems():
-					print '    {:>8} : {}'.format(key, val)
-			print '---------------------------------'
-			print ''
+					print('    {:>8} : {}'.format(key, val))
+			print('---------------------------------')
+			print('')
 
 	def search(self, string):
 		'''

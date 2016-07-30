@@ -1,3 +1,6 @@
+from __future__ import with_statement, print_function, absolute_import
+from itertools import *
+from functools import *
 import os
 import re
 import time
@@ -297,7 +300,7 @@ def stdout(subjobid, *extraSubjobids):
 
 def set_priority(job_ids, priority):
 	for job_id in job_ids:
-		print job_id, 'set to', priority
+		print(job_id, 'set to', priority)
 
 JOBINFO = _jobinfo(filters={}, agenda=True, subjobs=True, fields=None, callbacks=True, id=None, status=None)
 HOSTINFO = _hostinfo(filters={}, subjobs=True, fields=None, id=None, state=None, name=None)

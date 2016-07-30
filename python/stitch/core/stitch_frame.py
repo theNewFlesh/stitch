@@ -1,7 +1,8 @@
-from __future__ import with_statement
+from __future__ import with_statement, print_function, absolute_import
+from itertools import *
+from functools import *
 import re
 import os
-from itertools import *
 from collections import OrderedDict
 import pandas as pd
 from pandas import DataFrame, Series
@@ -47,10 +48,10 @@ class StitchFrame(Base):
 
         >>> sdf = StitchFrame(data=data, columns=columns)
 
-        >>> print sdf
+        >>> print(sdf)
         <stitch.core.stitch_frame.StitchFrame object at 0x10accfed0>
 
-        >>> print sf.data
+        >>> print(sf.data)
            name  age profession
         0   joe   12   mechanic
         1  bill   22    soldier
@@ -118,7 +119,7 @@ class StitchFrame(Base):
             DataFrame mask
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
                name  age profession
             0   joe   12   mechanic
             1  bill   22    soldier
@@ -126,14 +127,14 @@ class StitchFrame(Base):
             3  jane   43    teacher
 
             >>> mask = sf.is_iterable()
-            >>> print mask
+            >>> print(mask)
                name    age profession
             0  True  False       True
             1  True  False       True
             2  True  False       True
             3  True  False       True
 
-            >>> print sf.data[mask]
+            >>> print(sf.data[mask])
                name  age profession
             0   joe  NaN   mechanic
             1  bill  NaN    soldier
@@ -167,14 +168,14 @@ class StitchFrame(Base):
             DataFrame
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
                name  age profession
             0   joe   12   mechanic
             1  bill   22    soldier
             2   sue   65      pilot
             3  jane   43    teacher
 
-            >>> print sf.data.applymap(type)
+            >>> print(sf.data.applymap(type))
                        name                   age    profession
             0  <type 'str'>  <type 'np.int64'>  <type 'str'>
             1  <type 'str'>  <type 'np.int64'>  <type 'str'>
@@ -182,7 +183,7 @@ class StitchFrame(Base):
             3  <type 'str'>  <type 'np.int64'>  <type 'str'>
 
             >>> sf.as_type(str)
-            >>> print sf.data.applymap(type)
+            >>> print(sf.data.applymap(type))
                        name           age    profession
             0  <type 'str'>  <type 'str'>  <type 'str'>
             1  <type 'str'>  <type 'str'>  <type 'str'>
@@ -201,14 +202,14 @@ class StitchFrame(Base):
             DataFrame of iterable elements
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
                name  age profession
             0   joe   12   mechanic
             1  bill   22    soldier
             2   sue   65      pilot
             3  jane   43    teacher
 
-            >>> print sf.as_iterable()
+            >>> print(sf.as_iterable())
                name   age profession
             0   joe  [12]   mechanic
             1  bill  [22]    soldier
@@ -228,14 +229,14 @@ class StitchFrame(Base):
             DataFrame of coerced elements
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
                name age profession
             0   joe  12   mechanic
             1  bill  ()         {}
             2   sue  65       [{}]
             3        43    teacher
 
-            >>> print sf.coerce_nulls()
+            >>> print(sf.coerce_nulls())
                    name  age profession
                 0   joe   12   mechanic
                 1  bill  NaN        NaN
@@ -281,14 +282,14 @@ class StitchFrame(Base):
             DataFrame of regex matches
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
                name  age         profession
             0   joe   12  Airplane Mechanic
             1  bill   22            soldier
             2   sue   65              pilot
             3  jane   43            teacher
 
-            >>> print sf.regex_match('airplane (mechanic)', group=1, ignore_case=True)
+            >>> print(sf.regex_match('airplane (mechanic)', group=1, ignore_case=True))
                name  age profession
             0   joe   12   Mechanic
             1  bill   22    soldier
@@ -311,14 +312,14 @@ class StitchFrame(Base):
             DataFrame of regex searches
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
                name  age                      profession
             0   joe   12  Experimental Airplane Mechanic
             1  bill   22                         soldier
             2   sue   65                           pilot
             3  jane   43                         teacher
 
-            >>> print sf.regex_search('airplane (mechanic)', group=1, ignore_case=True)
+            >>> print(sf.regex_search('airplane (mechanic)', group=1, ignore_case=True))
                name  age profession
             0   joe   12   Mechanic
             1  bill   22    soldier
@@ -342,14 +343,14 @@ class StitchFrame(Base):
             DataFrame of regex substitutions
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
                name  age         profession
             0   joe   12  Airplane Mechanic
             1  bill   22            soldier
             2   sue   65              pilot
             3  jane   43            teacher
 
-            >>> print sf.regex_sub('airplane', 'Helicopter', ignore_case=True)
+            >>> print(sf.regex_sub('airplane', 'Helicopter', ignore_case=True))
                name  age           profession
             0   joe   12  Helicopter Mechanic
             1  bill   22              soldier
@@ -370,7 +371,7 @@ class StitchFrame(Base):
             DataFrame of with matched elements as lists of groups
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
                name  age           profession
             0   joe   12  Helicopter Mechanic
             1  bill   22              soldier
@@ -378,7 +379,7 @@ class StitchFrame(Base):
             3  jane   43              teacher
 
             >>> sf.regex_split('(helicopter) (.*)', ignore_case=True)
-            >>> print sf.data
+            >>> print(sf.data)
                name  age              profession
             0   joe   12  [Helicopter, Mechanic]
             1  bill   22                 soldier
@@ -399,14 +400,14 @@ class StitchFrame(Base):
             DataFrame with nan elements at the bottom
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
                name  age profession
             0   joe   12   mechanic
             1  bill  NaN        NaN
             2   sue   65        NaN
             3   NaN   43    teacher
 
-            >>> print sf.nan_to_bottom()
+            >>> print(sf.nan_to_bottom())
                name  age profession
             0   joe   12   mechanic
             1  bill   65    teacher
@@ -519,14 +520,14 @@ class StitchFrame(Base):
             Flattened DataFrame
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
                                foo             bar
             0  {u'a': 1, u'b': 10}     some string
             1  {u'a': 2, u'b': 20}  another string
             2  {u'a': 3, u'b': 30}            blah
 
             >>> sf.flatten()
-            >>> print sf.data
+            >>> print(sf.data)
                 foo_a    foo_b             bar
             0       1       10     some string
             1       2       20  another string
@@ -609,7 +610,7 @@ class StitchFrame(Base):
             Stacked (striped) DataFrame
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
                name  age profession
             0   joe   12   Mechanic
             1  bill   22    soldier
@@ -620,7 +621,7 @@ class StitchFrame(Base):
             6  jane   22   engineer
             7  jane   43    teacher
 
-            >>> print sf.stack_by_column('name')
+            >>> print(sf.stack_by_column('name'))
                joe        joe  bill       bill  sue        sue  jane       jane
                age profession   age profession  age profession   age profession
             0   12   Mechanic    22    soldier   65      pilot    22   engineer
@@ -665,12 +666,12 @@ class StitchFrame(Base):
             Unstriped DataFrame
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
               name profession  name profession  name profession  name profession
             0  joe   Mechanic  bill    soldier  bill  policeman  jane    teacher
             1  sue      pilot   NaN        NaN  jane   engineer   NaN        NaN
 
-            >>> print sf.unstripe()
+            >>> print(sf.unstripe())
                name profession
             0   joe   Mechanic
             1   sue      pilot
@@ -714,21 +715,21 @@ class StitchFrame(Base):
             drop (bool optional): Drop columns to be merged. Default: False
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
               first_name last_name  age    job_1    job_2
             0       john   jenkins   23    pilot     None
             1       jane     smith   46  surgeon     None
             2      harry    harmon   27  teacher  chemist
             3        sue     marie   78    nurse    baker
 
-            >>> print sf.merge_columns(['first_name', 'last_name'])
+            >>> print(sf.merge_columns(['first_name', 'last_name']))
               first_name last_name  age    job_1    job_2 first_name_last_name
             0       john   jenkins   23    pilot     None          johnjenkins
             1       jane     smith   46  surgeon     None          janesmith
             2      harry    harmon   27  teacher  chemist          harryharmon
             3        sue     marie   78    nurse    baker          suemarie
 
-            >>> print sf.merge_columns(['job_1', 'job_2'],
+            >>> print(sf.merge_columns(['job_1', 'job_2'],)
                 func=lambda x: [ x[x.index[0]], x[x.index[1]] ],
                 new_column='jobs')
 
@@ -738,7 +739,7 @@ class StitchFrame(Base):
             2      harry    harmon   27  teacher  chemist  [teacher, chemist]
             3        sue     marie   78    nurse    baker      [nurse, baker]
 
-            >>> print sf.merge_columns(['job_1', 'job_2'],
+            >>> print(sf.merge_columns(['job_1', 'job_2'],)
                 func=lambda x: {'1st': x[x.index[0]], '2nd': x[x.index[1]] },
                 new_column='jobs', drop=True)
               first_name last_name  age                                      jobs
@@ -1169,14 +1170,14 @@ class StitchFrame(Base):
             Queried (likely reduced) DataFrame
 
         Example:
-            >>> print sf.data
+            >>> print(sf.data)
                 name  age
             0    abe   15
             1  carla   22
             2   jack   57
 
             >>> sf.search('(name) is (abe) | (age) < (50)')
-            >>> print sf.data
+            >>> print(sf.data)
                 name  age
             0    abe   15
             1  carla   22

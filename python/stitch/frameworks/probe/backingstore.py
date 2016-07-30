@@ -1,3 +1,6 @@
+from __future__ import with_statement, print_function, absolute_import
+from itertools import *
+from functools import *
 import json
 from pandas import Series
 from stitch.core.stitch_frame import StitchFrame

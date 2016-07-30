@@ -1,4 +1,6 @@
-from __future__ import with_statement, print_function
+from __future__ import with_statement, print_function, absolute_import
+from itertools import *
+from functools import *
 import os
 from stitch.core.stitch_frame import StitchFrame
 from stitch.core.stitch_string import StitchString

@@ -1,3 +1,6 @@
+from __future__ import with_statement, print_function, absolute_import
+from itertools import *
+from functools import *
 import warnings
 import re
 from copy import copy, deepcopy
@@ -25,7 +28,7 @@ class Base(object):
 		for item in dir(self):
 			found = nonPublicRE.match(item)
 			if not found:
-				print item
+				print(item)
 
 	def _print_semiprivate(self):
 		'''Pretty print semi-private methods and attributes'''
@@ -33,7 +36,7 @@ class Base(object):
 		for item in dir(self):
 			found = semiPrivateRE.match(item)
 			if found:
-				print item
+				print(item)
 
 	def _print_private(self):
 		'''Pretty print private methods and attributes'''
@@ -41,7 +44,7 @@ class Base(object):
 		for item in dir(self):
 			found = privateRE.match(item)
 			if found:
-				print item
+				print(item)
 # ------------------------------------------------------------------------------
 
 def as_type(item, dtype):
@@ -254,7 +257,7 @@ def reduce_units(iterable, new_unit='-', min=0):
 	Example:
 		This function is usefull for simplifying indentation
 		>>> for indent, line in zip(indents, text):
-		>>>		print indent, line
+		>>>		print(indent, line)
 		First
 		  Second
 				  Third
@@ -291,7 +294,7 @@ def flatten_nested_dict(item, separator='_', null='null'):
 							}
 						 })
 
-		>>> pprint(flat)
+		>>> pprint(flat))
 		{
 			a : null,
 			a_b1 : null,
@@ -638,7 +641,7 @@ def reduce_units(series, new_unit='-', min=0):
 		first strip the indentation into its own series, and then reduce it.
 
 		>>> file = file.readlines()
-		>>> print file
+		>>> print(file)
 			:A
 				:B
 					:C
@@ -646,12 +649,12 @@ def reduce_units(series, new_unit='-', min=0):
 					:F
 		>>> indents = [x.split(':')[0] for x in file]
 		>>> data = [x.split(':')[1] for x in file]
-		>>> print indents
+		>>> print(indents)
 		['	', '		', '			', '		', '			']
 		>>> r = reduce_units(indents, ' ', inplace=True)
-		>>> print r
+		>>> print(r)
 		['', ' ', '  ', ' ', '  ']
-		>>> print [line for line in zip(indents, data)]
+		>>> print([line for line in zip(indents, data)])
 		A
 		 B
 		  C

@@ -63,7 +63,7 @@ def run():
 
 	if args.search:
 		cli._api.search(args.search, display_fields=args.displayfields)
-		print cli.results
+		print(cli.results)
 	else:
 		cli.cmdloop()
 

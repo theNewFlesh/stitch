@@ -1,8 +1,9 @@
-from __future__ import with_statement
+from __future__ import with_statement, print_function, absolute_import
+from itertools import *
+from functools import *
 import re
 import warnings
 from collections import OrderedDict
-from itertools import *
 import json
 import pandas
 from pandas import DataFrame, Series, Panel

@@ -1,4 +1,6 @@
-from __future__ import with_statement
+from __future__ import with_statement, print_function, absolute_import
+from itertools import *
+from functools import *
 from collections import OrderedDict
 import json
 from stitch.core.errors import *

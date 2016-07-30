@@ -1,1 +1,1 @@
-import probe
+import stitch.frameworks.probe

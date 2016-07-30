@@ -1,7 +1,7 @@
-import utils
-import errors
-import stitch_frame
-import stitch_lut
-import stitch_parser
-import stitch_interpreter
-import stitch_string
+import stitch.core.utils
+import stitch.core.errors
+import stitch.core.stitch_frame
+import stitch.core.stitch_lut
+import stitch.core.stitch_parser
+import stitch.core.stitch_interpreter
+import stitch.core.stitch_string

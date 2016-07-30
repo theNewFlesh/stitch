@@ -1,3 +1,3 @@
-import backingstore
-import probe_api
-import probe_cli
+import stitch.frameworks.probe.backingstore
+import stitch.frameworks.probe.probe_api
+import stitch.frameworks.probe.probe_cli

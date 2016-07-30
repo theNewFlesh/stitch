@@ -122,7 +122,7 @@ class StitchWord(Base):
 			data.loc[mask.index, 'mutation'] = integer
 
 		mutation = _mutation_handler(mutation)
-		for key, val in mutation.iteritems():
+		for key, val in mutation.items():
 			_mutate(key, val)
 		return self._data
 
@@ -405,7 +405,7 @@ class StitchPhrase(Base):
 			raise TypeError('Improper mode specified: ' + mode)
 
 		if len(data) > 0:
-			for key, val in mutation.iteritems():
+			for key, val in mutation.items():
 				_mutate(data, key, val)
 		return self._data
 
@@ -572,7 +572,7 @@ class StitchPhrase(Base):
 			o['error'] = False
 			o['unfound_elements'] = []
 			help_str = string
-			for name, element in self._elements.iteritems():
+			for name, element in self._elements.items():
 				diagnosis = element.diagnose(string)
 				if diagnosis['error']:
 					if diagnosis['fix']:
@@ -606,7 +606,7 @@ class StitchPhrase(Base):
 				return o
 			if p['fix']:
 				o['error'] = True
-				for key, val in p.iteritems():
+				for key, val in p.items():
 					if key not in o:
 						if key != 'fix':
 							o[key] = val
@@ -668,7 +668,7 @@ class StitchPhrase(Base):
 		p = self._scaffold_test(string)
 		if p['error']:
 			o['error'] = True
-			for key, val in p.iteritems():
+			for key, val in p.items():
 				if key not in o:
 					if key != 'fix':
 						o[key] = val

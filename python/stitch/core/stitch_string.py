@@ -42,19 +42,19 @@ class StitchString(Base):
 		lut = lex['vars']
 
 		data = []
-		for word, val in lex['words'].iteritems():
+		for word, val in lex['words'].items():
 			val['items'] = [ lut[x] for x in val['items'] ]
 			val['capture'] = lut[val['capture']]
 			val['descriptor'] = word
 			val['type'] = 'word'
 			data.append(val)
 
-		for phrase, val in lex['phrases'].iteritems():
+		for phrase, val in lex['phrases'].items():
 			val['descriptor'] = phrase
 			val['type'] = 'phrase'
 			data.append(val)
 
-		for phrase, val in lex['master_phrase'].iteritems():
+		for phrase, val in lex['master_phrase'].items():
 			val['descriptor'] = phrase
 			val['type'] = 'master'
 			data.append(val)
@@ -132,7 +132,7 @@ class StitchString(Base):
 
 	def diagnose(self, string, as_dataframe=True):
 		def conform(dict_):
-			for k, v in dict_.iteritems():
+			for k, v in dict_.items():
 				if k in ['mutation', 'element_order']:
 					dict_[k] = str(v)
 			return dict_

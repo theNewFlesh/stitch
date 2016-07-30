@@ -59,7 +59,7 @@ class Tuner(Base):
 		for conf in configs:
 			with open(os.path.join(root, conf)) as config:
 				config = json.loads(config.read())
-				for key, value in config.iteritems():
+				for key, value in config.items():
 					if key in self._config.keys():
 						if type(value) is dict and type(self._config[key]) is dict:
 							value = dict(self._config[key].items() + value.items())

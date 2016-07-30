@@ -68,7 +68,7 @@ class StitchParser(Base):
 			print('COMPOUND QUERY: ' + str(i))
 			for x, q in enumerate(cq):
 				print('  QUERY: ' + str(x))
-				for key, val in q.iteritems():
+				for key, val in q.items():
 					print('    {:>8} : {}'.format(key, val))
 			print('---------------------------------')
 			print('')
@@ -88,7 +88,7 @@ class StitchParser(Base):
 			compound_query = []
 			for q in fragment:
 				query = {}
-				for key, value in q.asDict().iteritems():
+				for key, value in q.asDict().items():
 					if key == 'operator':
 						query[key] = value
 					else:

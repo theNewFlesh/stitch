@@ -26,7 +26,7 @@ def flatten_qube_field(database, fields):
 				if type(item) != dict:
 					item = eval(str(item))
 				temp = {}
-			for key, value in item.iteritems():
+			for key, value in item.items():
 				temp[field + '_' + key] = value
 			frames.append(temp)
 
@@ -34,7 +34,7 @@ def flatten_qube_field(database, fields):
 
 		for frame in frames:
 			new_job = copy(head)
-			for key, value in frame.iteritems():
+			for key, value in frame.items():
 				new_job[key] = value
 			new_db.append(new_job)
 
